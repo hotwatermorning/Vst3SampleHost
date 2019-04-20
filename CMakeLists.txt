@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
 
-option(USE_SYSTEM_WXWIDGETS OFF)
-
 ####################################################################
 # general setup
 ####################################################################
@@ -47,26 +45,26 @@ endif()
 ####################################################################
 # optoins
 ####################################################################
-option(TERRA_BUILD_TEST "Build test project" OFF)
+option(ENABLE_BUILD_TESTS "Build test project" OFF)
 
 ####################################################################
 # configure project
 ####################################################################
 
-if(TERRA_BUILD_TEST)
-  project("Terra-Test")
+if(ENABLE_BUILD_TESTS)
+  project("Vst3SampleHost-Test")
 else()
-  project("Terra")
+  project("Vst3SampleHost")
 endif()
 
 # set source directories
 set(SOURCE_DIR_LIST
-  "./Terra"
+  "./src"
   "./schema/cpp"
   )
 
-if(NOT TERRA_BUILD_TEST)
-  set(EXCLUDE_PATTERN_LIST "./Terra/test")
+if(NOT ENABLE_BUILD_TESTS)
+  set(EXCLUDE_PATTERN_LIST "./src/test")
 endif()
 
 # check that the target_path should be excluded
@@ -89,7 +87,7 @@ if(IsXcode)
 endif()
 
 # set the root directory of the source file tree in IDE
-set(BASE_DIR "./Terra")
+set(BASE_DIR "./src")
 get_filename_component(BASE_DIR "${BASE_DIR}" ABSOLUTE)
 
 foreach(DIR ${SOURCE_DIR_LIST})
@@ -118,7 +116,7 @@ endforeach()
 
 message("Files ${SOURCE_FILES}")
 
-if(TERRA_BUILD_TEST)
+if(ENABLE_BUILD_TESTS)
   if(IsMSVC)
     add_executable(${PROJECT_NAME} ${SOURCE_FILES})
   elseif(IsXcode)
@@ -132,91 +130,41 @@ else()
   endif()
 endif()
 
-get_filename_component(PREFIX_HEADER_PATH "./Terra/prefix.hpp" ABSOLUTE)
+get_filename_component(PREFIX_HEADER_PATH "./src/prefix.hpp" ABSOLUTE)
 if(IsMSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /nologo /std:c++17 /MP /source-charset:utf-8 \
       -DUNICODE -D_UNICODE -DNOMINMAX -D_USE_MATH_DEFINES /EHsc \
       -D_CRT_SECURE_NO_WARNINGS /FI\"${PREFIX_HEADER_PATH}\"")
       set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -D_DEBUG /MDd")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG /MD")
-  set(CMAKE_CXX_FLAGS "-DHAVE_TYPE_TRAITS=1 ${CMAKE_CXX_FLAGS}")
-  get_filename_component(WX_INCLUDE_DIR "./ext/wxWidgets/${BUILD_DIR_NAME}/install/include" ABSOLUTE)
-  get_filename_component(WX_LIB_DIR "./ext/wxWidgets/${BUILD_DIR_NAME}/install/lib/vc_x64_lib" ABSOLUTE)
-  if(IsDebug)
-    set(DP "d")
-  else()
-    set(DP "")
-  endif()
-  set(CMAKE_EXE_LINKER_FLAGS
-    "\"${WX_LIB_DIR}/wxbase31u${DP}.lib\" \
-    \"${WX_LIB_DIR}/wxbase31u${DP}_net.lib\" \
-    \"${WX_LIB_DIR}/wxbase31u${DP}_xml.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_core.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_xrc.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_webview.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_stc.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_richtext.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_ribbon.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_qa.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_propgrid.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_media.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_html.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_gl.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_aui.lib\" \
-    \"${WX_LIB_DIR}/wxmsw31u${DP}_adv.lib\" \
-    \"${WX_LIB_DIR}/wxjpeg${DP}.lib\" \"${WX_LIB_DIR}/wxpng${DP}.lib\" \"${WX_LIB_DIR}/wxtiff${DP}.lib\" \
-    \"${WX_LIB_DIR}/wxzlib${DP}.lib\" \"${WX_LIB_DIR}/wxregexu${DP}.lib\" \"${WX_LIB_DIR}/wxexpat${DP}.lib\" \"${WX_LIB_DIR}/wxscintilla${DP}.lib\" \
-    ${CMAKE_EXE_LINKER_FLAGS}"
-    )
-  set(CMAKE_CXX_FLAGS "/I\"${WX_INCLUDE_DIR}\" /I\"${WX_INCLUDE_DIR}/msvc\" ${CMAKE_CXX_FLAGS}")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Werror=return-type -stdlib=libc++")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -D_DEBUG")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D_NDEBUG")
 
-  find_program(WX_CONFIG "wx-config")
-  if(WX_CONFIG AND USE_SYSTEM_WXWIDGETS)
-    message("Use system installed wxWidgets")
-    execute_process(COMMAND "${WX_CONFIG}" "--cxxflags" OUTPUT_VARIABLE WX_CXX_FLAGS)
-    execute_process(COMMAND "${WX_CONFIG}" "--libs base,core" OUTPUT_VARIABLE WX_LIB_FLAGS)
-  else()
-    message("Use custom built wxWidgets")
-    get_filename_component(WX_CONFIG_PREFIX "./ext/wxWidgets/${BUILD_DIR_NAME}/install" ABSOLUTE)
-    message("WX_CONFIG_PREFIX: ${WX_CONFIG_PREFIX}")
-    set(WX_CONFIG "${WX_CONFIG_PREFIX}/bin/wx-config")
-    message("WX_CONFIG: ${WX_CONFIG}")
-    execute_process(COMMAND "${WX_CONFIG}" "--prefix=${WX_CONFIG_PREFIX}" "--cxxflags" OUTPUT_VARIABLE WX_CXX_FLAGS)
-    execute_process(COMMAND "${WX_CONFIG}" "--prefix=${WX_CONFIG_PREFIX}" "--libs base,core" OUTPUT_VARIABLE WX_LIB_FLAGS)
-  endif()
-
-  message("WX_CXX_FLAGS ${WX_CXX_FLAGS}")
-  message("WX_LIB_FLAGS ${WX_LIB_FLAGS}")
-
-  set(CMAKE_CXX_FLAGS "-DHAVE_TYPE_TRAITS=1 ${WX_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${WX_LIB_FLAGS} ${CMAKE_EXE_LINKER_FLAGS}")
-
   set_target_properties(${PROJECT_NAME} PROPERTIES XCODE_ATTRIBUTE_GCC_PREFIX_HEADER "${PREFIX_HEADER_PATH}")
   set_target_properties(${PROJECT_NAME} PROPERTIES XCODE_ATTRIBUTE_GCC_PRECOMPILE_PREFIX_HEADER "YES")
 endif()
 
-if(TERRA_BUILD_TEST)
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DTERRA_BUILD_TEST")
+# fltk flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_THREAD_SAFE -D_REENTRANT -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE")
+
+if(ENABLE_BUILD_TESTS)
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DENABLE_BUILD_TESTS")
 endif()
 
 if(IsMSVC)
   find_library(PORTAUDIO_LIB "portaudio_static_x64" PATHS "./ext/portaudio/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
-  find_library(PROTOBUF_LIB "libprotobuf" "libprotobufd" PATHS "./ext/protobuf/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
-  find_library(FMT_LIB NAMES "fmt" "fmtd.lib" PATHS "./ext/fmt/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
   find_library(VST3_SDK_LIB "sdk" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
   find_library(VST3_BASE_LIB "base" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
   find_library(RTMIDI_LIB "rtmidi_static" "rtmidi_staticd" PATHS "./ext/rtmidi/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
+  find_library(FLTK_LIB "fltk" PATHS "./ext/fltk/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
 else()
   find_library(PORTAUDIO_LIB "libportaudio.a" PATHS "./ext/portaudio/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
-  find_library(PROTOBUF_LIB "protobuf" PATHS "./ext/protobuf/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
-  find_library(FMT_LIB NAMES "fmt" "fmtd" PATHS "./ext/fmt/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
   find_library(VST3_SDK_LIB "sdk" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
   find_library(VST3_BASE_LIB "base" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
   find_library(RTMIDI_LIB "rtmidi_static" PATHS "./ext/rtmidi/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
+  find_library(FLTK_LIB "fltk" PATHS "./ext/fltk/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
   find_library(JACK_LIB jack)
 endif()
 
@@ -224,9 +172,8 @@ list(APPEND LINKLIBS
   ${VST3_SDK_LIB}
   ${VST3_BASE_LIB}
   ${PORTAUDIO_LIB}
-  ${PROTOBUF_LIB}
-  ${FMT_LIB}
   ${RTMIDI_LIB}
+  ${FLTK_LIB}
   )
 
 if(JACK_LIB)
@@ -256,19 +203,16 @@ if(IsXcode)
 endif()
 
 include_directories(
-  "./Terra"
+  "./src"
   "./ext/vst3sdk"
-  "./ext/variant/include"
   "./schema/cpp"
   "./ext/portaudio/${BUILD_DIR_NAME}/install/include"
-  "./ext/protobuf/${BUILD_DIR_NAME}/install/include"
-  "./ext/fmt/${BUILD_DIR_NAME}/install/include"
   "./ext/rtmidi/${BUILD_DIR_NAME}/install/include"
-  "./ext/midifile/include"
-  "./ext/midifile/src-library"
+  "./ext/fltk/${BUILD_DIR_NAME}/install/include"
+  "/Users/yuasa/develop/Terra/ext/variant/include"
   )
 
-if(TERRA_BUILD_TEST)
+if(ENABLE_BUILD_TESTS)
   include_directories("./ext/Catch2/single_include")
 endif()
 
@@ -280,6 +224,9 @@ if(IsXcode)
     "-framework AudioToolbox"
     "-framework CoreAudio"
     "-framework CoreMidi"
+    "-framework CoreGraphics"
+    "-framework CoreText"
+    "-framework AppKit"
     )
 endif()
 

@@ -211,7 +211,7 @@ class ExecutionResult
 //! similar to execute_may_fail but this function fails if the command finished with an exit value of non zero.
 @Field def execute = { String params, def working_dir = ".", Map env_vars = [:] ->
   def result = execute_may_fail(params, working_dir, env_vars)
-  assert (result.exitValue() == 0), "undesirable exit value ${result.exitValue()}"
+  assert result.succeeded(), "undesirable exit value ${result.exitValue()}"
   return result
 }
 
@@ -420,37 +420,6 @@ task update_submodules {
   }
 }
 
-task build_protobuf {
-  doLast {
-    println "Build Protocol Buffer"
-    def build_dir = file("../ext/protobuf/${build_dir_name}").getAbsolutePath()
-    assert(mkdirs_if_needed(build_dir))
-
-    build_if_needed(
-      "protobuf",
-      file("${build_dir}/install"),
-      get_hash("protobuf"),
-      {
-        if(isWindows()) {
-          execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX='${build_dir}/install' " +
-                  "-Dprotobuf_BUILD_TESTS=OFF -Dprotobuf_MSVC_STATIC_RUNTIME=OFF ../cmake"
-                  , build_dir)
-          execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
-          execute("cmake --build . -j --target INSTALL --config ${project.config}", build_dir)
-        } else {
-          execute("./autogen.sh", "${build_dir}/..")
-          execute("../configure --disable-shared --prefix \"${build_dir}/install\"",
-                  build_dir,
-                  ccache_envvars
-                  )
-          execute("make", build_dir)
-          execute("make install", build_dir)
-        }
-      })
-  }
-}
-build_protobuf.mustRunAfter update_submodules
-
 task build_rtmidi {
   doLast {
     println "Build RtMidi"
@@ -539,97 +508,32 @@ task build_vst3sdk {
 }
 build_vst3sdk.mustRunAfter update_submodules
 
-task build_wxwidgets {
+task build_fltk {
   doLast {
-    println "Build wxWidgets"
-    def build_dir = file("../ext/wxWidgets/${build_dir_name}").getAbsolutePath()
+    println "Build FLTK"
+    def build_dir = file("../ext/fltk/${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
 
     build_if_needed(
-      "wxwidgets",
+      "fltk",
       file("${build_dir}/install"),
-      get_hash("wxWidgets"),
+      get_hash("fltk"),
       {
-
-        if(isWindows()) {
-          copy {
-            from file("../ext/wxWidgets/include/wx/msw/setup0.h")
-            into file("../ext/wxWidgets/include/wx/msw")
-            rename "setup0\\.h", "setup.h"
-          }
           execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX='${build_dir}/install' " +
-                  " -DwxBUILD_SHARED=OFF -DwxBUILD_MONOLITHIC=OFF " +
-                  "-DwxBUILD_USE_STATIC_RUNTIME=OFF -DwxBUILD_MSVC_MULTIPROC=ON " +
+                  "-DwxBUILD_SHARED=OFF -DwxBUILD_MONOLITHIC=OFF " +
+                  "-DOPTION_BUILD_EXAMPLES=ON" +
                   "-DCMAKE_CXX_STANDARD=14 .."
                   , build_dir)
-          execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
-          execute("cmake --build . -j --target INSTALL --config ${project.config}", build_dir)
-        } else {
-          def debug_flags = ""
-          if(project.config == "Debug") {
-            debug_flags = "--enable-debug --enable-debug-info --enable-debug-gdb"
-          }
-
-          execute("./autogen.sh", "../ext/wxWidgets")
-          execute('../configure CXXFLAGS="-stdlib=libc++ -DHAVE_TYPE_TRAITS" OBJCXXFLAGS="-stdlib=libc++" ' +
-                  'CPPFLAGS="-stdlib=libc++" LDFLAGS="-stdlib=libc++" ' +
-                  '--with-macosx-version-min=10.7 --with-cocoa ' +
-                  '--with-libjpeg=builtin --with-libpng=builtin --with-regex=builtin --with-libtiff=builtin ' +
-                  '--with-zlib=builtin --with-expat=builtin ' +
-                  '--enable-stl --enable-std_containers --enable-std_iostreams --enable-std_string ' +
-                  "--disable-shared --enable-unicode ${debug_flags} --with-cxx=14 --prefix=\"${build_dir}/install\"",
-                  build_dir,
-                  ccache_envvars
-                  )
-          execute("make -j4", build_dir)
-          execute("make install", build_dir)
-        }
+          def job = (isWindows() ? "-j" : "")
+          execute("cmake --build . ${job} --target ALL_BUILD --config ${project.config}", build_dir)
+          execute("cmake --build . ${job} --target install --config ${project.config}", build_dir)
       })
   }
 }
-build_wxwidgets.mustRunAfter update_submodules
-
-task build_fmtlib {
-  doLast {
-    println "Build fmtlib"
-    def build_dir = file("../ext/fmt/${build_dir_name}").getAbsolutePath()
-    assert(mkdirs_if_needed(build_dir))
-
-    build_if_needed(
-      "fmtlib",
-      file("${build_dir}/install"),
-      get_hash("fmt"),
-      {
-        if(isWindows()) {
-          execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX='${build_dir}/install' " +
-                  "-DFMT_TEST=OFF ..", build_dir, ccache_envvars)
-          execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
-          execute("cmake --build . -j --target INSTALL --config ${project.config}", build_dir)
-        } else {
-          execute("cmake -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" -DCMAKE_BUILD_TYPE=${project.config} ..", build_dir, ccache_envvars)
-          execute("make -j", build_dir)
-          execute("make install", build_dir)
-        }
-      })
-  }
-}
-build_fmtlib.mustRunAfter update_submodules
-
-task compile_schemas {
-  doLast {
-    def protoc = file("../ext/protobuf/${build_dir_name}/install/bin/protoc${isWindows() ? '.exe' : ''}").getAbsolutePath()
-    assert(file(protoc).exists())
-
-    assert(mkdirs_if_needed(file("../schema/cpp")))
-    file("../schema").eachFileMatch(~/.*\.proto$/) {
-      execute("'${protoc}' -Ischema --cpp_out=schema/cpp '${it.getName()}'", "..")
-    }
-  }
-}
-compile_schemas.mustRunAfter build_protobuf
+build_fltk.mustRunAfter update_submodules
 
 task build_submodules {
-  dependsOn { [build_protobuf, compile_schemas, build_rtmidi, build_portaudio, build_vst3sdk, build_wxwidgets, build_fmtlib] }
+  dependsOn { [build_rtmidi, build_portaudio, build_vst3sdk, build_fltk] }
 }
 
 task copy_resources {
@@ -664,7 +568,6 @@ task prepare_app {
   }
 }
 prepare_app.mustRunAfter build_submodules
-prepare_app.mustRunAfter compile_schemas
 
 task build_app {
   doLast {
@@ -685,11 +588,10 @@ task prepare_test {
 
     def build_dir = file("../${test_build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
-    execute("cmake ${getCMakeGenerator()} -DCMAKE_BUILD_TYPE=${project.config} -DTERRA_BUILD_TEST=ON ..", build_dir)
+    execute("cmake ${getCMakeGenerator()} -DCMAKE_BUILD_TYPE=${project.config} -DENABLE_BUILD_TESTS=ON ..", build_dir)
   }
 }
 prepare_test.mustRunAfter build_submodules
-prepare_test.mustRunAfter compile_schemas
 
 task build_test {
   doLast {
@@ -710,9 +612,9 @@ task run_test {
   doLast {
     def build_dir = file("../${test_build_dir_name}").getAbsolutePath()
     if(isWindows()) {
-      execute("Debug\\Terra-Test.exe", build_dir)
+      execute("Debug\\Vst3SampleHost-Test.exe", build_dir)
     } else {
-      execute("./Debug/Terra-Test.app/Contents/MacOS/Terra-Test", build_dir)
+      execute("./Debug/Vst3SampleHost-Test.app/Contents/MacOS/Vst3SampleHost-Test", build_dir)
     }
   }
 }

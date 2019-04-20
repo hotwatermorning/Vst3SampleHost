@@ -1,27 +1,15 @@
 [submodule "ext/vst3sdk"]
 	path = ext/vst3sdk
 	url = https://github.com/steinbergmedia/vst3sdk.git
-[submodule "ext/wxWidgets"]
-	path = ext/wxWidgets
-	url = https://github.com/wxWidgets/wxWidgets.git
 [submodule "ext/portaudio"]
 	path = ext/portaudio
 	url = https://git.assembla.com/portaudio.git
-[submodule "ext/fmt"]
-	path = ext/fmt
-	url = https://github.com/fmtlib/fmt.git
-[submodule "ext/protobuf"]
-	path = ext/protobuf
-	url = https://github.com/protocolbuffers/protobuf.git
-[submodule "ext/variant"]
-	path = ext/variant
-	url = https://github.com/mpark/variant.git
 [submodule "ext/rtmidi"]
 	path = ext/rtmidi
 	url = https://github.com/thestk/rtmidi.git
-[submodule "ext/midifile"]
-	path = ext/midifile
-	url = https://github.com/craigsapp/midifile.git
 [submodule "ext/Catch2"]
 	path = ext/Catch2
 	url = https://github.com/catchorg/Catch2.git
+[submodule "ext/fltk"]
+	path = ext/fltk
+	url = https://github.com/fltk/fltk.git
