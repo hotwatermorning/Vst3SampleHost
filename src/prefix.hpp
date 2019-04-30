@@ -2,6 +2,16 @@
 
 #include <cstdint>
 
+#include <wx/setup.h>
+#include <wx/wxprec.h>
+
+#ifndef WX_PRECOMP
+#include <wx/wx.h>
+#endif
+
+#include <wx/tglbtn.h>
+#include <wx/dcgraph.h>
+
 #if defined(_MSC_VER)
 
 #include <windows.h>
@@ -52,3 +62,4 @@ constexpr wchar_t const *kAppName = L"Vst3SampleHost";
 NS_HWM_END
 
 #include "misc/DebuggerOutputStream.hpp"
+#include "misc/StrCnv.hpp"

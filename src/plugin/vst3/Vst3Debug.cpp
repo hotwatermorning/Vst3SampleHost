@@ -34,7 +34,10 @@ std::wstring tresult_to_wstring(tresult result)
 Steinberg::tresult ShowError(Steinberg::tresult result, String context)
 {
     if(result != kResultOk) {
-        //hwm::dout << L"Failed({}): {}"_format(tresult_to_wstring(result), context) << std::endl;
+        hwm::dout << wxString::Format(L"Failed(%ls): %ls",
+                                      tresult_to_wstring(result), context
+                                      ).ToStdWstring()
+        << std::endl;
     }
     
     return result;
@@ -50,48 +53,38 @@ void OutputParameterInfo(Vst::IEditController *edit_controller)
         Vst::ParameterInfo info;
         edit_controller->getParameterInfo(i, info);
         
-//        hwm::dout <<
-//        L"{}: {{"
-//        L"ID:{}, Title:{}, ShortTitle:{}, Units:{}, "
-//        L"StepCount:{}, Default:{}, UnitID:{}, "
-//        L"CanAutomate:{}, "
-//        L"IsReadOnly:{}, "
-//        L"IsWrapAround:{}, "
-//        L"IsList:{}, "
-//        L"IsProgramChange:{}, "
-//        L"IsByPass:{}"
-//        L"}}"_format(i, info.id, to_wstr(info.title), to_wstr(info.shortTitle), to_wstr(info.units),
-//                     info.stepCount, info.defaultNormalizedValue, info.unitId,
-//                     (info.flags & info.kCanAutomate) != 0,
-//                     (info.flags & info.kIsReadOnly) != 0,
-//                     (info.flags & info.kIsWrapAround) != 0,
-//                     (info.flags & info.kIsList) != 0,
-//                     (info.flags & info.kIsProgramChange) != 0,
-//                     (info.flags & info.kIsBypass) != 0
-//                     )
-//        << std::endl;
+        auto has_flag = [info](auto flag) { return (info.flags & flag) != 0 ? L"true" : L"false"; };
+        hwm::wdout
+        << wxString::Format(L"[%4d]: {"
+                            L"ID:%d, Title:%ls, ShortTitle:%ls, Units:%ls, "
+                            L"StepCount:%d, DefaultValue:%0.6lf, UnitID:%d, "
+                            L"CanAutomate:%ls, IsReadOnly:%ls, IsWrapAround:%ls, "
+                            L"IsList:%ls, IsProgramChange:%ls, IsBypass:%ls "
+                            L"}",
+                            i,
+                            (Int32)info.id, to_wstr(info.title), to_wstr(info.shortTitle), to_wstr(info.units),
+                            (Int32)info.stepCount, (double)info.defaultNormalizedValue, (Int32)info.unitId,
+                            has_flag(info.kCanAutomate), has_flag(info.kIsReadOnly), has_flag(info.kIsWrapAround),
+                            has_flag(info.kIsList), has_flag(info.kIsProgramChange), has_flag(info.kIsBypass)
+                            ).ToStdWstring()
+        << std::endl;
     }
 }
 
 String UnitInfoToString(Vst::UnitInfo const &info)
 {
-//    return
-//    L"ID: {}, Name: {}, Parent: {}, Program List ID: {}"_format(info.id,
-//                                                                to_wstr(info.name),
-//                                                                info.parentUnitId,
-//                                                                info.programListId);
-    
-    return L"";
+    return
+    wxString::Format(L"ID:%d, Name:%ls, Parent:%d, ProgramListID:%d",
+                     (Int32)info.id, to_wstr(info.name), (Int32)info.parentUnitId, (Int32)info.programListId
+                     ).ToStdWstring();
 }
 
 String ProgramListInfoToString(Vst::ProgramListInfo const &info)
 {
-//    return
-//    L"ID: {}, Name: {}, Program Count: {}"_format(info.id,
-//                                                  to_wstr(info.name),
-//                                                  info.programCount);
-    
-    return L"";
+    return
+    wxString::Format(L"ID:%d, Name:%ls, ProgramCount:%d",
+                     (Int32)info.id, to_wstr(info.name), (Int32)info.programCount
+                     ).ToStdWstring();
 }
 
 void OutputUnitInfo(Vst::IUnitInfo *unit_handler)
@@ -118,11 +111,13 @@ void OutputUnitInfo(Vst::IUnitInfo *unit_handler)
             break;
         }
         
-        //hwm::wdout << L"[{}] {}"_format(i, ProgramListInfoToString(program_list_info)) << std::endl;
+        hwm::wdout
+        << wxString::Format(L"[%d] %ls", (Int32)i, ProgramListInfoToString(program_list_info)).ToStdWstring()
+        << std::endl;
         
         for(size_t program_index = 0; program_index < program_list_info.programCount; ++program_index) {
             
-            //hwm::wdout << L"\t[{}] "_format(program_index);
+            hwm::wdout << wxString::Format(L"\t[%d] ", (Int32)program_index).ToStdWstring();
             
             Vst::String128 name;
             unit_handler->getProgramName(program_list_info.id, program_index, name);
@@ -144,7 +139,7 @@ void OutputUnitInfo(Vst::IUnitInfo *unit_handler)
                 Vst::String128 attr_value = {};
                 unit_handler->getProgramInfo(program_list_info.id, program_index, attr, attr_value);
                 
-                //hwm::wdout << L", {}: {}"_format(to_wstr(attr), to_wstr(attr_value));
+                hwm::wdout << L", " << to_wstr(attr) << ":[" << to_wstr(attr_value) << L"]";
             }
             
             if(unit_handler->hasProgramPitchNames(program_list_info.id, program_index) == kResultTrue) {
@@ -164,20 +159,17 @@ void OutputUnitInfo(Vst::IUnitInfo *unit_handler)
 
 String BusInfoToString(Vst::BusInfo &bus, Vst::SpeakerArrangement speaker)
 {
-//    return
-//    L"Bus{{ Name: {}, MediaType: {}, Direction: {}, "
-//          L"BusType: {}, Channels: {}, Default Active: {}, "
-//          L"Speaker: {}"
-//    L" }}"_format(to_wstr(bus.name),
-//                  (bus.mediaType == Vst::MediaTypes::kAudio ? L"Audio" : L"Midi"),
-//                  (bus.direction == Vst::BusDirections::kInput ? L"Input" : L"Output"),
-//                  (bus.busType == Vst::BusTypes::kMain ? L"Main Bus" : L"Aux Bus"),
-//                  bus.channelCount,
-//                  ((bus.flags & bus.kDefaultActive) != 0),
-//                  GetSpeakerName(speaker)
-//                  );
-    
-    return L"";
+    return
+    wxString::Format(L"{ Name:%ls, MediaType:%ls, Direction:%ls"
+                     "BusType:%ls, Channels:%d, DefaultActive:%ls, Speaker:[%ls] }",
+                     to_wstr(bus.name),
+                     (bus.mediaType == Vst::MediaTypes::kAudio ? L"Audio" : L"Midi"),
+                     (bus.direction == Vst::BusDirections::kInput ? L"Input" : L"Output"),
+                     (bus.busType == Vst::BusTypes::kMain ? L"Main Bus" : L"Aux Bus"),
+                     (Int32)bus.channelCount,
+                     ((bus.flags & bus.kDefaultActive) != 0) ? L"true" : L"false",
+                     GetSpeakerName(speaker)
+                     ).ToStdWstring();
 }
 
 // this function returns a string which representing relationship between a bus and units.
@@ -211,9 +203,10 @@ String BusUnitInfoToString(int bus_index, Vst::BusInfo const &bus, Vst::IUnitInf
                 return spaces + L"No related unit info for this bus channel.";
             }
         }
-        
-        return L"";
-        //return spaces + L"Channel:{:#2d} => Unit: {})"_format(channel, to_wstr(unit_info.name));
+
+        return spaces + wxString::Format(L"Channel:%02d => Unit:%ls",
+                                         (Int32)channel, to_wstr(unit_info.name)
+                                         ).ToStdWstring();
     };
 
     String str;
@@ -252,7 +245,9 @@ void OutputBusInfoImpl(Vst::IComponent *component,
         :   String(kNumSpaces, L' ') + L"No unit info for this bus."
         ;
         
-        //hwm::wdout << L"[{}] {}\n{}"_format(i, bus_info_str, bus_unit_info_str) << std::endl;
+        hwm::wdout
+        << wxString::Format(L"[%d] %ls\n%ls", (Int32)i, bus_info_str, bus_unit_info_str).ToStdWstring()
+        << std::endl;
     }
 }
 

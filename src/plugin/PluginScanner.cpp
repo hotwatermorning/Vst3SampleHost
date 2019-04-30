@@ -3,12 +3,12 @@
 #include <atomic>
 #include <thread>
 
+#include <wx/dir.h>
+
 #include "../misc/ScopeExit.hpp"
 #include "../misc/StrCnv.hpp"
 #include "../misc/ListenerService.hpp"
 #include <pluginterfaces/vst/ivstaudioprocessor.h>
-#include <FL/filename.H>
-#include <FL/fl_utf8.h>
 
 NS_HWM_BEGIN
 
@@ -45,53 +45,14 @@ struct PluginScanner::Impl
 };
 
 class PluginScanner::Traverser
+:   public wxDirTraverser
 {
 public:
     Traverser(PluginScanner &owner)
     :   owner_(owner)
     {}
     
-    void ScanDir(std::string path)
-    {
-        struct dirent **list;
-        int const num = fl_filename_list(path.c_str(), &list, fl_alphasort);
-        if(num < 0) {
-            hwm::dout << "error while scanning file list." << std::endl;
-            return;
-        }
-        
-        HWM_SCOPE_EXIT([&list, num] {
-            fl_filename_free_list(&list, num);
-        });
-        
-        auto const is_ext_vst3 = [](auto name) {
-            return fl_filename_ext(name) == std::string(".vst3");
-        };
-        
-        for(int i = 0; i < num; ++i) {
-            dirent * &entry = list[i];
-            if(fl_filename_isdir(entry->d_name)) {
-#if SMTG_OS_MACOS != 0
-                if(is_ext_vst3(entry->d_name)) {
-                    bool const is_plugin = ScanPlugin(entry->d_name);
-                    if(is_plugin) { continue; }
-                }
-#endif
-                ScanDir(entry->d_name);
-            } else {
-#if SMTG_OS_MACOS == 0
-                struct stat st;
-                fl_stat(entry->d_name, &st);
-                
-                if(S_ISREG(st.st_mode) && is_ext_vst3(entry->d_name)) {
-                    ScanPlugin(entry->d_name);
-                }
-#endif
-            }
-        }
-    }
-    
-    bool ScanPlugin(std::string const &path)
+    bool LoadFactory(String const &path)
     {
         auto factory_list = Vst3PluginFactoryList::GetInstance();
         auto factory = factory_list->FindOrCreateFactory(to_wstr(path));
@@ -128,6 +89,22 @@ public:
     
 private:
     PluginScanner &owner_;
+    
+    wxDirTraverseResult OnFile(wxString const &filename) override
+    {
+#if SMTG_OS_MACOS == 0
+        if(filename.EndsWith(L"vst3")) { LoadFactory(filename.ToStdWstring()); }
+#endif
+        return wxDIR_CONTINUE;
+    }
+    
+    wxDirTraverseResult OnDir(wxString const &dirname) override
+    {
+#if SMTG_OS_MACOS
+        if(dirname.EndsWith(L"vst3")) { LoadFactory(dirname.ToStdWstring()); }
+#endif
+        return wxDIR_CONTINUE;
+    }
 };
 
 PluginScanner::PluginScanner()
@@ -200,11 +177,12 @@ void PluginScanner::ScanAsync()
         
         Traverser tr(*this);
         for(auto path: path_to_scan) {
-            auto const utf8path = to_utf8(path);
-            if(fl_filename_isdir(utf8path.c_str()) == false) { continue; }
-
+            if(wxDir::Exists(path) == false) { continue; }
+            
+            wxDir dir(path);
+            
             try {
-                tr.ScanDir(utf8path);
+                dir.Traverse(tr);
             } catch(std::exception &e) {
                 hwm::dout << "Failed to traverse plugin directories: " << e.what() << std::endl;
             }

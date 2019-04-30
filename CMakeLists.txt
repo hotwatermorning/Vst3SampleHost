@@ -137,17 +137,64 @@ if(IsMSVC)
       -D_CRT_SECURE_NO_WARNINGS /FI\"${PREFIX_HEADER_PATH}\"")
       set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -D_DEBUG /MDd")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG /MD")
+  get_filename_component(WX_INCLUDE_DIR "./ext/wxWidgets/${BUILD_DIR_NAME}/install/include" ABSOLUTE)
+  get_filename_component(WX_LIB_DIR "./ext/wxWidgets/${BUILD_DIR_NAME}/install/lib/vc_x64_lib" ABSOLUTE)
+  if(IsDebug)
+    set(DP "d")
+  else()
+    set(DP "")
+  endif()
+  set(CMAKE_EXE_LINKER_FLAGS
+    "\"${WX_LIB_DIR}/wxbase31u${DP}.lib\" \
+    \"${WX_LIB_DIR}/wxbase31u${DP}_net.lib\" \
+    \"${WX_LIB_DIR}/wxbase31u${DP}_xml.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_core.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_xrc.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_webview.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_stc.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_richtext.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_ribbon.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_qa.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_propgrid.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_media.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_html.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_gl.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_aui.lib\" \
+    \"${WX_LIB_DIR}/wxmsw31u${DP}_adv.lib\" \
+    \"${WX_LIB_DIR}/wxjpeg${DP}.lib\" \"${WX_LIB_DIR}/wxpng${DP}.lib\" \"${WX_LIB_DIR}/wxtiff${DP}.lib\" \
+    \"${WX_LIB_DIR}/wxzlib${DP}.lib\" \"${WX_LIB_DIR}/wxregexu${DP}.lib\" \"${WX_LIB_DIR}/wxexpat${DP}.lib\" \"${WX_LIB_DIR}/wxscintilla${DP}.lib\" \
+    ${CMAKE_EXE_LINKER_FLAGS}"
+    )
+  set(CMAKE_CXX_FLAGS "/I\"${WX_INCLUDE_DIR}\" /I\"${WX_INCLUDE_DIR}/msvc\" ${CMAKE_CXX_FLAGS}")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Werror=return-type -stdlib=libc++")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -D_DEBUG")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D_NDEBUG")
 
+  find_program(WX_CONFIG "wx-config")
+  if(WX_CONFIG AND USE_SYSTEM_WXWIDGETS)
+    message("Use system installed wxWidgets")
+    execute_process(COMMAND "${WX_CONFIG}" "--cxxflags" OUTPUT_VARIABLE WX_CXX_FLAGS)
+    execute_process(COMMAND "${WX_CONFIG}" "--libs base,core" OUTPUT_VARIABLE WX_LIB_FLAGS)
+  else()
+    message("Use custom built wxWidgets")
+    get_filename_component(WX_CONFIG_PREFIX "./ext/wxWidgets/${BUILD_DIR_NAME}/install" ABSOLUTE)
+    message("WX_CONFIG_PREFIX: ${WX_CONFIG_PREFIX}")
+    set(WX_CONFIG "${WX_CONFIG_PREFIX}/bin/wx-config")
+    message("WX_CONFIG: ${WX_CONFIG}")
+    execute_process(COMMAND "${WX_CONFIG}" "--prefix=${WX_CONFIG_PREFIX}" "--cxxflags" OUTPUT_VARIABLE WX_CXX_FLAGS)
+    execute_process(COMMAND "${WX_CONFIG}" "--prefix=${WX_CONFIG_PREFIX}" "--libs base,core" OUTPUT_VARIABLE WX_LIB_FLAGS)
+  endif()
+
+  message("WX_CXX_FLAGS ${WX_CXX_FLAGS}")
+  message("WX_LIB_FLAGS ${WX_LIB_FLAGS}")
+
+  set(CMAKE_CXX_FLAGS "-DHAVE_TYPE_TRAITS=1 ${WX_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${WX_LIB_FLAGS} ${CMAKE_EXE_LINKER_FLAGS}")
+
   set_target_properties(${PROJECT_NAME} PROPERTIES XCODE_ATTRIBUTE_GCC_PREFIX_HEADER "${PREFIX_HEADER_PATH}")
   set_target_properties(${PROJECT_NAME} PROPERTIES XCODE_ATTRIBUTE_GCC_PRECOMPILE_PREFIX_HEADER "YES")
 endif()
-
-# fltk flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_THREAD_SAFE -D_REENTRANT -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE")
 
 if(ENABLE_BUILD_TESTS)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DENABLE_BUILD_TESTS")
@@ -158,13 +205,11 @@ if(IsMSVC)
   find_library(VST3_SDK_LIB "sdk" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
   find_library(VST3_BASE_LIB "base" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
   find_library(RTMIDI_LIB "rtmidi_static" "rtmidi_staticd" PATHS "./ext/rtmidi/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
-  find_library(FLTK_LIB "fltk" PATHS "./ext/fltk/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
 else()
   find_library(PORTAUDIO_LIB "libportaudio.a" PATHS "./ext/portaudio/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
   find_library(VST3_SDK_LIB "sdk" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
   find_library(VST3_BASE_LIB "base" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
   find_library(RTMIDI_LIB "rtmidi_static" PATHS "./ext/rtmidi/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
-  find_library(FLTK_LIB "fltk" PATHS "./ext/fltk/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
   find_library(JACK_LIB jack)
 endif()
 
@@ -173,7 +218,6 @@ list(APPEND LINKLIBS
   ${VST3_BASE_LIB}
   ${PORTAUDIO_LIB}
   ${RTMIDI_LIB}
-  ${FLTK_LIB}
   )
 
 if(JACK_LIB)
@@ -208,7 +252,6 @@ include_directories(
   "./schema/cpp"
   "./ext/portaudio/${BUILD_DIR_NAME}/install/include"
   "./ext/rtmidi/${BUILD_DIR_NAME}/install/include"
-  "./ext/fltk/${BUILD_DIR_NAME}/install/include"
   "/Users/yuasa/develop/Terra/ext/variant/include"
   )
 

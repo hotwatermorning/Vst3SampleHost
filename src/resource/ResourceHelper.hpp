@@ -11,16 +11,6 @@ public:
     ResourceHelper();
     ~ResourceHelper();
     
-    //! Get the root dir of Terra
-    /*! "~/Documents/diatonic.jp/Terra"
-     */
-    String GetTerraDir() const;
-    
-    //! Get the config file path.
-    /*! "~/Documents/diatonic.jp/Terra/Config/terra.conf"
-     */
-    String GetConfigFilePath() const;
-    
     //! Get resource file path specified by the path hierarchy.
     String GetResourcePath(String path) const;
     
@@ -39,18 +29,6 @@ public:
         return T(GetResourcePath(path_hierarchy));
     }
 };
-
-inline
-String GetTerraDir()
-{
-    return ResourceHelper::GetInstance()->GetTerraDir();
-}
-
-inline
-String GetConfigFilePath()
-{
-    return ResourceHelper::GetInstance()->GetConfigFilePath();
-}
 
 inline
 String GetResourcePath(String path)

@@ -508,32 +508,58 @@ task build_vst3sdk {
 }
 build_vst3sdk.mustRunAfter update_submodules
 
-task build_fltk {
+
+task build_wxwidgets {
   doLast {
-    println "Build FLTK"
-    def build_dir = file("../ext/fltk/${build_dir_name}").getAbsolutePath()
+    println "Build wxWidgets"
+    def build_dir = file("../ext/wxWidgets/${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
 
     build_if_needed(
-      "fltk",
+      "wxwidgets",
       file("${build_dir}/install"),
-      get_hash("fltk"),
+      get_hash("wxWidgets"),
       {
+
+        if(isWindows()) {
+          copy {
+            from file("../ext/wxWidgets/include/wx/msw/setup0.h")
+            into file("../ext/wxWidgets/include/wx/msw")
+            rename "setup0\\.h", "setup.h"
+          }
           execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX='${build_dir}/install' " +
-                  "-DwxBUILD_SHARED=OFF -DwxBUILD_MONOLITHIC=OFF " +
-                  "-DOPTION_BUILD_EXAMPLES=ON" +
+                  " -DwxBUILD_SHARED=OFF -DwxBUILD_MONOLITHIC=OFF " +
+                  "-DwxBUILD_USE_STATIC_RUNTIME=OFF -DwxBUILD_MSVC_MULTIPROC=ON " +
                   "-DCMAKE_CXX_STANDARD=14 .."
                   , build_dir)
-          def job = (isWindows() ? "-j" : "")
-          execute("cmake --build . ${job} --target ALL_BUILD --config ${project.config}", build_dir)
-          execute("cmake --build . ${job} --target install --config ${project.config}", build_dir)
+          execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
+          execute("cmake --build . -j --target INSTALL --config ${project.config}", build_dir)
+        } else {
+          def debug_flags = ""
+          if(project.config == "Debug") {
+            debug_flags = "--enable-debug --enable-debug-info --enable-debug-gdb"
+          }
+
+          execute("./autogen.sh", "../ext/wxWidgets")
+          execute('../configure CXXFLAGS="-stdlib=libc++ -DHAVE_TYPE_TRAITS" OBJCXXFLAGS="-stdlib=libc++" ' +
+                  'CPPFLAGS="-stdlib=libc++" LDFLAGS="-stdlib=libc++" ' +
+                  '--with-macosx-version-min=10.9 --with-cocoa ' +
+                  '--with-libjpeg=builtin --with-libpng=builtin --with-regex=builtin --with-libtiff=builtin ' +
+                  '--with-zlib=builtin --with-expat=builtin ' +
+                  "--disable-shared --enable-unicode ${debug_flags} --with-cxx=14 --prefix=\"${build_dir}/install\"",
+                  build_dir,
+                  ccache_envvars
+                  )
+          execute("make -j4", build_dir)
+          execute("make install", build_dir)
+        }
       })
   }
 }
-build_fltk.mustRunAfter update_submodules
+build_wxwidgets.mustRunAfter update_submodules
 
 task build_submodules {
-  dependsOn { [build_rtmidi, build_portaudio, build_vst3sdk, build_fltk] }
+  dependsOn { [build_rtmidi, build_portaudio, build_vst3sdk, build_wxwidgets] }
 }
 
 task copy_resources {

@@ -10,6 +10,6 @@
 [submodule "ext/Catch2"]
 	path = ext/Catch2
 	url = https://github.com/catchorg/Catch2.git
-[submodule "ext/fltk"]
-	path = ext/fltk
-	url = https://github.com/fltk/fltk.git
+[submodule "ext/wxWidgets"]
+	path = ext/wxWidgets
+	url = https://github.com/wxWidgets/wxWidgets.git

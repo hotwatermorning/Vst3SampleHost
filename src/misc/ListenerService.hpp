@@ -12,6 +12,9 @@ protected:
     IListenerService()
     {}
     
+    IListenerService(IListenerService const &) = delete;
+    IListenerService & operator=(IListenerService const &) = delete;
+    
 public:
     virtual
     ~IListenerService()
