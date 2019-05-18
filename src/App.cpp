@@ -194,7 +194,7 @@ struct App::Impl
     ListenerService<ModuleLoadListener> mlls_;
     ListenerService<PluginLoadListener> plls_;
 
-    struct NoteInfo {
+    struct alignas(4) NoteInfo {
         bool is_note_on_;
         unsigned char channel_;
         unsigned char velocity_;
