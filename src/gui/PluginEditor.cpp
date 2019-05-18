@@ -563,6 +563,9 @@ public:
                            wxDEFAULT_FRAME_STYLE & ~(wxMAXIMIZE_BOX))
     ,   listener_(listener)
     {
+        auto key_input = PCKeyboardInput::GetInstance();
+        key_input->ApplyTo(this);
+        
         auto sizer = new wxBoxSizer(wxVERTICAL);
 
         control_ = new PluginEditorControl(this, target_plugin);

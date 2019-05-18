@@ -7,6 +7,7 @@
 #include "misc/StrCnv.hpp"
 #include "App.hpp"
 #include "gui/Gui.hpp"
+#include "gui/PCKeyboardInput.hpp"
 #include "processor/EventBuffer.hpp"
 
 NS_HWM_BEGIN
@@ -72,6 +73,7 @@ struct App::Impl
         }
     }
     
+    PCKeyboardInput keyinput_;
     AudioDeviceManager adm_;
     wxFrame *frame_;
     std::shared_ptr<Vst3PluginFactoryList> factory_list_;

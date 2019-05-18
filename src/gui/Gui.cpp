@@ -114,9 +114,6 @@ public:
         
         SetSizerAndFit(vbox);
         
-        Bind(wxEVT_KEY_DOWN, [this](auto &ev) { keyboard_->HandleWindowEvent(ev); });
-        Bind(wxEVT_KEY_UP, [this](auto &ev) { keyboard_->HandleWindowEvent(ev); });
-        
         Bind(wxEVT_PAINT, [this](auto &ev) { OnPaint(ev); });
         btn_load_module_->Bind(wxEVT_BUTTON, [this](auto &ev) { OnLoadModule(); });
         cho_select_component_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectComponent(); });
@@ -369,13 +366,6 @@ private:
         editor_frame_ = CreatePluginEditorFrame(this,
                                                 App::GetInstance()->GetPlugin(),
                                                 this);
-        
-        editor_frame_->Bind(wxEVT_KEY_UP, [this](wxKeyEvent &ev) {
-            keyboard_->ProcessWindowEvent(ev);
-        });
-        editor_frame_->Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent &ev) {
-            keyboard_->ProcessWindowEvent(ev);
-        });
         btn_open_editor_->Disable();
     }
     
