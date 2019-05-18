@@ -5,6 +5,7 @@
 #include "plugin/vst3/Vst3PluginFactory.hpp"
 #include "plugin/PluginScanner.hpp"
 #include "misc/StrCnv.hpp"
+#include "misc/MathUtil.hpp"
 #include "App.hpp"
 #include "gui/Gui.hpp"
 #include "gui/PCKeyboardInput.hpp"
@@ -14,6 +15,9 @@ NS_HWM_BEGIN
 
 SampleCount const kSampleRate = 44100;
 SampleCount const kBlockSize = 256;
+double const kAudioOutputLevelMinDB = -48.0;
+double const kAudioOutputLevelMaxDB = 0.0;
+Int32 kAudioOutputLevelTransientMillisec = 30;
 
 void OpenAudioDevice()
 {
@@ -72,6 +76,113 @@ struct App::Impl
         enable_audio_input_.store(false);
     }
     
+    class Transient
+    {
+    public:
+        static constexpr double kTolerance = 1E-10;
+        
+        static
+        double CalcTransientPerSample(double sample_rate,
+                                      UInt32 duration_in_milliseconds,
+                                      double db_amount)
+        {
+            auto const dur_sec = duration_in_milliseconds / 1000.0;
+            auto const dur_samples = dur_sec * sample_rate;
+            return db_amount / dur_samples;
+        }
+        
+        //! コンストラクタ
+        /*! @param sample_rate サンプリングレート
+         *  @param duration_in_msec 6dB出力を増加させるのにかかる時間
+         *  @param min_db 最小のdB値
+         *  @param max_db 最大のdB値
+         */
+
+        explicit
+        Transient(double sample_rate,
+                  UInt32 duration_in_msec,
+                  double min_db,
+                  double max_db)
+        :   amount_(6.0 / (duration_in_msec / 1000.0 * sample_rate))
+        ,   min_db_(min_db)
+        ,   max_db_(max_db)
+        {}
+        
+        explicit
+        Transient()
+        :   Transient(44100.0, 50, -48, 0.0)
+        {}
+        
+        Transient(Transient const &) = delete;
+        Transient & operator=(Transient const &) = delete;
+        
+        Transient(Transient &&rhs)
+        {
+            amount_ = rhs.amount_;
+            min_db_ = rhs.min_db_;
+            max_db_ = rhs.max_db_;
+            current_db_ = rhs.current_db_;
+            target_db_ = rhs.target_db_.load();
+        }
+        
+        Transient & operator=(Transient &&rhs)
+        {
+            amount_ = rhs.amount_;
+            min_db_ = rhs.min_db_;
+            max_db_ = rhs.max_db_;
+            current_db_ = rhs.current_db_;
+            target_db_ = rhs.target_db_.load();
+            
+            return *this;
+        }
+        
+        //! 指定したstepが経過したあとtransient値を計算して設定する
+        void update_transient(Int32 step)
+        {
+            assert(step >= 1);
+            
+            auto const goal = target_db_.load();
+            if(fabs(current_db_ - goal) < kTolerance) {
+                current_db_ = goal;
+            }
+            
+            if(current_db_ < goal) {
+                current_db_ = std::min<double>(current_db_ + amount_ * step, goal);
+            } else {
+                current_db_ = std::max<double>(current_db_ - amount_ * step, goal);
+            }
+        }
+
+        double get_current_transient_db() const
+        {
+            return current_db_;
+        }
+        
+        double get_current_transient_linear_gain() const
+        {
+            if(current_db_ == min_db_) {
+                return 0;
+            } else {
+                return DBToLinear(current_db_);
+            }
+        }
+        
+        double get_min_db() const { return min_db_; }
+        double get_max_db() const { return max_db_; }
+        double get_target_db() const { return target_db_.load(); }
+                                               
+        void set_target_db(double db) {
+            target_db_.store(hwm::Clamp<double>(db, min_db_, max_db_));
+        }
+        
+        double amount_;
+        double min_db_;
+        double max_db_;
+        double current_db_ = 0;
+        std::atomic<double> target_db_ = {0};
+    };
+    
+    Transient output_level_;
     PCKeyboardInput keyinput_;
     std::atomic<bool> enable_audio_input_ = { false };
     AudioDeviceManager adm_;
@@ -120,6 +231,11 @@ struct App::Impl
         
         silent_.resize(num_input_channels, max_block_size);
         silent_.fill(0.0);
+        
+        output_level_ = Transient(sample_rate_,
+                                  kAudioOutputLevelTransientMillisec,
+                                  kAudioOutputLevelMinDB,
+                                  kAudioOutputLevelMaxDB);
     }
     
     void Process(SampleCount block_size,
@@ -165,6 +281,16 @@ struct App::Impl
         
         input_event_buffers_.Clear();
         output_event_buffers_.Clear();
+        
+        output_level_.update_transient(block_size);
+        double const gain = output_level_.get_current_transient_linear_gain();
+        
+        for(Int32 ch = 0; ch < num_output_channels_; ++ch) {
+            auto ch_data = output[ch];
+            std::for_each_n(ch_data, block_size,
+                            [gain](auto &elem) { elem *= gain; }
+                            );
+        }
     }
     
     void StopProcessing() override
@@ -384,6 +510,26 @@ bool App::IsAudioInputEnabled() const
 void App::EnableAudioInput(bool enable)
 {
     pimpl_->enable_audio_input_.store(enable);
+}
+
+double App::GetAudioOutputMinLevel() const
+{
+    return pimpl_->output_level_.get_min_db();
+}
+
+double App::GetAudioOutputMaxLevel() const
+{
+    return pimpl_->output_level_.get_max_db();
+}
+
+double App::GetAudioOutputLevel() const
+{
+    return pimpl_->output_level_.get_target_db();
+}
+
+void App::SetAudioOutputLevel(double db)
+{
+    pimpl_->output_level_.set_target_db(db);
 }
 
 std::bitset<128> App::GetPlayingNotes()

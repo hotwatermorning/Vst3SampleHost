@@ -60,6 +60,15 @@ public:
     //! オーディオ入力を有効／無効にする
     void EnableAudioInput(bool enable = true);
     
+    //! オーディオ出力レベルの最小値(dB値)を返す。
+    double GetAudioOutputMinLevel() const;
+    //! オーディオ出力レベルの最大値(dB値)を返す。
+    double GetAudioOutputMaxLevel() const;
+    //! 現在設定しているオーディオ出力レベル(dB値)を返す。
+    double GetAudioOutputLevel() const;
+    //! オーディオ出力レベルを変更する。
+    void SetAudioOutputLevel(double db);
+    
     //! 再生中のノートを返す。
     std::bitset<128> GetPlayingNotes();
     
