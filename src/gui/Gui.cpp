@@ -6,6 +6,7 @@
 #include "../resource/ResourceHelper.hpp"
 #include "../plugin/vst3/Vst3Plugin.hpp"
 #include "../plugin/vst3/Vst3PluginFactory.hpp"
+#include "./Util.hpp"
 #include "./Keyboard.hpp"
 #include "./PluginEditor.hpp"
 #include "./PCKeyboardInput.hpp"
@@ -16,20 +17,67 @@ class HeaderPanel
 :   public wxPanel
 {
 public:
+    wxColour const kColLabel = HSVToColour(0.0, 0.0, 0.9);
+    wxColour const kColOutputSlider = HSVToColour(0.7, 0.4, 0.4);
+    wxColour const kColInputCheckBox = HSVToColour(0.5, 0.4, 0.4);
+    double const kVolumeSliderScale = 1000.0;
+    
     HeaderPanel(wxWindow *parent)
     :   wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
     ,   col_bg_(10, 10, 10)
     {
-        auto hbox = new wxBoxSizer(wxHORIZONTAL);
-        hbox->AddStretchSpacer();
+        auto app = App::GetInstance();
+        auto min_value = app->GetAudioOutputMinLevel();
+        auto max_value = app->GetAudioOutputMaxLevel();
         
-        SetSizer(hbox);
+        lbl_volume_ = new wxStaticText(this, wxID_ANY, L"出力レベル");
+        lbl_volume_->SetForegroundColour(kColLabel);
+        lbl_volume_->SetBackgroundColour(kColOutputSlider);
+        
+        sl_volume_ = new wxSlider(this, wxID_ANY, max_value * kVolumeSliderScale, min_value * kVolumeSliderScale, max_value * kVolumeSliderScale);
+        sl_volume_->SetBackgroundColour(kColOutputSlider);
+        sl_volume_->SetLabel(L"出力レベル");
+        
+        btn_enable_input_ = new wxCheckBox(this, wxID_ANY, L"マイク入力",
+                                       wxDefaultPosition,
+                                       wxSize(100, 1));
+        btn_enable_input_->SetForegroundColour(kColLabel);
+        btn_enable_input_->SetBackgroundColour(kColInputCheckBox);
+
+        auto hbox = new wxBoxSizer(wxHORIZONTAL);
+        hbox->Add(lbl_volume_, wxSizerFlags(0).Expand());
+        hbox->Add(sl_volume_, wxSizerFlags(3).Expand().Border(wxRIGHT, 5));
+        hbox->AddStretchSpacer(1);
+        hbox->Add(btn_enable_input_, wxSizerFlags(0).Expand());
+        
+        auto vbox = new wxBoxSizer(wxVERTICAL);
+        vbox->Add(hbox, wxSizerFlags(1).Expand().Border(wxALL, 5));
+        SetSizer(vbox);
+        
+        sl_volume_->Bind(wxEVT_SLIDER, [this](wxCommandEvent &ev) { OnSlider(ev); });
+        btn_enable_input_->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &ev) { OnCheckBox(ev); });
         
         SetBackgroundColour(col_bg_);
     }
     
 private:
+    wxStaticText *lbl_volume_;
+    wxSlider *sl_volume_;
+    wxCheckBox *btn_enable_input_;
     wxColor col_bg_;
+    
+private:
+    void OnSlider(wxCommandEvent &ev)
+    {
+        auto app = App::GetInstance();
+        app->SetAudioOutputLevel(sl_volume_->GetValue() / kVolumeSliderScale);
+    }
+    
+    void OnCheckBox(wxCommandEvent &ev)
+    {
+        auto app = App::GetInstance();
+        app->EnableAudioInput(btn_enable_input_->IsChecked());
+    }
 };
 
 class MainWindow
