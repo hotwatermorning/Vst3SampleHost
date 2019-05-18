@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <bitset>
 
 #include "./misc/SingleInstance.hpp"
 #include "./plugin/vst3/Vst3Plugin.hpp"
