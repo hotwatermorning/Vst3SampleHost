@@ -1,72 +1,57 @@
-![Terra](./misc/Logo.png)
+## Vst3SampleHost
 
-## What's this?
-
-The yet another audio plugin hosting application. (alpha version)
+このプロジェクトは、VST3プラグインをホストするサンプルホストアプリケーションのプロジェクトです。
 
 ![ScreenShot](./misc/ScreenShot.png)
 
-## Features
+## 機能
 
-* Load VST3 plugins.
-* Open audio input/output devices.
-* Open MIDI input devices.
-* Connect plugins and devices.
-    * To connect, drag from a pin of a plugin/device node to a pin of an another node.
-    * To disconnect, cut connections by shift + drag.
-* Send MIDI Notes with the computer keyboard.
-    * A, W, S, ..., O, L, and P keys are mapped to C3, C#3, D3, ..., C#4, D4, and D#4.
-    * Z and X keys change octaves.
+* VST3プラグインをロードできます。
+* PCキーボードからプラグインにMIDIノートを送信して、波形合成できます。
+    * PCキーボードのA, W, S, ..., L, P をピアノ鍵盤に見立てて、MIDIノートをプラグインに送信します。
+    * Z と X キーでオクターブを変更できます
+* マイク入力をプラグインに送信して、エフェクト処理できます。
 
-## How to build
+## ビルド方法
 
-Currently Terra can be built on these platforms:
+Vst3SampleHostは、以下の環境でビルドできます。
 
-* macOS 10.13.4 & Xcode 9.3.1
 * macOS 10.13.4 & Xcode 10.1
 * Windows 10 & Visual Studio 2017
 
-### Prerequisites
+### 要件
 
 * Git 2.8.1 or later
 * CMake 3.14.1 or later
-* Xcode 9.3.1 or later
+* Xcode 10.1 or later
 * Visual Studio 2017
 
-### macOS
+### macOS環境でのビルドコマンド
 
 ```sh
 cd ./gradle
 
 ./gradlew build_all [-Pconfig=Debug]
-# The `config` property is optional. For release build, use `-Pconfig=Release` instead.
+# `config` プロパティはデフォルトで `Debug` が指定されます。リリースビルド時は、 `-Pconfig=Release` を指定します。
 
-open ../build_debug/Debug/Terra.app
+open ../build_debug/Debug/Vst3SampleHost.app
 ```
 
-### Windows
+### Windows環境でのビルドコマンド
 
 ```bat
 cd .\gradle
 
 gradlew build_all [-Pconfig=Debug]
-: The `config` property is optional. For release build, use `-Pconfig=Release` instead.
-: For non-English locales, add `-Dfile.encoding=UTF-8` option to prevent Mojibake.
+: `config` プロパティはデフォルトで `Debug` が指定されます。リリースビルド時は、 `-Pconfig=Release` を指定します。
+: 非英語ロケール環境でのビルド時に文字化けが発生する場合は、 `-Dfile.encoding=UTF-8` オプションを追加してください。
 
-start ..\build_debug\Debug\Terra.exe
+start ..\build_debug\Debug\Vst3SampleHost.exe
 ```
 
 ### TIPS
 
-* Building submodules may fail after checking out new commit which refers another submodule commits.
-If it occured, run the `gradlew` command again with `clean_all` task followed by the `build_all` task like this:
-
-```sh
-./gradlew clean_all build_all [-Pconfig=Debug]
-```
-
-* To cleanup the build directory of a specific submodule, remove `/path/to/Terra/ext/<submodule-name>/build_<config-name>` directory manually.
-* If submodules are already built and only Terra need to be built, you can run the `gradlew` command with `prepare_app` and `build_app` tasks to skip rebuilding submodules:
+* サブモジュールのビルドが完了していてVst3SampleHost自体の再ビルドのみが必要な場合は、以下のようにコマンドを実行することで、不要なサブモジュールの再ビルドをスキップできます。
 
 ```sh
 ./gradlew prepare_app build_app [-Pconfig=Debug]
@@ -81,10 +66,7 @@ Terra uses these libraries.
 * [wxWidgets](http://www.wxwidgets.org/)
 * [PortAudio](http://www.portaudio.com/)
 * [VST3 SDK](https://github.com/steinbergmedia/vst3sdk)
-* [cppformat](http://fmtlib.net)
 * [RtMidi](https://github.com/thestk/rtmidi)
-* [Protocol Buffers](https://developers.google.com/protocol-buffers/)
-* [MPark.Variant](https://github.com/mpark/variant)
 * [midifile](https://github.com/craigsapp/midifile)
 
 ## Contact
@@ -92,3 +74,4 @@ Terra uses these libraries.
 hotwatermorning@gmail.com
 
 https://twitter.com/hotwatermorning
+
