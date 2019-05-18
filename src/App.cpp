@@ -1,4 +1,4 @@
-#include <wx/wx.h>
+#include <algorithm>
 
 #include "device/AudioDeviceManager.hpp"
 #include "plugin/vst3/Vst3Plugin.hpp"
@@ -12,8 +12,8 @@
 
 NS_HWM_BEGIN
 
-SampleCount kSampleRate = 44100;
-SampleCount kBlockSize = 256;
+SampleCount const kSampleRate = 44100;
+SampleCount const kBlockSize = 256;
 
 void OpenAudioDevice()
 {
@@ -54,9 +54,6 @@ void OpenAudioDevice()
     if(result.is_right() == false) {
         throw std::runtime_error(to_utf8(L"Failed to open the device: " + result.left().error_msg_));
     }
-    
-    //! start the audio device.
-    adm->GetDevice()->Start();
 }
 
 struct App::Impl
@@ -71,9 +68,12 @@ struct App::Impl
             requested_[i] = NoteInfo { false, 0, 0, 0 };
             playing_[i] = NoteInfo { false, 0, 0, 0 };
         }
+        
+        enable_audio_input_.store(false);
     }
     
     PCKeyboardInput keyinput_;
+    std::atomic<bool> enable_audio_input_ = { false };
     AudioDeviceManager adm_;
     wxFrame *frame_;
     std::shared_ptr<Vst3PluginFactoryList> factory_list_;
@@ -117,6 +117,9 @@ struct App::Impl
         continuous_sample_count_ = 0;
         block_size_ = max_block_size;
         sample_rate_ = sample_rate;
+        
+        silent_.resize(num_input_channels, max_block_size);
+        silent_.fill(0.0);
     }
     
     void Process(SampleCount block_size,
@@ -127,13 +130,12 @@ struct App::Impl
         
         if(!plugin_) { return; }
         
+        auto const input_buf = enable_audio_input_.load() ? input : silent_.data();
+
         ProcessInfo pi;
-        pi.input_audio_buffer_ = BufferRef<AudioSample const>(
-                                                              input, 0, num_input_channels_, 0, block_size
-                                                              );
-        pi.output_audio_buffer_ = BufferRef<AudioSample>(
-                                                         output, 0, num_output_channels_, 0, block_size
-                                                         );
+        
+        pi.input_audio_buffer_ = BufferRef<AudioSample const>(input_buf, 0, num_input_channels_, 0, block_size);
+        pi.output_audio_buffer_ = BufferRef<AudioSample>(output, 0, num_output_channels_, 0, block_size);
         pi.time_info_.is_playing_ = true;
         pi.time_info_.sample_length_ = block_size;
         pi.time_info_.sample_rate_ = sample_rate_;
@@ -167,7 +169,8 @@ struct App::Impl
     
     void StopProcessing() override
     {}
-    
+
+    Buffer<AudioSample> silent_;
     int num_input_channels_ = 0;
     int num_output_channels_ = 0;
     int block_size_ = 0;
@@ -198,14 +201,8 @@ bool App::OnInit()
 
     auto adm = AudioDeviceManager::GetInstance();
     adm->AddCallback(pimpl_.get());
-    
-    auto list = adm->Enumerate();
-    for(auto &device_info: list) {
-        if(device_info.io_type_ == DeviceIOType::kOutput) {
-            adm->Open(nullptr, &device_info, kSampleRate, kBlockSize);
-            break;
-        }
-    }
+
+    OpenAudioDevice();
     
     if(auto dev = adm->GetDevice()) {
         dev->Start();
@@ -375,6 +372,18 @@ void App::StopAllNotes()
     for(int i = 0; i < 128; ++i) {
         SendNoteOff(i);
     }
+}
+
+//! オーディオ入力が有効かどうか
+bool App::IsAudioInputEnabled() const
+{
+    return pimpl_->enable_audio_input_.load();
+}
+
+//! オーディオ入力を有効／無効にする
+void App::EnableAudioInput(bool enable)
+{
+    pimpl_->enable_audio_input_.store(enable);
 }
 
 std::bitset<128> App::GetPlayingNotes()

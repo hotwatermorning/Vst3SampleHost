@@ -54,6 +54,11 @@ public:
     void SendNoteOn(Int32 note_number, Int32 velocity = 100);
     void SendNoteOff(Int32 note_number, Int32 off_velocity = 0);
     void StopAllNotes();
+
+    //! オーディオ入力が有効かどうか
+    bool IsAudioInputEnabled() const;
+    //! オーディオ入力を有効／無効にする
+    void EnableAudioInput(bool enable = true);
     
     //! 再生中のノートを返す。
     std::bitset<128> GetPlayingNotes();
