@@ -20,7 +20,7 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(System.DefaultWorkingDirectory)/build_release/Release'
-      artifactName: terra_release_osx_10_13_xcode10_1
+      artifactName: vst3samplehost_release_osx_10_13_xcode10_1
     displayName: publish
 - job: build_win_msvc_2017
   pool:
@@ -39,5 +39,5 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(System.DefaultWorkingDirectory)/build_release/Release'
-      artifactName: terra_release_win_msvc2017
+      artifactName: vst3samplehost_release_win_msvc2017
     displayName: publish
