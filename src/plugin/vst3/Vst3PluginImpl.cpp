@@ -1043,7 +1043,7 @@ void Vst3Plugin::Impl::LoadInterfaces(IPluginFactory *factory, ClassInfo const &
         
         edit_controller = createInstance<Vst::IEditController>(factory, FUID::fromTUID(controller_id));
         
-        //! Not right if this plugin has no edit controller. Such a plugin is not supported for Terra.
+        //! Not right if this plugin has no edit controller. Such a plugin is not supported for this host.
         ThrowIfNotRight(edit_controller);
     }
 
