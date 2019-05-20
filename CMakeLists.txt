@@ -252,7 +252,6 @@ include_directories(
   "./schema/cpp"
   "./ext/portaudio/${BUILD_DIR_NAME}/install/include"
   "./ext/rtmidi/${BUILD_DIR_NAME}/install/include"
-  "/Users/yuasa/develop/Terra/ext/variant/include"
   )
 
 if(ENABLE_BUILD_TESTS)
