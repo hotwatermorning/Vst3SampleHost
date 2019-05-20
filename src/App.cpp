@@ -440,6 +440,6 @@ std::bitset<128> App::GetPlayingNotes()
 
 NS_HWM_END
 
-#if !defined(TERRA_BUILD_TEST)
+#if !defined(ENABLE_BUILD_TESTS)
 wxIMPLEMENT_APP(hwm::App);
 #endif
