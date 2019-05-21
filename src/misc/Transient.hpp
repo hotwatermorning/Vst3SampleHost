@@ -9,7 +9,7 @@ class Transient
 public:
     //! コンストラクタ。指定されたパラメータから音量の推移する速度を計算して設定する。
     /*! @param sample_rate サンプリングレート
-     *  @param duration_in_msec 音量が2倍や半分(= log10(2) * 2 =~ 6.02dB)に変換するのにかかる時間
+     *  @param duration_in_msec 音量が2倍や半分(= log10(2) * 2 =~ 6.02dB)に変化するのにかかる時間
      *  @param min_db 最小のdB値
      *  @param max_db 最大のdB値
      */
