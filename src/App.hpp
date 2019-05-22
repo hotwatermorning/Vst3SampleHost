@@ -18,18 +18,24 @@ public:
     App();
     ~App();
     
+    //! VST3プラグインのモジュールファイル（*.vst3）をロードする
     bool LoadVst3Module(String path);
+    //! 現在ロードしているモジュールファイル（*.vst3）をアンロードする
     void UnloadVst3Module();
     
-    //! ロードしたモジュールのIPluginFactoryで、指定したcidのVST3 Pluginを構築する。
+    //! 現在ロードしているモジュールのIPluginFactoryで、指定したcidのVST3プラグインをロードする。
     bool LoadVst3Plugin(ClassInfo::CID cid);
+    //! 現在ロードしているプラグインをアンロードする
     void UnloadVst3Plugin();
     
-    //! 構築したプラグインを返す。
-    //! まだ構築していない場合はnullptrが返る。
+    //! ロードしたモジュールから構築したVst3PluginFactoryを返す。
+    //! まだモジュールをロードしていない場合はnullptrが返る。
     Vst3PluginFactory * GetPluginFactory();
+    //! ロードしたプラグインを返す。
+    //! まだプラグインをロードしていない場合はnullptrが返る。
     Vst3Plugin * GetPlugin();
     
+    //! モジュールのロード／アンロード状態の変更通知を受け取るリスナークラス
     class ModuleLoadListener : public IListenerBase {
     protected:
         ModuleLoadListener() {}
@@ -38,9 +44,9 @@ public:
         virtual void OnBeforeModuleUnloaded(Vst3PluginFactory *factory) {}
     };
     using ModuleLoadListenerService = IListenerService<ModuleLoadListener>;
-    
     ModuleLoadListenerService & GetModuleLoadListenerService();
     
+    //! プラグインのロード／アンロード状態の変更通知を受け取るリスナークラス
     class PluginLoadListener : public IListenerBase {
     protected:
         PluginLoadListener() {}
@@ -49,11 +55,13 @@ public:
         virtual void OnBeforePluginUnloaded(Vst3Plugin *plugin) {}
     };
     using PluginLoadListenerService = IListenerService<PluginLoadListener>;
-    
     PluginLoadListenerService & GetPluginLoadListenerService();
     
+    //! 読み込んだプラグインにノートオンを送る
     void SendNoteOn(Int32 note_number, Int32 velocity = 100);
+    //! 読み込んだプラグインにノートオフを送る
     void SendNoteOff(Int32 note_number, Int32 off_velocity = 0);
+    //! 再生中のノートをすべて停止する
     void StopAllNotes();
 
     //! オーディオ入力が有効かどうか
