@@ -322,10 +322,6 @@ struct MidiDeviceManager::Impl
         std::string str_bytes;
         std::vector<UInt8> buf(3);
         m.ToBytes(buf);
-//        for(auto b: buf) {
-//            str_bytes += " {:02x}"_format((unsigned int)b);
-//        }
-//        hwm::dout << "[{:03.6f}]:{}"_format(m.time_stamp_, str_bytes) << std::endl;
 
         for( ; ; ) {
             auto result = input_messages_.Push(&m, 1);

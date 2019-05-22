@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "device/AudioDeviceManager.hpp"
+#include "device/MidiDeviceManager.hpp"
 #include "plugin/vst3/Vst3Plugin.hpp"
 #include "plugin/vst3/Vst3PluginFactory.hpp"
 #include "misc/StrCnv.hpp"
@@ -61,6 +62,36 @@ void OpenAudioDevice()
     }
 }
 
+std::vector<MidiDevice *> OpenMidiDevices()
+{
+    auto mdm = MidiDeviceManager::GetInstance();
+    
+    std::vector<MidiDevice *> list;
+    
+    auto midi_device_infos = mdm->Enumerate();
+    for(auto info: midi_device_infos) {
+        hwm::wdout
+        << wxString::Format(L"[%6ls] %ls - ", to_wstring(info.io_type_), info.name_id_
+                            ).ToStdWstring();
+        
+        if(info.io_type_ == DeviceIOType::kInput) {
+            String error;
+            auto dev = mdm->Open(info, &error);
+            if(!dev) {
+                hwm::wdout << L"Failed to open: " << error;
+            } else {
+                list.push_back(dev);
+                hwm::wdout << L"Opened.";
+            }
+        } else {
+            hwm::wdout << "Skip.";
+        }
+        hwm::wdout << std::endl;
+    }
+    
+    return list;
+}
+
 struct App::Impl
 :   IAudioDeviceCallback
 {
@@ -70,8 +101,8 @@ struct App::Impl
         output_event_buffers_.SetNumBuffers(1);
         
         for(int i = 0; i < 128; ++i) {
-            requested_[i] = NoteInfo { false, 0, 0, 0 };
-            playing_[i] = NoteInfo { false, 0, 0, 0 };
+            requested_[i] = NoteStatus::CreateNull();
+            playing_[i] = NoteStatus::CreateNull();
         }
         
         enable_audio_input_.store(false);
@@ -81,6 +112,9 @@ struct App::Impl
     PCKeyboardInput keyinput_;
     std::atomic<bool> enable_audio_input_ = { false };
     AudioDeviceManager adm_;
+    MidiDeviceManager mdm_;
+    std::vector<MidiDevice *> midi_ins_; //!< オープンしたMIDI入力デバイス
+    std::vector<DeviceMidiMessage> device_midi_messages_;
     wxFrame *frame_;
     std::shared_ptr<Vst3PluginFactoryList> factory_list_;
     std::shared_ptr<Vst3PluginFactory> factory_;
@@ -89,29 +123,56 @@ struct App::Impl
     ListenerService<ModuleLoadListener> mlls_;
     ListenerService<PluginLoadListener> plls_;
 
-    struct alignas(4) NoteInfo {
-        bool is_note_on_;
-        unsigned char channel_;
-        unsigned char velocity_;
-        unsigned char padding_; //!< 未使用。常に0であるべき
+    struct alignas(4) NoteStatus {
+        enum Type : char {
+            kNull,
+            kNoteOn,
+            kNoteOff,
+        };
         
-        bool operator==(NoteInfo const &rhs) const
+        static NoteStatus CreateNoteOn(UInt8 velocity)
+        {
+            assert(velocity != 0);
+            return NoteStatus { kNoteOn, velocity, 0 };
+        }
+        
+        static NoteStatus CreateNoteOff(UInt8 off_velocity)
+        {
+            return NoteStatus { kNoteOff, off_velocity, 0 };
+        }
+        
+        static NoteStatus CreateNull()
+        {
+            return NoteStatus {};
+        }
+        
+        bool is_null() const { return type_ == kNull; }
+        bool is_note_on() const { return type_ == kNoteOn; }
+        bool is_note_off() const { return type_ == kNoteOff; }
+        UInt8 get_velocity() const { return velocity_; }
+        
+        bool operator==(NoteStatus const &rhs) const
         {
             auto to_tuple = [](auto const &self) {
-                return std::tie(self.is_note_on_, self.channel_, self.velocity_, self.padding_);
+                return std::tie(self.type_, self.velocity_);
             };
+            
             return to_tuple(*this) == to_tuple(rhs);
         }
         
-        bool operator!=(NoteInfo const &rhs) const
+        bool operator!=(NoteStatus const &rhs) const
         {
             return !(*this == rhs);
         }
+
+        Type type_ = Type::kNull;
+        UInt8 velocity_ = 0;
+        UInt16 dummy_padding_ = 0;
     };
     
-    using NoteStatus = std::array<std::atomic<NoteInfo>, 128>;
-    NoteStatus requested_; //!< 再生待ちのノート
-    NoteStatus playing_;   //!< 再生中のノート
+    using KeyboardStatus = std::array<std::atomic<NoteStatus>, 128>;
+    KeyboardStatus requested_; //!< 再生待ちのノート
+    KeyboardStatus playing_;   //!< 再生中のノート
     
     void StartProcessing(double sample_rate,
                          SampleCount max_block_size,
@@ -153,22 +214,45 @@ struct App::Impl
         pi.time_info_.sample_pos_ = continuous_sample_count_;
         pi.time_info_.ppq_pos_ = (continuous_sample_count_ / sample_rate_) * pi.time_info_.tempo_ / 60.0;
 
-        for(int i = 0; i < 128; ++i) {
-            auto cur = playing_[i].load();
-            auto req = requested_[i].load();
-            if(cur == req) { continue; }
-            
-            playing_[i].store(req); // playing_変数の更新はここでのみ行う。CASをしなくても問題ない。
+        assert(input_event_buffers_.GetNumBuffers() >= 1);
+        auto &buf0 = *input_event_buffers_.GetBuffer(0);
+        for(UInt8 i = 0; i < 128; ++i) {
+            auto req = requested_[i].exchange(NoteStatus::CreateNull());
+            if(req.is_null()) { continue; }
             
             ProcessInfo::MidiMessage msg;
-            if(req.is_note_on_) {
-                assert(req.velocity_ != 0);
-                msg.data_ = MidiDataType::NoteOn { (UInt8)i, req.velocity_ };
+            if(req.is_note_on()) {
+                msg.data_ = MidiDataType::NoteOn { i, req.get_velocity() };
             } else {
-                msg.data_ = MidiDataType::NoteOff { (UInt8)i, req.velocity_ };
+                msg.data_ = MidiDataType::NoteOff { i, req.get_velocity() };
             }
-            input_event_buffers_.GetBuffer(0)->AddEvent(msg);
+            buf0.AddEvent(msg);
         }
+        
+        auto mdm = MidiDeviceManager::GetInstance();
+        double const now = mdm->GetMessages(device_midi_messages_);
+        
+        double const frame_begin_sec = now - (block_size / sample_rate_);
+        for(auto const &dev_msg: device_midi_messages_) {
+            ProcessInfo::MidiMessage msg;
+            msg.data_ = dev_msg.data_;
+            msg.offset_ = std::round(dev_msg.time_stamp_ - frame_begin_sec) * sample_rate_;
+            buf0.AddEvent(msg);
+        }
+        buf0.Sort();
+        
+        // playing_変数の更新はここでのみ行う。CASをしなくても問題ない。
+        for(int i = 0; i < buf0.GetCount(); ++i) {
+            auto const &ev = buf0.GetEvent(i);
+            if(auto p = ev.As<MidiDataType::NoteOn>()) {
+                assert(p->pitch_ < playing_.size());
+                playing_[p->pitch_].store(NoteStatus::CreateNoteOn(p->velocity_));
+            } else if(auto p = ev.As<MidiDataType::NoteOff>()) {
+                assert(p->pitch_ < playing_.size());
+                playing_[p->pitch_].store(NoteStatus::CreateNoteOff(p->off_velocity_));
+            }
+        }
+        
         pi.input_event_buffers_ = &input_event_buffers_;
         pi.output_event_buffers_ = &output_event_buffers_;
         
@@ -224,6 +308,7 @@ bool App::OnInit()
     adm->AddCallback(pimpl_.get());
 
     OpenAudioDevice();
+    pimpl_->midi_ins_ = OpenMidiDevices();
     
     if(auto dev = adm->GetDevice()) {
         dev->Start();
@@ -240,6 +325,11 @@ bool App::OnInit()
 int App::OnExit()
 {
     auto adm = AudioDeviceManager::GetInstance();
+    auto mdm = MidiDeviceManager::GetInstance();
+    
+    for(auto dev: pimpl_->midi_ins_) {
+        mdm->Close(dev);
+    }
     
     if(auto *dev = adm->GetDevice()) {
         dev->Stop();
@@ -380,12 +470,12 @@ void App::SendNoteOn(Int32 note_number, Int32 velocity)
         return;
     }
     
-    pimpl_->requested_[note_number] = Impl::NoteInfo { true, 0, (unsigned char)velocity, 0 };
+    pimpl_->requested_[note_number] = Impl::NoteStatus::CreateNoteOn((UInt8)velocity);
 }
 
 void App::SendNoteOff(Int32 note_number, int off_velocity)
 {
-    pimpl_->requested_[note_number] = Impl::NoteInfo { false, 0, (unsigned char)off_velocity, 0 };
+    pimpl_->requested_[note_number] = Impl::NoteStatus::CreateNoteOff((UInt8)off_velocity);
 }
 
 void App::StopAllNotes()
@@ -432,7 +522,8 @@ std::bitset<128> App::GetPlayingNotes()
     std::bitset<128> ret;
     
     for(int i = 0; i < 128; ++i) {
-        ret[i] = (pimpl_->playing_[i].load().velocity_ != 0);
+        auto note = pimpl_->playing_[i].load();
+        ret[i] = note.is_note_on(); // 現在はベロシティ情報は使用していない
     }
     
     return ret;
