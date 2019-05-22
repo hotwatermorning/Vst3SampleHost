@@ -5,7 +5,7 @@
 #include "plugin/vst3/Vst3PluginFactory.hpp"
 #include "misc/StrCnv.hpp"
 #include "misc/MathUtil.hpp"
-#include "misc/Transient.hpp"
+#include "misc/TransitionalVolume.hpp"
 #include "misc/LockFactory.hpp"
 #include "App.hpp"
 #include "gui/Gui.hpp"
@@ -77,7 +77,7 @@ struct App::Impl
         enable_audio_input_.store(false);
     }
     
-    Transient output_level_;
+    TransitionalVolume output_level_;
     PCKeyboardInput keyinput_;
     std::atomic<bool> enable_audio_input_ = { false };
     AudioDeviceManager adm_;
@@ -127,10 +127,10 @@ struct App::Impl
         silent_.resize(num_input_channels, max_block_size);
         silent_.fill(0.0);
         
-        output_level_ = Transient(sample_rate_,
-                                  kAudioOutputLevelTransientMillisec,
-                                  kAudioOutputLevelMinDB,
-                                  kAudioOutputLevelMaxDB);
+        output_level_ = TransitionalVolume(sample_rate_,
+                                           kAudioOutputLevelTransientMillisec,
+                                           kAudioOutputLevelMinDB,
+                                           kAudioOutputLevelMaxDB);
     }
     
     void Process(SampleCount block_size,
@@ -177,8 +177,8 @@ struct App::Impl
         input_event_buffers_.Clear();
         output_event_buffers_.Clear();
         
-        output_level_.update_transient(block_size);
-        double const gain = output_level_.get_current_transient_linear_gain();
+        output_level_.update_transition(block_size);
+        double const gain = output_level_.get_current_linear_gain();
         
         for(Int32 ch = 0; ch < num_output_channels_; ++ch) {
             auto ch_data = output[ch];

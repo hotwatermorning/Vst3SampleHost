@@ -1,4 +1,4 @@
-#include "Transient.hpp"
+#include "TransitionalVolume.hpp"
 #include "MathUtil.hpp"
 
 NS_HWM_BEGIN
@@ -7,20 +7,20 @@ namespace {
     static constexpr double kTolerance = 1E-10;
 }
 
-Transient::Transient(double sample_rate,
-                     UInt32 duration_in_msec,
-                     double min_db,
-                     double max_db)
+TransitionalVolume::TransitionalVolume(double sample_rate,
+                                       UInt32 duration_in_msec,
+                                       double min_db,
+                                       double max_db)
 :   amount_(log10(2) * 20.0 / (duration_in_msec / 1000.0 * sample_rate))
 ,   min_db_(min_db)
 ,   max_db_(max_db)
 {}
 
-Transient::Transient()
-:   Transient(44100.0, 50, -48, 0.0)
+TransitionalVolume::TransitionalVolume()
+:   TransitionalVolume(44100.0, 50, -48, 0.0)
 {}
 
-Transient::Transient(Transient &&rhs)
+TransitionalVolume::TransitionalVolume(TransitionalVolume &&rhs)
 {
     amount_ = rhs.amount_;
     min_db_ = rhs.min_db_;
@@ -29,7 +29,7 @@ Transient::Transient(Transient &&rhs)
     target_db_ = rhs.target_db_.load();
 }
 
-Transient & Transient::operator=(Transient &&rhs)
+TransitionalVolume & TransitionalVolume::operator=(TransitionalVolume &&rhs)
 {
     amount_ = rhs.amount_;
     min_db_ = rhs.min_db_;
@@ -40,8 +40,7 @@ Transient & Transient::operator=(Transient &&rhs)
     return *this;
 }
 
-//! 指定したstepが経過したあとtransient値を計算して設定する
-void Transient::update_transient(Int32 step)
+void TransitionalVolume::update_transition(Int32 step)
 {
     assert(step >= 1);
     
@@ -57,12 +56,12 @@ void Transient::update_transient(Int32 step)
     }
 }
 
-double Transient::get_current_transient_db() const
+double TransitionalVolume::get_current_db() const
 {
     return current_db_;
 }
 
-double Transient::get_current_transient_linear_gain() const
+double TransitionalVolume::get_current_linear_gain() const
 {
     if(current_db_ == min_db_) {
         return 0;
@@ -71,11 +70,11 @@ double Transient::get_current_transient_linear_gain() const
     }
 }
 
-double Transient::get_min_db() const { return min_db_; }
-double Transient::get_max_db() const { return max_db_; }
-double Transient::get_target_db() const { return target_db_.load(); }
+double TransitionalVolume::get_min_db() const { return min_db_; }
+double TransitionalVolume::get_max_db() const { return max_db_; }
+double TransitionalVolume::get_target_db() const { return target_db_.load(); }
 
-void Transient::set_target_db(double db) {
+void TransitionalVolume::set_target_db(double db) {
     target_db_.store(hwm::Clamp<double>(db, min_db_, max_db_));
 }
 
