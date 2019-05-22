@@ -2,7 +2,7 @@
 
 #include "../misc/SingleInstance.hpp"
 #include "../data_type/MidiDataType.hpp"
-#include "./DeviceIOType.hpp"
+#include "./DeviceType.hpp"
 #include "./MidiDevice.hpp"
 
 NS_HWM_BEGIN

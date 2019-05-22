@@ -7,27 +7,6 @@
 
 NS_HWM_BEGIN
 
-std::string to_string(AudioDriverType type)
-{
-    using A = AudioDriverType;
-    switch (type) {
-        case A::kDirectSound: return "DirectSound";
-        case A::kMME: return "MME";
-        case A::kASIO: return "ASIO";
-        case A::kWDMKS: return "WDM KS";
-        case A::kWASAPI: return "WASAPI";
-        case A::kCoreAudio: return "CoreAudio";
-        case A::kALSA: return "ALSA";
-        case A::kJACK: return "JACK";
-        default: return "Unknown";
-    }
-}
-
-std::wstring to_wstring(AudioDriverType type)
-{
-    return to_wstr(to_string(type));
-}
-
 AudioDriverType ToAudioDriverType(PaHostApiIndex index)
 {
     using A = AudioDriverType;

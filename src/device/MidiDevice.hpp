@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./DeviceIOType.hpp"
+#include "./DeviceType.hpp"
 
 NS_HWM_BEGIN
 

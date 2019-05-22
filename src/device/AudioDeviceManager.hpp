@@ -2,24 +2,9 @@
 
 #include "../misc/SingleInstance.hpp"
 #include "../misc/Either.hpp"
-#include "./DeviceIOType.hpp"
+#include "./DeviceType.hpp"
 
 NS_HWM_BEGIN
-
-enum class AudioDriverType {
-    kUnknown,
-    kDirectSound,
-    kMME,
-    kASIO,
-    kWDMKS,
-    kWASAPI,
-    kCoreAudio,
-    kALSA,
-    kJACK,
-};
-
-std::string to_string(AudioDriverType type);
-std::wstring to_wstring(AudioDriverType type);
 
 struct AudioDeviceInfo
 {
@@ -27,7 +12,7 @@ struct AudioDeviceInfo
     DeviceIOType io_type_ = DeviceIOType::kOutput;
     String name_;
     int num_channels_ = 0;
-
+    
     std::vector<double> supported_sample_rates_;
     
     bool IsSampleRateSupported(double rate) const {
