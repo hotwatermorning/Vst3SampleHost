@@ -15,6 +15,7 @@ NS_HWM_BEGIN
 
 class HeaderPanel
 :   public wxPanel
+,   public App::PlaybackOptionChangeListener
 {
 public:
     wxColour const kColLabel = HSVToColour(0.0, 0.0, 0.9);
@@ -43,6 +44,9 @@ public:
                                        wxSize(100, 1));
         btn_enable_input_->SetForegroundColour(kColLabel);
         btn_enable_input_->SetBackgroundColour(kColInputCheckBox);
+        
+        btn_enable_input_->Enable(app->CanEnableAudioInput());
+        btn_enable_input_->SetValue(app->IsAudioInputEnabled());
 
         auto hbox = new wxBoxSizer(wxHORIZONTAL);
         hbox->Add(lbl_volume_, wxSizerFlags(0).Expand());
@@ -56,7 +60,8 @@ public:
         
         sl_volume_->Bind(wxEVT_SLIDER, [this](wxCommandEvent &ev) { OnSlider(ev); });
         btn_enable_input_->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &ev) { OnCheckBox(ev); });
-        
+
+        slr_pocl_.reset(app->GetPlaybackOptionChangeListenerService(), this);
         SetBackgroundColour(col_bg_);
     }
     
@@ -65,6 +70,7 @@ private:
     wxSlider *sl_volume_;
     wxCheckBox *btn_enable_input_;
     wxColor col_bg_;
+    ScopedListenerRegister<App::PlaybackOptionChangeListener> slr_pocl_;
     
 private:
     void OnSlider(wxCommandEvent &ev)
@@ -77,6 +83,16 @@ private:
     {
         auto app = App::GetInstance();
         app->EnableAudioInput(btn_enable_input_->IsChecked());
+    }
+    
+    void OnAudioInputAvailabilityChanged(bool available) override
+    {
+        btn_enable_input_->Enable(available);
+    }
+    
+    void OnAudioInputEnableStateChanged(bool enabled) override
+    {
+        btn_enable_input_->SetValue(enabled);
     }
 };
 
