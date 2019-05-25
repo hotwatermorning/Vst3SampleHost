@@ -4,14 +4,15 @@
 #include "./UnitData.hpp"
 #include "./PCKeyboardInput.hpp"
 #include <pluginterfaces/base/keycodes.h>
+#include <pluginterfaces/gui/iplugview.h>
 #include <map>
+
+NS_HWM_BEGIN
 
 std::ostream & operator<<(std::ostream &os, Steinberg::ViewRect const &rc)
 {
     return os << "(" << rc.left << ", " << rc.top << ", " << rc.right << ", " << rc.bottom << ")";
 }
-
-NS_HWM_BEGIN
 
 class ParameterSlider
 :   public wxPanel
