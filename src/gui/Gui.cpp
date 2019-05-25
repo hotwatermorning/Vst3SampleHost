@@ -471,11 +471,37 @@ class MainFrame
 {
     wxSize const initial_size = { 600, 400 };
     
+    enum {
+        kID_Playback_EnableAudioInputs = wxID_HIGHEST + 1,
+        kID_Device_Preferences
+    };
+    
 public:
     MainFrame()
     :   wxFrame(nullptr, wxID_ANY, L"Vst3SampleHost", wxDefaultPosition, initial_size)
     {
         SetMinClientSize(wxSize(350, 320));
+        
+        auto menu_playback = new wxMenu();
+        menu_playback->AppendCheckItem(kID_Playback_EnableAudioInputs, "オーディオ入力を有効化\tCTRL-I", "オーディオ入力を有効にします");
+        
+        auto menu_device = new wxMenu();
+        menu_device->Append(kID_Device_Preferences, "デバイス設定\tCTRL-,", "デバイス設定を変更します");
+        
+        auto menubar = new wxMenuBar();
+        menubar->Append(menu_playback, "再生");
+        menubar->Append(menu_device, "デバイス");
+        SetMenuBar(menubar);
+        
+        Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
+            auto app = App::GetInstance();
+            app->EnableAudioInput(app->IsAudioInputEnabled() == false);
+        }, kID_Playback_EnableAudioInputs);
+        
+        Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
+            auto app = App::GetInstance();
+            app->SelectAudioDevice();
+        }, kID_Device_Preferences);
         
         auto key_input = PCKeyboardInput::GetInstance();
         key_input->ApplyTo(this);
