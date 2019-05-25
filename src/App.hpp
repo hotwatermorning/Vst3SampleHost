@@ -82,6 +82,9 @@ public:
     //! 再生中のノートを返す。
     std::bitset<128> GetPlayingNotes();
     
+    //! オーディオデバイスを選択し、オープンに成功したらコンフィグファイルを更新する
+    void SelectAudioDevice();
+    
     Config & GetConfig();
     Config const & GetConfig() const;
     

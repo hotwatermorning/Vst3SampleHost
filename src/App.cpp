@@ -13,6 +13,7 @@
 #include "App.hpp"
 #include "gui/Gui.hpp"
 #include "gui/PCKeyboardInput.hpp"
+#include "gui/DeviceSettingDialog.hpp"
 #include "processor/EventBuffer.hpp"
 #include "config/Config.hpp"
 
@@ -24,9 +25,15 @@ double const kAudioOutputLevelMinDB = -48.0;
 double const kAudioOutputLevelMaxDB = 0.0;
 Int32 kAudioOutputLevelTransientMillisec = 30;
 
-void OpenAudioDevice()
+bool OpenAudioDevice(Config const &conf)
 {
+    if(conf.audio_output_device_name_.empty()) {
+        return false;
+    }
+    
     auto adm = AudioDeviceManager::GetInstance();
+    
+    adm->Close();
     
     auto audio_device_infos = adm->Enumerate();
     for(auto const &info: audio_device_infos) {
@@ -49,20 +56,29 @@ void OpenAudioDevice()
         else { return &*found; }
     };
     
-    auto output_device = find_entry(DeviceIOType::kOutput, 2, adm->GetDefaultDriver());
-    if(!output_device) { output_device = find_entry(DeviceIOType::kOutput, 2); }
+    auto output_device = find_entry(DeviceIOType::kOutput,
+                                    conf.audio_output_channel_count_,
+                                    conf.audio_output_driver_type_,
+                                    conf.audio_output_device_name_);
+
+    //! may not found
+    auto input_device = find_entry(DeviceIOType::kInput,
+                                   conf.audio_input_channel_count_,
+                                   conf.audio_input_driver_type_,
+                                   conf.audio_input_device_name_);
     
     if(!output_device) {
-        throw std::runtime_error("No audio output devices found");
+        hwm::wdout << L"audio output device not found: " << conf.audio_output_device_name_ << std::endl;
+        return false;
     }
     
-    //! may not found
-    auto input_device = find_entry(DeviceIOType::kInput, 2, output_device->driver_);
-    
-    auto result = adm->Open(input_device, output_device, kSampleRate, kBlockSize);
+    auto result = adm->Open(input_device, output_device, conf.sample_rate_, conf.block_size_);
     if(result.is_right() == false) {
-        throw std::runtime_error(to_utf8(L"Failed to open the device: " + result.left().error_msg_));
+        hwm::wdout << L"failed to open the audio output device: " + result.left().error_msg_ << std::endl;
+        return false;
     }
+    
+    return true;
 }
 
 std::vector<MidiDevice *> OpenMidiDevices()
@@ -126,6 +142,47 @@ struct App::Impl
     
     ListenerService<ModuleLoadListener> mlls_;
     ListenerService<PluginLoadListener> plls_;
+    
+    bool ReadConfigFile()
+    {
+#if defined(_MSC_VER)
+        std::ifstream ifs(GetConfigFilePath());
+#else
+        std::ifstream ifs(to_utf8(GetConfigFilePath()));
+#endif
+        if(!ifs) {
+            hwm::dout << "Failed to open the config file." << std::endl;
+            return false;
+        }
+        
+        try {
+            ifs >> config_;
+            return true;
+        } catch(std::exception &e) {
+            hwm::dout << "Failed to read the config file: " << e.what() << std::endl;
+            return false;
+        }
+    }
+    
+    void WriteConfigFile()
+    {
+        try {
+            std::ofstream ofs;
+            ofs.exceptions(std::ios::failbit|std::ios::badbit);
+        
+#if defined(_MSC_VER)
+            ofs.open(GetConfigFilePath());
+#else
+            ofs.open(to_utf8(GetConfigFilePath()));
+#endif
+            ofs << config_;
+        } catch(std::exception &e) {
+            hwm::dout << "Failed to write config data: " << e.what() << std::endl;
+            auto msg = std::string("コンフィグファイルの書き込みに失敗しました。\nアプリケーションを終了します。\n[") + e.what() + "]";
+            wxMessageBox(msg);
+            std::exit(-1);
+        }
+    }
 
     struct alignas(4) NoteStatus {
         enum Type : char {
@@ -196,6 +253,12 @@ struct App::Impl
                                            kAudioOutputLevelTransientMillisec,
                                            kAudioOutputLevelMinDB,
                                            kAudioOutputLevelMaxDB);
+
+        if(plugin_) {
+            plugin_->SetSamplingRate(sample_rate_);
+            plugin_->SetBlockSize(block_size_);
+            plugin_->Resume();
+        }
     }
     
     void Process(SampleCount block_size,
@@ -277,7 +340,11 @@ struct App::Impl
     }
     
     void StopProcessing() override
-    {}
+    {
+        if(plugin_) {
+            plugin_->Suspend();
+        }
+    }
 
     Buffer<AudioSample> silent_;
     int num_input_channels_ = 0;
@@ -311,7 +378,18 @@ bool App::OnInit()
     auto adm = AudioDeviceManager::GetInstance();
     adm->AddCallback(pimpl_.get());
 
-    OpenAudioDevice();
+    pimpl_->ReadConfigFile();
+
+    if(OpenAudioDevice(pimpl_->config_) == false) {
+        // Select Audio Device
+        SelectAudioDevice();
+    }
+    
+    if(adm->GetDevice() == nullptr) {
+        wxMessageBox(L"利用できるオーディオ出力デバイスがありません。");
+        return false;
+    }
+    
     pimpl_->midi_ins_ = OpenMidiDevices();
     
     if(auto dev = adm->GetDevice()) {
@@ -415,6 +493,8 @@ bool App::LoadVst3Plugin(ClassInfo::CID cid)
         return nullptr;
     }
     
+    tmp->SetSamplingRate(pimpl_->sample_rate_);
+    tmp->SetBlockSize(pimpl_->block_size_);
     tmp->Resume();
     
     {
@@ -531,6 +611,34 @@ std::bitset<128> App::GetPlayingNotes()
     }
     
     return ret;
+}
+
+void App::SelectAudioDevice()
+{
+    for( ; ; ) {
+        auto dlg = CreateDeviceSettingDialog(nullptr);
+        dlg->ShowModal();
+        dlg->Destroy();
+
+        auto adm = AudioDeviceManager::GetInstance();
+        
+        if(auto dev = adm->GetDevice()) {
+            dev->Start();
+            break;
+        }
+        
+        auto msg_dlg = new wxMessageDialog(nullptr, "", "", wxYES_NO|wxCENTRE);
+        msg_dlg->SetMessage("オーディオ出力デバイスをオープンできませんでした。再試行しますか？");
+        msg_dlg->SetTitle("再試行の確認");
+        msg_dlg->SetYesNoLabels("再試行", "アプリの終了");
+        auto result = msg_dlg->ShowModal();
+        if(result != wxYES) {
+            std::exit(-2);
+        }
+    }
+    
+    pimpl_->config_.ScanAudioDeviceStatus();
+    pimpl_->WriteConfigFile();
 }
 
 Config & App::GetConfig()
