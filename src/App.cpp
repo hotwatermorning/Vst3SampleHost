@@ -142,6 +142,7 @@ struct App::Impl
     
     ListenerService<ModuleLoadListener> mlls_;
     ListenerService<PluginLoadListener> plls_;
+    ListenerService<PlaybackOptionChangeListener> pocls_;
     
     bool ReadConfigFile()
     {
@@ -373,7 +374,6 @@ bool App::OnInit()
     wxInitAllImageHandlers();
     
     pimpl_->factory_list_ = std::make_shared<Vst3PluginFactoryList>();
-    pimpl_->frame_ = CreateMainFrame();
 
     auto adm = AudioDeviceManager::GetInstance();
     adm->AddCallback(pimpl_.get());
@@ -396,6 +396,7 @@ bool App::OnInit()
         dev->Start();
     }
     
+    pimpl_->frame_ = CreateMainFrame();
     pimpl_->frame_->CentreOnScreen();
     pimpl_->frame_->Layout();
     pimpl_->frame_->Show(true);
@@ -546,6 +547,11 @@ App::PluginLoadListenerService & App::GetPluginLoadListenerService()
     return pimpl_->plls_;
 }
 
+App::PlaybackOptionChangeListenerService & App::GetPlaybackOptionChangeListenerService()
+{
+    return pimpl_->pocls_;
+}
+
 void App::SendNoteOn(Int32 note_number, Int32 velocity)
 {
     assert(0 <= note_number && note_number < 128);
@@ -575,10 +581,28 @@ bool App::IsAudioInputEnabled() const
     return pimpl_->enable_audio_input_.load();
 }
 
+bool App::CanEnableAudioInput() const
+{
+    auto adm = AudioDeviceManager::GetInstance();
+    if(auto dev = adm->GetDevice()) {
+        auto in_info = dev->GetDeviceInfo(DeviceIOType::kInput);
+        assert(!in_info || in_info->num_channels_ > 0);
+        
+        return in_info != nullptr;
+    }
+    
+    return false;
+}
+
 //! オーディオ入力を有効／無効にする
 void App::EnableAudioInput(bool enable)
 {
+    if(enable == IsAudioInputEnabled()) { return; }
+    
     pimpl_->enable_audio_input_.store(enable);
+    pimpl_->pocls_.Invoke([enable](auto *li) {
+        li->OnAudioInputEnableStateChanged(enable);
+    });
 }
 
 double App::GetAudioOutputMinLevel() const
@@ -615,6 +639,8 @@ std::bitset<128> App::GetPlayingNotes()
 
 void App::SelectAudioDevice()
 {
+    bool const old_inputtability = CanEnableAudioInput();
+    
     for( ; ; ) {
         auto dlg = CreateDeviceSettingDialog(nullptr);
         dlg->ShowModal();
@@ -639,6 +665,17 @@ void App::SelectAudioDevice()
     
     pimpl_->config_.ScanAudioDeviceStatus();
     pimpl_->WriteConfigFile();
+    
+    bool const new_inputtability = CanEnableAudioInput();
+    if(old_inputtability != new_inputtability) {
+        if(new_inputtability == false && IsAudioInputEnabled()) {
+            EnableAudioInput(false);
+        }
+        
+        pimpl_->pocls_.Invoke([new_inputtability](auto *li) {
+            li->OnAudioInputAvailabilityChanged(new_inputtability);
+        });
+    }
 }
 
 Config & App::GetConfig()

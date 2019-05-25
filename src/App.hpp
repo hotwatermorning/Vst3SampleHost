@@ -58,6 +58,19 @@ public:
     using PluginLoadListenerService = IListenerService<PluginLoadListener>;
     PluginLoadListenerService & GetPluginLoadListenerService();
     
+    //! プラグインのロード／アンロード状態の変更通知を受け取るリスナークラス
+    class PlaybackOptionChangeListener : public IListenerBase {
+    protected:
+        PlaybackOptionChangeListener() {}
+    public:
+        //! オーディオデバイスの状態が変更になって、オーディオ入力が可能かどうかが変化したときに呼ばれるコールバック
+        virtual void OnAudioInputAvailabilityChanged(bool available) {}
+        //! オーディオ入力が可能な状態で、その有効／無効を切り替えたときに呼ばれるコールバック
+        virtual void OnAudioInputEnableStateChanged(bool enabled) {}
+    };
+    using PlaybackOptionChangeListenerService = IListenerService<PlaybackOptionChangeListener>;
+    PlaybackOptionChangeListenerService & GetPlaybackOptionChangeListenerService();
+    
     //! 読み込んだプラグインにノートオンを送る
     void SendNoteOn(Int32 note_number, Int32 velocity = 100);
     //! 読み込んだプラグインにノートオフを送る
@@ -65,6 +78,10 @@ public:
     //! 再生中のノートをすべて停止する
     void StopAllNotes();
 
+    //! オーディオ入力を有効にできるかどうか。
+    /*! オーディオ入力デバイスをオープンしているときはtrueを返す。
+     */
+    bool CanEnableAudioInput() const;
     //! オーディオ入力が有効かどうか
     bool IsAudioInputEnabled() const;
     //! オーディオ入力を有効／無効にする
