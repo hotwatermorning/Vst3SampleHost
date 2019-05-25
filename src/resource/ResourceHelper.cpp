@@ -5,14 +5,10 @@
 
 NS_HWM_BEGIN
 
-ResourceHelper::ResourceHelper()
-{}
-
-ResourceHelper::~ResourceHelper()
-{}
+constexpr wchar_t const * kConfigFileName = L"Vst3SampleHost.conf";
 
 //! Get resource file path specified by the path hierarchy.
-String ResourceHelper::GetResourcePath(String path) const
+String GetResourcePath(String path)
 {
     assert(path.size() > 0);
     
@@ -23,14 +19,14 @@ String ResourceHelper::GetResourcePath(String path) const
 #if defined(_MSC_VER)
     auto exe_path = wxFileName::DirName(wxStandardPaths::Get().GetExecutablePath());
     exe_path.RemoveLastDir();
-    return exe_path.GetFullPath().ToStdWstring() + L"\\Resource" + path;
+    return exe_path.GetFullPath().ToStdWstring() + L"Resource" + path;
 #else
     return wxStandardPaths::Get().GetResourcesDir().ToStdWstring() + path;
 #endif
 }
 
 //! Get resource file path specified by the path hierarchy.
-String ResourceHelper::GetResourcePath(std::vector<String> path_hierarchy) const
+String GetResourcePath(std::vector<String> path_hierarchy)
 {
     assert(path_hierarchy.empty() == false &&
            std::all_of(path_hierarchy.begin(),
