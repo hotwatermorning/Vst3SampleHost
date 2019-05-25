@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <fstream>
 
+#include <wx/filename.h>
+
 #include "device/AudioDeviceManager.hpp"
 #include "device/MidiDeviceManager.hpp"
 #include "plugin/vst3/Vst3Plugin.hpp"
@@ -146,10 +148,16 @@ struct App::Impl
     
     bool ReadConfigFile()
     {
+        wxFileName conf_path(GetConfigFilePath());
+        if(conf_path.Mkdir(wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL) == false) {
+            hwm::dout << "Failed to open the config file." << std::endl;
+            return false;
+        }
+        
 #if defined(_MSC_VER)
-        std::ifstream ifs(GetConfigFilePath());
+        std::ifstream ifs(conf_path.GetFullPath().ToStdWstring());
 #else
-        std::ifstream ifs(to_utf8(GetConfigFilePath()));
+        std::ifstream ifs(to_utf8(conf_path.GetFullPath().ToStdWstring()));
 #endif
         if(!ifs) {
             hwm::dout << "Failed to open the config file." << std::endl;
@@ -168,13 +176,18 @@ struct App::Impl
     void WriteConfigFile()
     {
         try {
+            wxFileName conf_path(GetConfigFilePath());
+            if(conf_path.Mkdir(wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL) == false) {
+                throw std::runtime_error("Failed to create the config directory.");
+            }
+            
             std::ofstream ofs;
             ofs.exceptions(std::ios::failbit|std::ios::badbit);
         
 #if defined(_MSC_VER)
-            ofs.open(GetConfigFilePath());
+            ofs.open(conf_path.GetFullPath().ToStdWstring());
 #else
-            ofs.open(to_utf8(GetConfigFilePath()));
+            ofs.open(to_utf8(conf_path.GetFullPath().ToStdWstring()));
 #endif
             ofs << config_;
         } catch(std::exception &e) {

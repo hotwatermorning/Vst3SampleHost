@@ -9,7 +9,9 @@ String GetResourcePath(String path);
 //! 指定したパス階層のリソースファイルの場所をフルパスで返す。
 String GetResourcePath(std::vector<String> path_hierarchy);
 //! コンフィグファイルの場所をフルパスで返す。
-/*! このパスは、Vst3SampleHost.appや、Vst3SampleHost.exeと同階層に置かれる。
+/*! このパスは、以下のようなユーザーの設定ファイル用ディレクトリに置かれる。
+ *    * Win: "C:\Users\<UserName>\AppData\Roaming\Vst3SampleHost\Vst3SampleHost.conf"
+ *    * Mac: "~/Library/Preferences/Vst3SampleHost/Vst3SampleHost.conf"
  */
 String GetConfigFilePath();
 
