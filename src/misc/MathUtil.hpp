@@ -12,16 +12,19 @@ Dest Round(Src src)
     return static_cast<Dest>(std::round(src));
 }
 
-template <class T>
-constexpr const T& Clamp(const T& v, const T& low, const T& high)
-{
-    return std::min<T>(std::max<T>(v, low), high);
-}
-
 template <class T, class Compare>
 constexpr const T& Clamp(const T& v, const T& low, const T& high, Compare comp)
 {
+    //! 少なくともlowはhighより大きくはないはず
+    assert(!comp(high, low));
+    
     return std::min<T>(std::max<T>(v, low, comp), high, comp);
+}
+
+template <class T>
+constexpr const T& Clamp(const T& v, const T& low, const T& high)
+{
+    return Clamp(v, low, high, std::less<T>{});
 }
 
 //! 線形な音量値からdBへの変換
