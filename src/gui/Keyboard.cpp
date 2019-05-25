@@ -176,8 +176,9 @@ public:
         auto pt = ev.GetPosition();
         
         auto note = PointToNoteNumber(pt);
+        if(note == last_dragging_note_) { return; }
         
-        if(last_dragging_note_ && last_dragging_note_ != note) {
+        if(last_dragging_note_) {
             SendNoteOff(*last_dragging_note_);
         }
         
