@@ -41,4 +41,12 @@ std::optional<AudioDriverType> to_audio_driver_type(std::string const &str);
 //! strがドライバ名として解釈できなかったり、"Unknown"の場合はstd::nulloptを返す
 std::optional<AudioDriverType> to_audio_driver_type(std::wstring const &str);
 
+static constexpr double kSupportedSampleRateMin = 44100.0;
+static constexpr double kSupportedSampleRateMax = 192000.0;
+static constexpr double kSupportedSampleRateDefault = 44100.0;
+
+static constexpr SampleCount kSupportedBlockSizeMin = 16;
+static constexpr SampleCount kSupportedBlockSizeMax = 4096;
+static constexpr SampleCount kSupportedBlockSizeDefault = 128;
+
 NS_HWM_END

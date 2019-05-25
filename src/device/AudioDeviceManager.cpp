@@ -261,7 +261,11 @@ std::vector<AudioDeviceInfo> AudioDeviceManager::Enumerate()
             info->maxOutputChannels
         };
         
-        for(auto rate: { 44100, 48000, 88200, 96000, 176400, 192000 }) {
+        auto const supported_sample_rates = { 44100, 48000, 88200, 96000, 176400, 192000 };
+        assert(*supported_sample_rates.begin() == kSupportedSampleRateMin);
+        assert(*(supported_sample_rates.end() - 1) == kSupportedSampleRateMax);
+        
+        for(auto rate: supported_sample_rates) {
             PaStreamParameters pi;
             PaStreamParameters po;
             
@@ -308,6 +312,14 @@ AudioDeviceManager::Open(AudioDeviceInfo const *input_device,
         return Error(ErrorCode::kInvalidParameters, L"Invalid parameters.");
     }
     
+    if(sample_rate < kSupportedSampleRateMin || kSupportedSampleRateMax < sample_rate) {
+        return Error(ErrorCode::kInvalidParameters, L"Unsupported sample rate.");
+    }
+    
+    if(block_size < kSupportedBlockSizeMin || kSupportedBlockSizeMax < block_size) {
+        return Error(ErrorCode::kInvalidParameters, L"Unsupported block size.");
+    }
+    
     PaStreamParameters ip = {};
     PaStreamParameters op = {};
     PaStreamParameters *pip = nullptr;
@@ -328,23 +340,33 @@ AudioDeviceManager::Open(AudioDeviceInfo const *input_device,
         return -1;
     };
     
-    if(input_device) {
+    if(input_device && input_device->num_channels_ > 0) {
         ip.channelCount = input_device->num_channels_;
         ip.device = find_index(*input_device);
         ip.sampleFormat = paFloat32;
         if(ip.device >= 0) { pip = &ip; }
     }
     
-    if(output_device) {
+    if(output_device && output_device->num_channels_ > 0) {
         op.channelCount = output_device->num_channels_;
         op.device = find_index(*output_device);
         op.sampleFormat = paFloat32;
         if(op.device >= 0) { pop = &op; }
     }
     
-//    hwm::wdout << L"Open Device ({}, {})"_format(pip ? input_device->name_ : L"N/A",
-//                                                 pop ? output_device->name_ : L"N/A")
-//    << std::endl;
+    auto name_with_driver = [](AudioDeviceInfo const *info) {
+        assert(info);
+        return info->name_ + L" (" + to_wstring(info->driver_) + L")";
+    };
+    
+    hwm::wdout
+    << wxString::Format(L"Open Device [ %ls, %ls, %6lg, %d ]",
+                        pip ? name_with_driver(input_device).c_str() : L"N/A",
+                        pop ? name_with_driver(output_device).c_str() : L"N/A",
+                        sample_rate,
+                        (Int32)block_size
+                        ).ToStdWstring()
+    << std::endl;
     
     if(!pip && !pop) {
         return Error(ErrorCode::kDeviceNotFound, L"Device not found");
