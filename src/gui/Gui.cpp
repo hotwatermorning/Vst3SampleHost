@@ -499,14 +499,14 @@ public:
         SetMinClientSize(wxSize(350, 320));
         
         auto menu_playback = new wxMenu();
-        menu_playback->AppendCheckItem(kID_Playback_EnableAudioInputs, "オーディオ入力を有効化\tCTRL-I", "オーディオ入力を有効にします");
+        menu_playback->AppendCheckItem(kID_Playback_EnableAudioInputs, L"オーディオ入力を有効化\tCTRL-I", L"オーディオ入力を有効にします");
         
         auto menu_device = new wxMenu();
-        menu_device->Append(kID_Device_Preferences, "デバイス設定\tCTRL-,", "デバイス設定を変更します");
+        menu_device->Append(kID_Device_Preferences, L"デバイス設定\tCTRL-,", L"デバイス設定を変更します");
         
         auto menubar = new wxMenuBar();
-        menubar->Append(menu_playback, "再生");
-        menubar->Append(menu_device, "デバイス");
+        menubar->Append(menu_playback, L"再生");
+        menubar->Append(menu_device, L"デバイス");
         SetMenuBar(menubar);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {

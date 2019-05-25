@@ -471,6 +471,7 @@ public:
     :   wxDialog(parent, wxID_ANY, "Device Setting")
     {
         SetMinSize(wxSize(400, 300));
+        SetMaxSize(wxSize(1000, 600));
         
         panel_ = new DeviceSettingPanel(this);
         panel_->Show();
