@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <fstream>
 
 #include "device/AudioDeviceManager.hpp"
 #include "device/MidiDeviceManager.hpp"
@@ -8,10 +9,12 @@
 #include "misc/MathUtil.hpp"
 #include "misc/TransitionalVolume.hpp"
 #include "misc/LockFactory.hpp"
+#include "resource/ResourceHelper.hpp"
 #include "App.hpp"
 #include "gui/Gui.hpp"
 #include "gui/PCKeyboardInput.hpp"
 #include "processor/EventBuffer.hpp"
+#include "config/Config.hpp"
 
 NS_HWM_BEGIN
 
@@ -108,6 +111,7 @@ struct App::Impl
         enable_audio_input_.store(false);
     }
     
+    Config config_;
     TransitionalVolume output_level_;
     PCKeyboardInput keyinput_;
     std::atomic<bool> enable_audio_input_ = { false };
@@ -527,6 +531,16 @@ std::bitset<128> App::GetPlayingNotes()
     }
     
     return ret;
+}
+
+Config & App::GetConfig()
+{
+    return pimpl_->config_;
+}
+
+Config const & App::GetConfig() const
+{
+    return pimpl_->config_;
 }
 
 NS_HWM_END

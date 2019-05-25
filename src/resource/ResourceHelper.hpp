@@ -8,6 +8,10 @@ NS_HWM_BEGIN
 String GetResourcePath(String path);
 //! 指定したパス階層のリソースファイルの場所をフルパスで返す。
 String GetResourcePath(std::vector<String> path_hierarchy);
+//! コンフィグファイルの場所をフルパスで返す。
+/*! このパスは、Vst3SampleHost.appや、Vst3SampleHost.exeと同階層に置かれる。
+ */
+String GetConfigFilePath();
 
 template<class T>
 T GetResourceAs(String path)

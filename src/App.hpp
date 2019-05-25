@@ -5,6 +5,7 @@
 
 #include "./misc/SingleInstance.hpp"
 #include "./plugin/vst3/Vst3Plugin.hpp"
+#include "./config/Config.hpp"
 
 NS_HWM_BEGIN
 
@@ -80,6 +81,9 @@ public:
     
     //! 再生中のノートを返す。
     std::bitset<128> GetPlayingNotes();
+    
+    Config & GetConfig();
+    Config const & GetConfig() const;
     
 private:
     struct Impl;

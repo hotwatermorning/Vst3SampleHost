@@ -50,4 +50,20 @@ String GetResourcePath(std::vector<String> path_hierarchy)
     return GetResourcePath(concat);
 }
 
+String GetConfigFilePath()
+{
+    auto exe_path = wxFileName::DirName(wxStandardPaths::Get().GetExecutablePath());
+    
+#if defined(_MSC_VER)
+    exe_path.RemoveLastDir();
+    return exe_path.GetFullPath().ToStdWstring() + kConfigFileName;
+#else
+    exe_path.RemoveLastDir();
+    exe_path.RemoveLastDir();
+    exe_path.RemoveLastDir();
+    exe_path.RemoveLastDir();
+    return exe_path.GetFullPath().ToStdWstring() + kConfigFileName;
+#endif
+}
+
 NS_HWM_END
