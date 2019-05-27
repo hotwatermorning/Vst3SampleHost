@@ -129,7 +129,7 @@ public:
     static
     bool is_same_device(AudioDeviceInfo const &x, AudioDeviceInfo const &y)
     {
-        auto to_tuple = [](auto info) {
+        auto to_tuple = [](auto const &info) {
             return std::tie(info.driver_, info.io_type_, info.name_, info.num_channels_);
         };
         
@@ -232,7 +232,7 @@ public:
             op_cho = cho_audio_outputs_;
             index_start = 0;
         } else {
-            op_cho = cho_audio_outputs_;
+            op_cho = cho_audio_inputs_;
             index_start = 1;
         }
         
@@ -316,7 +316,7 @@ public:
                 }
             } else {
                 auto info = GetOppositeDeviceInfo(*new_setting.output_info_);
-                new_setting.output_info_ = info;
+                new_setting.input_info_ = info;
                 result = open_impl(new_setting);
             }
         }
