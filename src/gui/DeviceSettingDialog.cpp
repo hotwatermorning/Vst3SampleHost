@@ -1,6 +1,10 @@
+#include <string>
+
 #include "DeviceSettingDialog.hpp"
+
 #include "Util.hpp"
 #include "../device/AudioDeviceManager.hpp"
+#include "../resource/ResourceHelper.hpp"
 
 NS_HWM_BEGIN
 
@@ -86,6 +90,15 @@ public:
         
         st_buffer_sizes_->SetForegroundColour(HSVToColour(0.0, 0.0, 0.9));
         st_buffer_sizes_->SetBackgroundColour(kPanelBackgroundColour.brush_.GetColour());
+
+        auto img = GetResourceAs<wxImage>(L"caution.png");
+        assert(img.IsOk());
+        img.Rescale(20, 20, wxIMAGE_QUALITY_HIGH);
+        warning_icon_ = new wxStaticBitmap(this, wxID_ANY, wxBitmap(img, 32), wxDefaultPosition, wxSize(20, 20));
+        auto tooltip = new wxToolTip(L"DirectSound使用時は、バッファサイズが小さいと正しく動作しないことがあります。");
+        tooltip->SetDelay(500);
+        warning_icon_->SetToolTip(tooltip);
+
         
         auto vbox = new wxBoxSizer(wxVERTICAL);
         
@@ -101,6 +114,11 @@ public:
         add_entry(vbox, st_audio_outputs_, cho_audio_outputs_);
         add_entry(vbox, st_sample_rates_, cho_sample_rates_);
         add_entry(vbox, st_buffer_sizes_, cho_buffer_sizes_);
+        auto hbox = new wxBoxSizer(wxHORIZONTAL);
+        hbox->AddStretchSpacer(1);
+        warning_icon_->Hide();
+        hbox->Add(warning_icon_, wxSizerFlags(0).Expand()); 
+        vbox->Add(hbox, wxSizerFlags(0).Expand().Border(wxTOP | wxBOTTOM, 5));
         
         auto outer_box = new wxBoxSizer(wxHORIZONTAL);
         outer_box->Add(vbox, wxSizerFlags(1).Expand().Border(wxALL,  5));
@@ -389,6 +407,19 @@ public:
             cho_buffer_sizes_->Append(std::to_string(block));
         }
         select(cho_buffer_sizes_, std::to_wstring(device_setting_.block_size_), 0);
+
+        bool should_show_warning_icon = false;
+        if(device_setting_.output_info_ && device_setting_.output_info_->driver_ == AudioDriverType::kDirectSound) {
+            auto rate = stof(cho_sample_rates_->GetStringSelection().ToStdString());
+            auto block = stoi(cho_buffer_sizes_->GetStringSelection().ToStdString());
+
+            if(block / rate <= 0.085) {
+                should_show_warning_icon = true;
+            }
+        }
+
+        warning_icon_->Show(should_show_warning_icon);
+        Layout();
     }
     
     void InitializeList()
@@ -461,6 +492,7 @@ private:
     wxChoice *cho_sample_rates_ = nullptr;
     wxStaticText *st_buffer_sizes_ = nullptr;
     wxChoice *cho_buffer_sizes_ = nullptr;
+    wxStaticBitmap *warning_icon_ = nullptr;
 };
 
 class DeviceSettingDialog
