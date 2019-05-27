@@ -466,12 +466,18 @@ private:
 class DeviceSettingDialog
 :   public wxDialog
 {
+    wxSize const kMinSize = { 400, 200 };
+    wxSize const kMaxSize = { 1000, 200 };
+
 public:
     DeviceSettingDialog(wxWindow *parent)
-    :   wxDialog(parent, wxID_ANY, "Device Setting")
+    :   wxDialog(parent, wxID_ANY, "Device Setting", 
+                 wxDefaultPosition, kMinSize,
+                 wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
     {
-        SetMinSize(wxSize(400, 300));
-        SetMaxSize(wxSize(1000, 600));
+        SetMinClientSize(kMinSize);
+        SetMaxClientSize(kMaxSize);
+        SetClientSize(kMinSize);
         
         panel_ = new DeviceSettingPanel(this);
         panel_->Show();
