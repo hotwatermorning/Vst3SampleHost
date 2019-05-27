@@ -464,7 +464,7 @@ task build_portaudio {
           def asiosdk_zip_name = "asiosdk2.3.zip"
           def asiosdk_zip_path = new File(build_dir, asiosdk_zip_name)
           def asiosdk_url = "https://www.steinberg.net/sdk_downloads/${asiosdk_zip_name}"
-          def asiosdk_dir = new File(build_dir, "ASIOSDK")
+          def asiosdk_dir = new File(build_dir, "ASIOSDK2.3")
 
           download {
             src asiosdk_url
