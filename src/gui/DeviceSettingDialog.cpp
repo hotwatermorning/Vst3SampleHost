@@ -381,7 +381,7 @@ public:
         
         cho_buffer_sizes_->Clear();
         
-        auto const block_size_list = { 16, 32, 64, 128, 256, 378, 512, 768, 1024, 2048, 4096 };
+        auto const block_size_list = { 16, 32, 64, 128, 256, 378, 512, 768, 1024, 2048, 4096, 8192 };
         assert(*block_size_list.begin() == kSupportedBlockSizeMin);
         assert(*(block_size_list.end()-1) == kSupportedBlockSizeMax);
         
