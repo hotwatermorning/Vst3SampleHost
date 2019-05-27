@@ -99,6 +99,12 @@ public:
         if(!Pa_IsStreamStopped(stream_)) {
             Pa_StopStream(stream_);
             ForEachCallbacks([](auto *cb) { cb->StopProcessing(); });
+
+            input_underflow_count_ = 0;
+            input_overflow_count_ = 0;
+            output_underflow_count_ = 0;
+            output_overflow_count_ = 0;
+            priming_output_count_ = 0;
         }
     }
     
@@ -113,6 +119,12 @@ public:
                                           unsigned long block_size, const PaStreamCallbackTimeInfo *timeInfo,
                                           PaStreamCallbackFlags statusFlags)
     {
+        input_underflow_count_ += ((statusFlags & paInputUnderflow) != 0);
+        input_overflow_count_ += ((statusFlags & paInputOverflow) != 0);
+        output_underflow_count_ += ((statusFlags & paOutputUnderflow) != 0);
+        output_overflow_count_ += ((statusFlags & paOutputOverflow) != 0);
+        priming_output_count_ += ((statusFlags & paPrimingOutput) != 0);
+
         ClearBuffer<float>(output, block_size);
         InvokeCallbacks<float>(input, output, block_size);
         return paContinue;
@@ -129,6 +141,12 @@ private:
     int num_inputs_ = 0;
     int num_outputs_ = 0;
     Buffer<float> tmp_input_float_, tmp_output_float_;
+
+    UInt64 input_underflow_count_ = 0;
+    UInt64 input_overflow_count_ = 0;
+    UInt64 output_underflow_count_ = 0;
+    UInt64 output_overflow_count_ = 0;
+    UInt64 priming_output_count_ = 0;
     
     //! @tparam F is a functor where its signature is `void(IAudioDeviceCallback *)`
     template<class F>
@@ -298,6 +316,11 @@ std::vector<AudioDeviceInfo> AudioDeviceManager::Enumerate()
     return result;
 }
 
+void SteamFinishedCallback(void* user_data)
+{
+    hwm::dout << "-------------- stream stopped --------------" << std::endl;
+}
+
 AudioDeviceManager::OpenResult
 AudioDeviceManager::Open(AudioDeviceInfo const *input_device,
                          AudioDeviceInfo const *output_device,
@@ -381,6 +404,8 @@ AudioDeviceManager::Open(AudioDeviceInfo const *input_device,
         // todo portaudioのエラーコードに合わせて整理
         return Error(ErrorCode::kUnknown, L"Unknown Error");
     }
+
+    Pa_SetStreamFinishedCallback(stream, &SteamFinishedCallback);
     
     pimpl_->device_ = std::make_unique<AudioDeviceImpl>(input_device, output_device,
                                                         sample_rate, block_size,
