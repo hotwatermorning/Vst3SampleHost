@@ -297,6 +297,7 @@ private:
 
 class PluginEditorControl
 :   public wxPanel
+,   public Vst3PluginListener
 {
 public:
     static constexpr Int32 kUnitChoiceWidth = 100;
@@ -403,6 +404,8 @@ public:
                 x->OnChangeEditorType(chk_gen_editor_->IsChecked());
             });
         });
+        
+        slr_vpl_.reset(plugin_->GetVst3PluginListenerService(), this);
     }
     
     ~PluginEditorControl()
@@ -420,6 +423,7 @@ private:
     wxButton *btn_prev_program_;
     wxCheckBox *chk_gen_editor_;
     ListenerService<Listener> listeners_;
+    ScopedListenerRegister<Vst3PluginListener> slr_vpl_;
     
     struct UnitInfo {
         int unit_index_;
@@ -439,7 +443,22 @@ private:
         return data->unit_id_;
     }
     
-    void UpdateProgramList() {
+    void SelectUnit(UInt32 unit_id)
+    {
+        for(Int32 i = 0; i < cho_select_unit_->GetCount(); ++i) {
+            auto unit_data = dynamic_cast<UnitData *>(cho_select_unit_->GetClientObject(i));
+            assert(unit_data);
+            
+            if(unit_data->unit_id_ == unit_id) {
+                cho_select_unit_->SetSelection(i);
+                UpdateProgramList();
+                return;
+            }
+        }
+    }
+    
+    void UpdateProgramList()
+    {
         assert(cho_select_unit_->GetSelection() != wxNOT_FOUND);
         
         auto unit_id = GetUnitID(cho_select_unit_);
@@ -452,6 +471,45 @@ private:
         }
         
         cho_select_program_->SetSelection(plugin_->GetProgramIndex(unit_id));
+    }
+    
+    virtual void OnPerformEdit(Vst3Plugin *plugin, Steinberg::Vst::ParamID id, Steinberg::Vst::ParamValue valueNormalized)
+    {
+        auto param_info = plugin->FindParameterInfoByID(id);
+        assert(param_info);
+        
+        if(param_info->is_program_change_) {
+            SelectUnit(param_info->unit_id_);
+        }
+    }
+    
+    virtual void OnRestartComponent(Vst3Plugin *plugin, Steinberg::int32 flags)
+    {
+    }
+    
+    virtual void OnStartGroupEdit(Vst3Plugin *plugin)
+    {
+    }
+    
+    virtual void OnFinishGroupEdit(Vst3Plugin *plugin)
+    {
+    }
+    
+    virtual void OnNotifyUnitSelection(Vst3Plugin *plugin, Steinberg::Vst::UnitID unitId)
+    {
+        SelectUnit(unitId);
+    }
+    
+    virtual void OnNotifyProgramListChange(Vst3Plugin *plugin,
+                                           Steinberg::Vst::ProgramListID listId,
+                                           Steinberg::int32 programIndex)
+    {
+        hwm::wdout << "Notify Program List Change." << std::endl;
+    }
+    
+    virtual void OnNotifyUnitByBusChange(Vst3Plugin *plugin)
+    {
+        hwm::wdout << "Notify Unit By Bus Change." << std::endl;
     }
 };
 
@@ -597,7 +655,6 @@ public:
     }
 
     ~PluginEditorFrame() {
-        control_->GetListeners().RemoveListener(this);
     }
 
     bool Destroy() override
@@ -605,6 +662,12 @@ public:
         if(contents_) {
             contents_->Destroy();
             contents_ = nullptr;
+        }
+        
+        if(control_) {
+            control_->GetListeners().RemoveListener(this);
+            control_->Destroy();
+            control_ = nullptr;
         }
         
         listener_->OnDestroyFromPluginEditorFrame();
