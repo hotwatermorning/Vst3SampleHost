@@ -1,4 +1,5 @@
 #include <string>
+#include <wx/tooltip.h>
 
 #include "DeviceSettingDialog.hpp"
 
