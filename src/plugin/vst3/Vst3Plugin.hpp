@@ -18,67 +18,6 @@
 
 NS_HWM_BEGIN
 
-struct Vst3Note
-{
-    enum class Type {
-        kNoteOn,
-        kNoteOff
-    };
-    
-    Vst3Note() = default;
-    Vst3Note(SampleCount offset, double ppq_pos, int channel, int pitch, int velocity, Type type)
-    {
-        SetOffset(offset);
-        SetPPQPos(ppq_pos);
-        SetChannel(channel);
-        SetPitch(pitch);
-        SetVelocity(velocity);
-        SetNoteType(type);
-    }
-    
-    SampleCount GetOffset() const { return offset_; }
-    
-    void SetOffset(SampleCount offset) {
-        assert(offset_ >= 0);
-        offset_ = offset;
-    }
-    
-    double GetPPQPos() const { return ppq_pos_; }
-    void SetPPQPos(double ppq_pos) { ppq_pos_ = ppq_pos; }
-    
-    int GetChannel() const { return channel_; }
-    void SetChannel(int channel) {
-        assert(0 <= channel && channel <= 15);
-        channel_ = channel;
-    }
-    
-    int GetPitch() const { return pitch_; }
-    void SetPitch(int pitch) {
-        assert(0 <= pitch && pitch <= 127);
-        pitch_ = pitch;
-    }
-    
-    int GetVelocity() const { return velocity_; }
-    void SetVelocity(int velocity) {
-        assert(0 <= velocity && velocity <= 127);
-        velocity_ = velocity;
-    }
-    
-    Type GetNoteType() const { return type_; }
-    void SetNoteType(Type type) { type_ = type; }
-    
-    bool IsNoteOn() const { return GetNoteType() == Type::kNoteOn; }
-    bool IsNoteOff() const { return GetNoteType() == Type::kNoteOff; }
-
-private:
-    SampleCount offset_ = 0;
-    double ppq_pos_ = 0;
-    int channel_ = 0;
-    int pitch_ = 0;
-    int velocity_ = 0;
-    Type type_ = Type::kNoteOff;
-};
-
 //! VST3のプラグインを表すクラス
 /*!
 	Vst3PluginFactoryから作成可能
