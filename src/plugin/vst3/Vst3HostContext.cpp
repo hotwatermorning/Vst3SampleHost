@@ -59,20 +59,28 @@ tresult PLUGIN_API Vst3Plugin::HostContext::createInstance(TUID cid, TUID iid, v
 
 tresult PLUGIN_API Vst3Plugin::HostContext::beginEdit (Vst::ParamID id)
 {
-    //hwm::dout << "Begin edit   [{}]"_format(id) << std::endl;
+    vpls_.Invoke([this, id](Vst3PluginListener *li) {
+        li->OnBeginEdit(plugin_, id);
+    });
+    
     return kResultOk;
 }
 
 tresult PLUGIN_API Vst3Plugin::HostContext::performEdit (Vst::ParamID id, Vst::ParamValue valueNormalized)
 {
-    //hwm::dout << "Perform edit [{}]\t[{}]"_format(id, valueNormalized) << std::endl;
+    vpls_.Invoke([this, id, valueNormalized](Vst3PluginListener *li) {
+        li->OnPerformEdit(plugin_, id, valueNormalized);
+    });
     plugin_->EnqueueParameterChange(id, valueNormalized);
     return kResultOk;
 }
 
 tresult PLUGIN_API Vst3Plugin::HostContext::endEdit (Vst::ParamID id)
 {
-    //hwm::dout << "End edit     [{}]"_format(id) << std::endl;
+    vpls_.Invoke([this, id](Vst3PluginListener *li) {
+        li->OnEndEdit(plugin_, id);
+    });
+    
     return kResultOk;
 }
 
@@ -108,48 +116,71 @@ tresult PLUGIN_API Vst3Plugin::HostContext::restartComponent (int32 flags)
     if(plugin_) {
         plugin_->RestartComponent(flags);
     }
+    
+    vpls_.Invoke([this, flags](Vst3PluginListener *li) {
+        li->OnRestartComponent(plugin_, flags);
+    });
+    
     return kResultOk;
 }
 
 tresult PLUGIN_API Vst3Plugin::HostContext::setDirty (TBool state)
 {
-    //hwm::dout << "Plugin has dirty [{}]"_format(state != 0) << std::endl;
+    vpls_.Invoke([this, state](Vst3PluginListener *li) {
+        li->OnSetDirty(plugin_, state);
+    });
     return kResultOk;
 }
 
 tresult PLUGIN_API Vst3Plugin::HostContext::requestOpenEditor (FIDString name)
 {
-    //hwm::dout << "Open editor request has come [{}]"_format(name) << std::endl;
+    vpls_.Invoke([this, name = to_wstr(name)](Vst3PluginListener *li) {
+        li->OnRequestOpenEditor(plugin_, name);
+    });
     return kResultOk;
 }
 
 tresult PLUGIN_API Vst3Plugin::HostContext::startGroupEdit ()
 {
-    hwm::dout << "Begin group edit." << std::endl;
+    vpls_.Invoke([this](Vst3PluginListener *li) {
+        li->OnStartGroupEdit(plugin_);
+    });
+    
     return kResultOk;
 }
 
 tresult PLUGIN_API Vst3Plugin::HostContext::finishGroupEdit ()
 {
-    hwm::dout << "End group edit." << std::endl;
+    vpls_.Invoke([this](Vst3PluginListener *li) {
+        li->OnFinishGroupEdit(plugin_);
+    });
     return kResultOk;
 }
 
 tresult Vst3Plugin::HostContext::notifyUnitSelection (UnitID unitId)
 {
-    hwm::dout << "notifyUnitSelection" << std::endl;
+    vpls_.Invoke([this, unitId](Vst3PluginListener *li) {
+        li->OnNotifyUnitSelection(plugin_, unitId);
+    });
+    
     return kResultOk;
 }
 
 tresult Vst3Plugin::HostContext::notifyProgramListChange (ProgramListID listId, int32 programIndex)
 {
-    hwm::dout << "notifyProgramListChange" << std::endl;
+    vpls_.Invoke([this, listId, programIndex](Vst3PluginListener *li) {
+        li->OnNotifyProgramListChange(plugin_, listId, programIndex);
+    });
+    
     return kResultOk;
 }
 
 tresult Vst3Plugin::HostContext::notifyUnitByBusChange ()
 {
-    hwm::dout << "notifyUnitByBusChange" << std::endl;
+    vpls_.Invoke([this](Vst3PluginListener *li) {
+        li->OnNotifyUnitByBusChange(plugin_);
+    });
+    
     return kResultOk;
 }
 

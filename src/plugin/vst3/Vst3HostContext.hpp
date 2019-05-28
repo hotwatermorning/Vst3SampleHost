@@ -46,6 +46,7 @@ public:
     Vst3Plugin *plugin_ = nullptr;
     PlugFrameListener *plug_frame_listener_ = nullptr;
     std::u16string host_name_;
+    ListenerService<Vst3PluginListener> vpls_;
     
     void SetVst3Plugin(Vst3Plugin *plugin);
     

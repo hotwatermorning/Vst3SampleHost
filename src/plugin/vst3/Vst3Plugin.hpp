@@ -18,6 +18,55 @@
 
 NS_HWM_BEGIN
 
+struct Vst3PluginListener
+:   IListenerBase
+{
+protected:
+    Vst3PluginListener()
+    {}
+    
+public:
+    /** To be called before calling a performEdit (e.g. on mouse-click-down event). */
+    virtual void OnBeginEdit(Vst3Plugin *plugin, Steinberg::Vst::ParamID id)
+    {}
+    
+    /** Called between beginEdit and endEdit to inform the handler that a given parameter has a new value. */
+    virtual void OnPerformEdit(Vst3Plugin *plugin, Steinberg::Vst::ParamID id, Steinberg::Vst::ParamValue valueNormalized)
+    {}
+    
+    /** To be called after calling a performEdit (e.g. on mouse-click-up event). */
+    virtual void OnEndEdit(Vst3Plugin *plugin, Steinberg::Vst::ParamID id)
+    {}
+    
+    virtual void OnRestartComponent(Vst3Plugin *plugin, Steinberg::int32 flags)
+    {}
+    
+    //! プラグインがDirtyな状態だとHostに通知するときに呼ばれるコールバック
+    virtual void OnSetDirty(Vst3Plugin *plugin, Steinberg::TBool state)
+    {}
+    
+    virtual void OnRequestOpenEditor(Vst3Plugin *plugin, String name)
+    {}
+    
+    virtual void OnStartGroupEdit(Vst3Plugin *plugin)
+    {}
+    
+    /** Finishes the group editing started by a \ref startGroupEdit (call after a \ref IComponentHandler::endEdit). */
+    virtual void OnFinishGroupEdit(Vst3Plugin *plugin)
+    {}
+    
+    virtual void OnNotifyUnitSelection(Vst3Plugin *plugin, Steinberg::Vst::UnitID unitId)
+    {}
+    
+    virtual void OnNotifyProgramListChange(Vst3Plugin *plugin,
+                                           Steinberg::Vst::ProgramListID listId,
+                                           Steinberg::int32 programIndex)
+    {}
+    
+    virtual void OnNotifyUnitByBusChange(Vst3Plugin *plugin)
+    {}    
+};
+
 //! VST3のプラグインを表すクラス
 /*!
 	Vst3PluginFactoryから作成可能
@@ -214,6 +263,9 @@ public:
     
     std::optional<DumpData> SaveData() const;
     void LoadData(DumpData const &dump);
+    
+    using Vst3PluginListenerService = IListenerService<Vst3PluginListener>;
+    Vst3PluginListenerService & GetVst3PluginListenerService();
     
 private:
 	std::unique_ptr<Impl> pimpl_;

@@ -285,4 +285,9 @@ std::unique_ptr<Vst3Plugin>
     return plugin;
 }
 
+Vst3Plugin::Vst3PluginListenerService & Vst3Plugin::GetVst3PluginListenerService()
+{
+    return host_context_->vpls_;
+}
+
 NS_HWM_END
