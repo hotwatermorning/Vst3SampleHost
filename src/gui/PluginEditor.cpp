@@ -357,12 +357,12 @@ public:
         }
         
         auto hbox = new wxBoxSizer(wxHORIZONTAL);
-        hbox->Add(cho_select_unit_, wxSizerFlags(0).Expand());
-        hbox->Add(cho_select_program_, wxSizerFlags(0).Expand());
+        hbox->Add(cho_select_unit_, wxSizerFlags(1).Expand());
+        hbox->Add(cho_select_program_, wxSizerFlags(2).Expand());
         hbox->Add(btn_prev_program_, wxSizerFlags(0).Expand());
         hbox->Add(btn_next_program_, wxSizerFlags(0).Expand());
-        hbox->Add(chk_gen_editor_, wxSizerFlags(0).Expand());
         hbox->AddStretchSpacer(1);
+        hbox->Add(chk_gen_editor_, wxSizerFlags(0).Expand());
         
         SetSizer(hbox);
         
