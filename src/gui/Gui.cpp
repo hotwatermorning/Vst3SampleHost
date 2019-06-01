@@ -213,7 +213,7 @@ private:
         auto fi = factory->GetFactoryInfo();
         
         String fi_str =
-        wxString::Format(L"vendor: %ls\nurl: %ls\ne-mail: %:ls\n"
+        wxString::Format(L"vendor: %ls\nurl: %ls\ne-mail: %ls\n"
                          L"discardable: %ls\nlicense_check: %ls\ncomponent non discardable: %ls\nunicode: %ls",
                          fi.vendor().c_str(),
                          fi.url().c_str(),
