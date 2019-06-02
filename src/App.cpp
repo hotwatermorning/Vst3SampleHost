@@ -656,6 +656,7 @@ void App::SelectAudioDevice()
     
     for( ; ; ) {
         auto dlg = CreateDeviceSettingDialog(nullptr);
+        dlg->CenterOnScreen();
         dlg->ShowModal();
         dlg->Destroy();
 
