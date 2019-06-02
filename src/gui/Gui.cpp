@@ -197,12 +197,12 @@ public:
         auto app = App::GetInstance();
         slr_mll_.reset(app->GetModuleLoadListenerService(), this);
         slr_pll_.reset(app->GetPluginLoadListenerService(), this);
-
     }
     
     bool AcceptsFocus() const override { return false; }
     
-    bool Destroy() override {
+    bool Destroy() override
+    {
         OnCloseEditor();
         return wxWindow::Destroy();
     }
@@ -445,6 +445,7 @@ private:
 
 class MainFrame
 :   public wxFrame
+,   public App::PlaybackOptionChangeListener
 {
     wxSize const initial_size = { 480, 600 };
     
@@ -460,7 +461,9 @@ public:
         SetMinClientSize(wxSize(350, 600));
         
         auto menu_playback = new wxMenu();
-        menu_playback->AppendCheckItem(kID_Playback_EnableAudioInputs, L"オーディオ入力を有効化\tCTRL-I", L"オーディオ入力を有効にします");
+        menu_enable_input_ = menu_playback->AppendCheckItem(kID_Playback_EnableAudioInputs,
+                                                            L"オーディオ入力を有効化\tCTRL-I",
+                                                            L"オーディオ入力を有効にします");
         
         auto menu_device = new wxMenu();
         menu_device->Append(kID_Device_Preferences, L"デバイス設定\tCTRL-,", L"デバイス設定を変更します");
@@ -492,6 +495,9 @@ public:
         
         SetSizer(sizer);
         
+        auto app = App::GetInstance();
+        slr_pocl_.reset(app->GetPlaybackOptionChangeListenerService(), this);
+        
         Bind(wxEVT_CLOSE_WINDOW, [this](auto &ev) {
             wnd_->Destroy();
             wnd_ = nullptr;
@@ -499,8 +505,26 @@ public:
         });
     }
     
+    bool Destroy() override
+    {
+        slr_pocl_.reset();
+        return wxFrame::Destroy();
+    }
+    
 private:
     wxWindow *wnd_;
+    ScopedListenerRegister<App::PlaybackOptionChangeListener> slr_pocl_;
+    wxMenuItem *menu_enable_input_;
+    
+    void OnAudioInputAvailabilityChanged(bool available) override
+    {
+        menu_enable_input_->Enable(available);
+    }
+    
+    void OnAudioInputEnableStateChanged(bool enabled) override
+    {
+        menu_enable_input_->Check(enabled);
+    }
 };
 
 wxFrame * CreateMainFrame()
