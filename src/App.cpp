@@ -376,7 +376,8 @@ App::App()
 {}
 
 App::~App()
-{}
+{
+}
 
 bool App::OnInit()
 {
@@ -433,6 +434,10 @@ int App::OnExit()
     }
     
     adm->RemoveCallback(pimpl_.get());
+    
+    UnloadVst3Module();
+    
+    pimpl_->factory_list_.reset();
     
     return 0;
 }

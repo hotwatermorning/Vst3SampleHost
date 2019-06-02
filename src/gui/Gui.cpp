@@ -507,6 +507,8 @@ public:
     
     bool Destroy() override
     {
+        DestroyChildren();
+        wnd_ = nullptr;
         slr_pocl_.reset();
         return wxFrame::Destroy();
     }
