@@ -65,6 +65,8 @@ public:
         SetBackgroundColour(col_bg_);
     }
     
+    bool AcceptsFocus() const override { return false; }
+    
 private:
     wxStaticText *lbl_volume_;
     wxSlider *sl_volume_;
@@ -195,7 +197,10 @@ public:
         auto app = App::GetInstance();
         slr_mll_.reset(app->GetModuleLoadListenerService(), this);
         slr_pll_.reset(app->GetPluginLoadListenerService(), this);
+
     }
+    
+    bool AcceptsFocus() const override { return false; }
     
     bool Destroy() override {
         OnCloseEditor();

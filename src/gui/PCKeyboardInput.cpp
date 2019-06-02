@@ -39,6 +39,9 @@ void PCKeyboardInput::ApplyTo(wxFrame *frame)
     });
     
     frame->Bind(wxEVT_MENU, [this](wxCommandEvent &ev) {
+        ev.Skip();
+        ev.StopPropagation();
+        
         auto const id = (KeyID)ev.GetId();
         if(id == kID_OctDown) {
             TransposeOctaveDown();
@@ -47,12 +50,10 @@ void PCKeyboardInput::ApplyTo(wxFrame *frame)
         } else {
             auto const pitch = KeyIDToPitch(id);
             if(pitch == kInvalidPitch) {
-                ev.Skip();
                 return;
             }
             
             if(pitch == playing_keys_[id]) {
-                ev.Skip();
                 return;
             }
             

@@ -189,6 +189,8 @@ public:
         SetAutoLayout(true);
         Layout();
     }
+    
+    bool AcceptsFocus() const override { return false; }
 
     bool Show(bool show = true) override
     {
@@ -411,6 +413,8 @@ public:
     ~PluginEditorControl()
     {}
     
+    bool AcceptsFocus() const override { return false; }
+    
     using IListenerService = IListenerService<Listener>;
     
     IListenerService & GetListeners() { return listeners_; }
@@ -578,6 +582,8 @@ public:
 
     ~PluginEditorContents()
     {}
+    
+    bool AcceptsFocus() const override { return false; }
 
 private:
     Vst3Plugin *plugin_ = nullptr;
@@ -656,6 +662,8 @@ public:
 
     ~PluginEditorFrame() {
     }
+    
+    bool AcceptsFocus() const override { return false; }
 
     bool Destroy() override
     {

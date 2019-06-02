@@ -59,6 +59,8 @@ public:
     ~Keyboard()
     {}
     
+    bool AcceptsFocus() const override { return false; }
+    
     static constexpr int kKeyWidth = 16;
     static constexpr int kBlackKeyDispOffset = 6;
     static constexpr int kBlackKeyDispWidth = 11;
