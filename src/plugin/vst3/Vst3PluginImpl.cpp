@@ -1353,6 +1353,7 @@ void Vst3Plugin::Impl::UnloadPlugin()
 
     unit_handler_.reset();
     plug_view_.reset();
+    midi_mapping_.reset();
 
     if(is_single_component_ == false) {
         edit_controller_->terminate();

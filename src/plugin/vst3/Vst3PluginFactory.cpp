@@ -278,8 +278,15 @@ Vst3PluginFactory::Impl::~Impl()
 {
     assert(loaded_plugins_.empty());
     
-    if(!module_) { return; }
-    factory_.reset();
+    // Moduleから取得したIPluginFactoryは、内部で一度addRefされてから呼び出し元に渡される。
+    // 呼び出し元ではIPluginFactoryの使用が終了したら、releaseを呼び出してIPluginFactoryを解放する。
+    // (c.f. VST3 SDK docの"How the host will load a Plug-in"）
+    // その仕様に準拠するため、ここで一度余分にreleaseを呼んでからfactory変数をリセットするようにしている。
+    if(factory_) {
+        factory_->release();
+        factory_.reset();
+    }
+    
     module_.reset();
 }
 
