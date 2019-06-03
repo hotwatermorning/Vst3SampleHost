@@ -10,7 +10,7 @@
 NS_HWM_BEGIN
 
 class Keyboard
-:   public wxWindow
+:   public wxScrolled<wxWindow>
 {
 public:
     using PlayingNoteList = std::bitset<128>;
@@ -22,13 +22,27 @@ public:
     }
     
     Keyboard(wxWindow *parent)
-    :   wxWindow(parent, wxID_ANY)
+    :   wxScrolled<wxWindow>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL)
     {
         wxSize min_size(1, kWhiteKeyHeight);
         
         SetSize(min_size);
-        SetMinSize(min_size);
+        SetMinClientSize(min_size);
+        SetMaxClientSize(wxSize(kFullKeysWidth, kWhiteKeyHeight));
+        SetVirtualSize(wxSize(kFullKeysWidth, kWhiteKeyHeight));
         
+        SetScrollbars(1,
+                      kWhiteKeyHeight,
+                      kFullKeysWidth,
+                      1,
+                      kFullKeysWidth / 2,
+                      0);
+        
+        ShowScrollbars(wxSHOW_SB_DEFAULT, wxSHOW_SB_DEFAULT);
+        
+        auto rect = GetClientRect();
+        last_size_ = rect.GetSize();
+
         playing_notes_.reset();
         
         img_white_          = LoadImage(L"pianokey_white.png");
@@ -52,8 +66,7 @@ public:
         Bind(wxEVT_MOVE, [this](auto &ev) { Refresh(); });
         Bind(wxEVT_SIZE, [this](auto &ev) { Refresh(); });
         Bind(wxEVT_PAINT, [this](auto &ev) { OnPaint(ev); });
-        
-        key_code_for_sample_note_.fill(0);
+        Bind(wxEVT_SIZE, [this](auto &ev) { OnSize(ev); });
     }
     
     ~Keyboard()
@@ -67,7 +80,7 @@ public:
     static constexpr int kNumKeys = 128;
     static constexpr int kNumWhiteKeys = 75;
     static constexpr int kFullKeysWidth = kKeyWidth * kNumWhiteKeys;
-    static constexpr int kWhiteKeyHeight = 100;
+    static constexpr int kWhiteKeyHeight = 110;
     static constexpr int kBlackKeyHeight = 60;
     
     static wxSize const kWhiteKey;
@@ -95,21 +108,24 @@ public:
     void OnPaint(wxPaintEvent &ev)
     {
         wxPaintDC dc(this);
+        DoPrepareDC(dc);
+        
         auto rect = GetClientRect();
         
         col_background.ApplyTo(dc);
         dc.DrawRectangle(rect);
         
-        int const disp_half = rect.GetWidth() / 2;
-        int const disp_shift = kFullKeysWidth / 2 - disp_half;
+        int left, right, dummy;
+        CalcUnscrolledPosition(rect.GetLeft(), 0, &left, &dummy);
+        CalcUnscrolledPosition(rect.GetRight(), 0, &right, &dummy);
         
         auto draw_key = [&](auto note_num, auto const &prop, auto const &img) {
             int const octave = note_num / 12;
             auto key_rect = prop.rect_;
-            key_rect.Offset(octave * kKeyWidth * 7 - disp_shift, 0);
+            key_rect.Offset(octave * kKeyWidth * 7, 0);
             
-            if(key_rect.GetLeft() >= rect.GetWidth()) { return; }
-            if(key_rect.GetRight() < 0) { return; }
+            if(key_rect.GetLeft() >= right) { return; }
+            if(key_rect.GetRight() < left) { return; }
             
             dc.DrawBitmap(wxBitmap(img), key_rect.GetTopLeft());
         };
@@ -141,11 +157,11 @@ public:
             draw_key(i, kKeyPropertyList[i % 12], img);
         }
         
-        auto font = wxFont(wxFontInfo(wxSize(8, 10)).Family(wxFONTFAMILY_DEFAULT));
+        auto font = wxFont(wxFontInfo(wxSize(8, 10)).Family(wxFONTFAMILY_TELETYPE).AntiAliased());
         dc.SetFont(font);
         for(int i = 0; i < kNumKeys; i += 12) {
             int const octave = i / 12;
-            auto rc = wxRect(wxPoint(octave * kKeyWidth * 7 - disp_shift, rect.GetHeight() * 0.8),
+            auto rc = wxRect(wxPoint(octave * kKeyWidth * 7, rect.GetHeight() * 0.8),
                              wxSize(kKeyWidth, 10));
             
             dc.DrawLabel(wxString::Format("C%d", i / 12 - 2), wxBitmap(), rc, wxALIGN_CENTER);
@@ -191,13 +207,28 @@ public:
         last_dragging_note_ = note;
     }
     
-    std::optional<int> PointToNoteNumber(wxPoint pt)
+    wxSize last_size_;
+    void OnSize(wxSizeEvent &ev)
     {
-        auto rect = GetClientRect();
-        int const disp_half = rect.GetWidth() / 2;
-        int const disp_shift = kFullKeysWidth / 2 - disp_half;
+        auto center = GetScrollPos(wxHORIZONTAL) + last_size_.GetWidth() / 2;
         
-        double const x = (pt.x + disp_shift);
+        auto new_size = ev.GetSize();
+        
+        SetScrollbars(1,
+                      kWhiteKeyHeight,
+                      kFullKeysWidth,
+                      1,
+                      center - new_size.GetWidth() / 2,
+                      0);
+        
+        last_size_ = new_size;
+    }
+    
+    std::optional<int> PointToNoteNumber(wxPoint pt)
+    {        
+        int x, y;
+        CalcUnscrolledPosition(pt.x, pt.y, &x, &y);
+        
         int const kOctaveWidth = 7.0 * kKeyWidth;
         
         int octave = (int)(x / (double)kOctaveWidth);
@@ -210,7 +241,7 @@ public:
             auto rc = key.rect_;
             rc.SetWidth(kBlackKeyDispWidth);
             rc.Inflate(1, 1);
-            if(rc.Contains(x_in_oct - kBlackKeyDispOffset, pt.y)) {
+            if(rc.Contains(x_in_oct - kBlackKeyDispOffset, y)) {
                 if(!found) { found = (index + octave * 12); }
                 break;
             }
@@ -220,7 +251,7 @@ public:
             auto key = kKeyPropertyList[index];
             auto rc = key.rect_;
             rc.Inflate(1, 1);
-            if(rc.Contains(x_in_oct, pt.y)) {
+            if(rc.Contains(x_in_oct, y)) {
                 if(!found) { found = (index + octave * 12); }
                 break;
             }
@@ -259,14 +290,8 @@ private:
     
 private:
     std::optional<int> last_dragging_note_;
-    std::array<wxChar, 128> key_code_for_sample_note_;
     wxTimer timer_;
     PlayingNoteList playing_notes_;
-    int key_base_ = 60;
-    constexpr static wxChar kPlayback = L' ';
-    constexpr static wxChar kOctaveDown = L'Z';
-    constexpr static wxChar kOctaveUp = L'X';
-    static std::vector<wxChar> const kKeyTable;
     wxImage img_white_;
     wxImage img_white_pushed_;
     wxImage img_white_pushed_contiguous_;
@@ -296,10 +321,6 @@ private:
         { int(kKeyWidth * 5.5 - 2), kBlackKey },
         { kKeyWidth * 6,            kWhiteKey },
     };
-};
-
-std::vector<wxChar> const Keyboard::kKeyTable = {
-    L'A', L'W', L'S', L'E', L'D', L'F', L'T', L'G', L'Y', L'H', L'U', L'J', L'K', L'O', L'L', L'P'
 };
 
 wxSize const Keyboard::kWhiteKey { kKeyWidth, kWhiteKeyHeight };

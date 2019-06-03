@@ -185,7 +185,13 @@ public:
         }
         
         vbox->Add(hbox, wxSizerFlags(1).Expand());
-        vbox->Add(keyboard_, wxSizerFlags(0).Expand());
+        {
+            auto hbox = new wxBoxSizer(wxHORIZONTAL);
+            hbox->AddStretchSpacer(1);
+            hbox->Add(keyboard_, wxSizerFlags(10000).Expand());
+            hbox->AddStretchSpacer(1);
+            vbox->Add(hbox, wxSizerFlags(0).Expand());
+        }
         
         SetSizerAndFit(vbox);
         
@@ -235,6 +241,7 @@ private:
         auto const num = factory->GetComponentCount();
         
         cho_select_component_->Clear();
+        
         for(int i = 0; i < num; ++i) {
             auto const &info = factory->GetComponentInfo(i);
             
