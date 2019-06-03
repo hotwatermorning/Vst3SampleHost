@@ -39,7 +39,7 @@ class PCKeyboardInput
             return elem.second == id;
         });
         
-        return (found == map.end() ? '\0' : found->first);
+        return (found == map.end() ? L'\0' : found->first);
     }
     
     static
@@ -65,6 +65,8 @@ private:
     std::map<KeyID, int> playing_keys_;
     wxAcceleratorTable acc_table_;
     int base_pitch_ = 48;
+    bool oct_up_pressing_ = false;
+    bool oct_down_pressing_ = false;
     
     wxAcceleratorTable const & GetAcceleratorTable() const
     {
