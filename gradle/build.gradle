@@ -29,9 +29,9 @@ ext {
   isWindows = { return System.properties['os.name'].toLowerCase().startsWith("windows") }
   build_dir_name = "build_${project.config.toLowerCase()}"
   test_build_dir_name = "test_${project.config.toLowerCase()}"
-  has_ccache = (project.use_ccache == "true" ? "which ccache".execute().waitFor() == 0 : false)
-  ccache_path = (has_ccache ? "which ccache".execute().text.trim() : "")
-  ccache_envvars = (has_ccache ? [CC: "${ccache_path} clang", CXX: "${ccache_path} clang++"] : [:])
+  enable_ccache = (project.use_ccache == "true" ? "which ccache".execute().waitFor() == 0 : false)
+  ccache_path = (enable_ccache ? "which ccache".execute().text.trim() : "")
+  ccache_envvars = (enable_ccache ? [CC: "${ccache_path} clang", CXX: "${ccache_path} clang++"] : [CCACHE_DISABLE: "true"])
   should_renew_cache = (project.renew_cache == "true")
   getCMakeGenerator = {
     return isWindows() ? "-G \"Visual Studio 15 2017 Win64\" -Tv141,host=x64" : "-G Xcode"
@@ -203,6 +203,7 @@ def execute_may_fail = { String command, def working_dir = ".", Map env_vars = [
 
   def service = Executors.newCachedThreadPool()
 
+  // these outputs may be displayed earlier than the outputs of main thread.
   service.execute {
     process.in.eachLine { line ->
       text += line + "\n"
@@ -210,6 +211,7 @@ def execute_may_fail = { String command, def working_dir = ".", Map env_vars = [
     }
   }
 
+  // these outputs may be displayed earlier than the outputs of main thread.
   service.execute {
     process.err.eachLine { line ->
       error_text += line + "\n"
@@ -457,12 +459,12 @@ task build_rtmidi {
       get_hash("rtmidi"),
       {
         if(isWindows()) {
-          execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF ..", build_dir, ccache_envvars)
+          execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF ..", build_dir)
           execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
           execute("cmake --build . -j --target INSTALL --config ${project.config}", build_dir)
         } else {
           execute("cmake -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${project.config} ..", build_dir, ccache_envvars)
-          execute("make -j", build_dir)
+          execute("make -j", build_dir, ccache_envvars)
           execute("make install", build_dir)
         }
       })
@@ -504,12 +506,12 @@ task build_portaudio {
                   "-DPA_BUILD_SHARED=OFF -DPA_USE_WDMKS=OFF " +
                   "-DPA_USE_ASIO=ON -DASIOSDK_ROOT_DIR=\"${asiosdk_dir}\" " +
                   "..",
-                  build_dir, ccache_envvars)
+                  build_dir)
           execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
           execute("cmake --build . -j --target INSTALL --config ${project.config}", build_dir)
         } else {
           execute("cmake -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" -DPA_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=${project.config} ..", build_dir, ccache_envvars)
-          execute("make -j", build_dir)
+          execute("make -j", build_dir, ccache_envvars)
           execute("make install", build_dir)
         }
       })
@@ -537,7 +539,7 @@ task build_vst3sdk {
             + " -DSMTG_ADD_VST3_HOSTING_SAMPLES=OFF "
             + " -DSMTG_ADD_VSTGUI=OFF "
             + ".."
-            , build_dir, ccache_envvars)
+            , build_dir)
           execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
         } else {
           // VST3SDKは、makeのinstallターゲットを用意しない
@@ -548,7 +550,7 @@ task build_vst3sdk {
             + " -DSMTG_ADD_VSTGUI=OFF "
             + ".."
             , build_dir, ccache_envvars)
-          execute("make -j", build_dir)
+          execute("make -j", build_dir, ccache_envvars)
         }
       })
   }
@@ -597,7 +599,7 @@ task build_wxwidgets {
                   build_dir,
                   ccache_envvars
                   )
-          execute("make -j4", build_dir)
+          execute("make -j4", build_dir, ccache_envvars)
           execute("make install", build_dir)
         }
       })
@@ -637,7 +639,7 @@ task prepare_app {
   doLast {
     def build_dir = file("../${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
-    execute("cmake ${getCMakeGenerator()} -DCMAKE_BUILD_TYPE=${project.config} ..", build_dir)
+    execute("cmake ${getCMakeGenerator()} -DCMAKE_BUILD_TYPE=${project.config} ..", build_dir, ccache_envvars)
   }
 }
 prepare_app.mustRunAfter build_submodules
@@ -648,7 +650,7 @@ task build_app {
     // for macOS, Xcode build performs parallel builds by default and
     // requires a number of concurrency for this option.
     def parallel_option = isWindows() ? "-j" : ""
-    execute("cmake --build . ${parallel_option} --target ALL_BUILD --config ${project.config}", build_dir)
+    execute("cmake --build . ${parallel_option} --target ALL_BUILD --config ${project.config}", build_dir, ccache_envvars)
   }
 }
 build_app.mustRunAfter copy_resources
@@ -661,7 +663,7 @@ task prepare_test {
 
     def build_dir = file("../${test_build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
-    execute("cmake ${getCMakeGenerator()} -DCMAKE_BUILD_TYPE=${project.config} -DENABLE_BUILD_TESTS=ON ..", build_dir)
+    execute("cmake ${getCMakeGenerator()} -DCMAKE_BUILD_TYPE=${project.config} -DENABLE_BUILD_TESTS=ON ..", build_dir, ccache_envvars)
   }
 }
 prepare_test.mustRunAfter build_submodules
