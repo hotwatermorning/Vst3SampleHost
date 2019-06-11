@@ -26,7 +26,6 @@ ensure_property(project, "use_ccache", ["true", "false"])
 ensure_property(project, "renew_cache", ["false", "true"])
 
 ext {
-  getenv = { String key -> return java.lang.System.getenv()[key] }
   isWindows = { return System.properties['os.name'].toLowerCase().startsWith("windows") }
   build_dir_name = "build_${project.config.toLowerCase()}"
   test_build_dir_name = "test_${project.config.toLowerCase()}"
@@ -36,6 +35,21 @@ ext {
   should_renew_cache = (project.renew_cache == "true")
   getCMakeGenerator = {
     return isWindows() ? "-G \"Visual Studio 15 2017 Win64\" -Tv141,host=x64" : "-G Xcode"
+  }
+}
+
+//! @param options is a map to customize getenv behavior.
+//! these options are supported.
+//! * null_as_empty. (Boolean, default is false)
+//! * trim. (Boolean. default is false)
+def getenv = { String key, Map options = [:] ->
+  def tmp = java.lang.System.getenv()[key]
+  if(options["null_as_empty"]) {
+    if(tmp == null) { tmp = "" }
+  }
+
+  if(options["trim"]) {
+    tmp = tmp.trim()
   }
 }
 
@@ -256,6 +270,7 @@ def createCacheParam = { File cache_dir, String archive_name, String build_confi
 // }
 
 def createNullCacheStrategy = {
+  logger.info("create NullCacheStrategy object")
   return [
     fetch: { def param -> return false },
     store: { def param -> return false },
@@ -263,16 +278,17 @@ def createNullCacheStrategy = {
 }
 
 def createAzureCacheStrategy = {
+  logger.info("create AzureCacheStrategy object")
   def getAzureStorageAccount = {
-    return getenv("AZURE_STORAGE_ACCOUNT").toString()
+    return getenv("AZURE_STORAGE_ACCOUNT", [null_as_empty: true, trim: true])
   }
 
   def getAzureStorageKey = {
-    return getenv("AZURE_STORAGE_KEY").toString()
+    return getenv("AZURE_STORAGE_KEY", [null_as_empty: true, trim: true])
   }
 
   def getAzureStorageContainerName = {
-    return getenv("AZURE_STORAGE_CONTAINER_NAME").toString()
+    return getenv("AZURE_STORAGE_CONTAINER_NAME", [null_as_empty: true, trim: true])
   }
 
   def getBlobApiParams = {
@@ -305,11 +321,15 @@ def createAzureCacheStrategy = {
   } else {
     if(execute_may_fail("which az").failed()) { return null }
   }
-  if(getAzureStorageAccount()?.trim() == false
-     || getAzureStorageKey()?.trim() == false
-     || getAzureStorageContainerName()?.trim() == false
-   )
-   { return null }
+
+  if(getAzureStorageAccount() == ""
+     || getAzureStorageKey() == ""
+     || getAzureStorageContainerName() == "")
+   {
+      logger.info("azure settings not found")
+      return null
+   }
+
 
   return [
     fetch: { def param ->
@@ -406,14 +426,16 @@ def get_cache_strategy = {
 // キャッシュがないときはビルドを行う
 def build_if_needed = { String archive_name, File cache_dir, String hash, Closure do_build ->
   def cache = get_cache_strategy()
-
   def param = createCacheParam(cache_dir, archive_name, project.config, hash)
 
-  // fetchしたデータの正当性は確認しない
-  // （正当性を確認して、内容が不十分なときはdo_buildでビルドし直すような設計も考えられるが、
-  // do_buildの実装側が面倒になるので、そこまではしない）
-  if(should_renew_cache == false && cache.fetch(param)) {
-    return
+  if(should_renew_cache) {
+    println "Renew cache"
+  } else {
+    // fetchしたデータの正当性は確認しない
+    // （正当性を確認して、内容が不十分なときはdo_buildでビルドし直すような設計も考えられるが、
+    // do_buildの実装側が面倒になるので、そこまではしない）
+    def fetched = cache.fetch(param)
+    if(fetched) { return }
   }
 
   do_build()
