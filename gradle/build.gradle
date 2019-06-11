@@ -1,5 +1,4 @@
 import groovy.json.*
-import groovy.transform.Field
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
