@@ -8,9 +8,14 @@ jobs:
   - script: brew install libtool automake
     displayName: brew install
   - script: |
-      cd gradle
+      cd Chapter01/gradle
       ./gradlew test -Pconfig=Debug
       ./gradlew build_all -Pconfig=Release
+      cd ../..
+      cd ChapterXX/gradle
+      ./gradlew test -Pconfig=Debug
+      ./gradlew build_all -Pconfig=Release
+      cd ../..
     env:
       AZURE_STORAGE_ACCOUNT: $(azure.storage.account)
       AZURE_STORAGE_KEY: $(azure.storage.key)
@@ -19,17 +24,27 @@ jobs:
     displayName: build all
   - task: PublishBuildArtifacts@1
     inputs:
-      pathtoPublish: '$(System.DefaultWorkingDirectory)/build_release/Release'
-      artifactName: vst3samplehost_release_osx_10_13_xcode10_1
-    displayName: publish
+      pathtoPublish: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
+      artifactName: vst3samplehost_release_osx_10_13_xcode10_1_chapter01
+    displayName: publish chapter01
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
+      artifactName: vst3samplehost_release_osx_10_13_xcode10_1_chapterXX
+    displayName: publish chapterXX
 - job: build_win_msvc_2017
   pool:
     vmImage: 'vs2017-win2016'
   steps:
   - script: |
-      cd gradle
+      cd Chapter01/gradle
       call gradlew test -Pconfig=Debug
       call gradlew build_all -Pconfig=Release
+      cd ../..
+      cd ChapterXX/gradle
+      call gradlew test -Pconfig=Debug
+      call gradlew build_all -Pconfig=Release
+      cd ../..
     env:
       AZURE_STORAGE_ACCOUNT: $(azure.storage.account)
       AZURE_STORAGE_KEY: $(azure.storage.key)
@@ -38,6 +53,11 @@ jobs:
     displayName: build all
   - task: PublishBuildArtifacts@1
     inputs:
-      pathtoPublish: '$(System.DefaultWorkingDirectory)/build_release/Release'
-      artifactName: vst3samplehost_release_win_msvc2017
-    displayName: publish
+      pathtoPublish: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
+      artifactName: vst3samplehost_release_win_msvc2017_chapter01
+    displayName: "publish chapter01"
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
+      artifactName: vst3samplehost_release_win_msvc2017_chapterXX
+    displayName: "publish chapterXX"
