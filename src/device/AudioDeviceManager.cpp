@@ -98,13 +98,7 @@ public:
     {
         if(!Pa_IsStreamStopped(stream_)) {
             Pa_StopStream(stream_);
-            ForEachCallbacks([](auto *cb) { cb->StopProcessing(); });
-
-            input_underflow_count_ = 0;
-            input_overflow_count_ = 0;
-            output_underflow_count_ = 0;
-            output_overflow_count_ = 0;
-            priming_output_count_ = 0;
+            OnStopped();
         }
     }
     
@@ -128,6 +122,18 @@ public:
         ClearBuffer<float>(output, block_size);
         InvokeCallbacks<float>(input, output, block_size);
         return paContinue;
+    }
+    
+    void OnStopped()
+    {
+        stream_ = nullptr;
+        ForEachCallbacks([](auto *cb) { cb->StopProcessing(); });
+        
+        input_underflow_count_ = 0;
+        input_overflow_count_ = 0;
+        output_underflow_count_ = 0;
+        output_overflow_count_ = 0;
+        priming_output_count_ = 0;
     }
     
 private:
