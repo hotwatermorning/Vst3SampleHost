@@ -401,10 +401,8 @@ public:
                 });
             }
         });
-        chk_gen_editor_->Bind(wxEVT_CHECKBOX, [this](auto &ev) {
-            listeners_.Invoke([this](auto *x) {
-                x->OnChangeEditorType(chk_gen_editor_->IsChecked());
-            });
+        chk_gen_editor_->Bind(wxEVT_CHECKBOX, [this](auto &) {
+            OnChangeView();
         });
         
         slr_vpl_.reset(plugin_->GetVst3PluginListenerService(), this);
@@ -418,6 +416,31 @@ public:
     using IListenerService = IListenerService<Listener>;
     
     IListenerService & GetListeners() { return listeners_; }
+    
+    using VT = IPluginEditorFrame::ViewType;
+    //! 現在のViewTypeを返す
+    VT GetViewType() const
+    {
+        return chk_gen_editor_->IsChecked() ? VT::kGeneric : VT::kDedicated;
+    }
+    
+    //! ViewTypeの切り替えに失敗した場合はfalseを返す
+    bool SetViewType(VT type)
+    {
+        if(type == VT::kDedicated &&
+           chk_gen_editor_->IsEnabled() == false)
+        {
+            return false;
+        }
+        
+        if(GetViewType() == type) {
+            return true;
+        }
+
+        chk_gen_editor_->SetValue(type == VT::kGeneric);
+        OnChangeView();
+        return true;
+    }
     
 private:
     Vst3Plugin *plugin_ = nullptr;
@@ -515,19 +538,13 @@ private:
     {
         hwm::wdout << "Notify Unit By Bus Change." << std::endl;
     }
-};
-
-class IPluginEditorFrame
-:   public wxFrame
-{
-protected:
-    template <class... Args>
-    IPluginEditorFrame(Args&&... args)
-        : wxFrame(std::forward<Args>(args)...)
-    {}
-
-public:
-    virtual void OnResizePlugView() = 0;
+    
+    void OnChangeView()
+    {
+        listeners_.Invoke([this](auto *x) {
+            x->OnChangeEditorType(chk_gen_editor_->IsChecked());
+        });
+    }
 };
 
 class PluginEditorContents
@@ -608,11 +625,15 @@ PluginEditorFrameListener::PluginEditorFrameListener()
 PluginEditorFrameListener::~PluginEditorFrameListener()
 {}
 
+template <class... Args>
+IPluginEditorFrame::IPluginEditorFrame(Args&&... args)
+: wxFrame(std::forward<Args>(args)...)
+{}
+
 class PluginEditorFrame
 :   public IPluginEditorFrame
 ,   public PluginEditorControl::Listener
 {
-
     static constexpr UInt32 kControlHeight = 20;
     wxSize const kMinFrameSize = wxSize(PluginEditorControl::kTotalWidth, kControlHeight);
     wxSize const kMaxFrameSize = wxSize(4000, 4000);
@@ -710,6 +731,18 @@ private:
             genedit_->UpdateParameters();
         }
     }
+    
+    //! 現在のViewTypeを返す
+    ViewType GetViewType() const override
+    {
+        return control_->GetViewType();
+    }
+    
+    //! ViewTypeの切り替えに失敗した場合はfalseを返す
+    bool SetViewType(ViewType type) override
+    {
+        return control_->SetViewType(type);
+    }
 
 private:
     PluginEditorFrameListener *listener_;
@@ -737,9 +770,9 @@ private:
     }
 };
 
-wxFrame * CreatePluginEditorFrame(wxWindow *parent,
-                                  Vst3Plugin *target_plugin,
-                                  PluginEditorFrameListener *listener)
+IPluginEditorFrame * CreatePluginEditorFrame(wxWindow *parent,
+                                             Vst3Plugin *target_plugin,
+                                             PluginEditorFrameListener *listener)
 {
     return new PluginEditorFrame(parent, target_plugin, listener);
 }
