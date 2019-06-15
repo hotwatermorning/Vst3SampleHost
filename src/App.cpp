@@ -17,7 +17,7 @@
 #include "gui/PCKeyboardInput.hpp"
 #include "gui/DeviceSettingDialog.hpp"
 #include "processor/EventBuffer.hpp"
-#include "config/Config.hpp"
+#include "file/Config.hpp"
 
 NS_HWM_BEGIN
 

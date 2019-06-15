@@ -5,7 +5,7 @@
 
 #include "./misc/SingleInstance.hpp"
 #include "./plugin/vst3/Vst3Plugin.hpp"
-#include "./config/Config.hpp"
+#include "./file/Config.hpp"
 
 NS_HWM_BEGIN
 

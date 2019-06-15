@@ -3,6 +3,7 @@
 #include <iomanip>
 
 #include "./Config.hpp"
+#include "./Util.hpp"
 #include "../misc/StringAlgo.hpp"
 #include "../misc/MathUtil.hpp"
 #include "../device/AudioDeviceManager.hpp"
@@ -51,19 +52,6 @@ void Config::ScanAudioDeviceStatus()
     block_size_ = dev->GetBlockSize();
 }
 
-template<class T>
-std::string to_s(T const &s) {
-    std::stringstream ss;
-    ss << s;
-    return ss.str();
-}
-
-template<>
-std::string to_s<String>(String const &s) { return to_utf8(s); }
-
-template<>
-std::string to_s<AudioDriverType>(AudioDriverType const &s) { return to_string(s); }
-
 std::ostream & operator<<(std::ostream &os, Config const &self)
 {
 #define WRITE_MEMBER(name) \
@@ -88,73 +76,20 @@ std::ostream & operator<<(std::ostream &os, Config const &self)
     return os;
 }
 
-Int32 stoi_or(std::string const &str, Int32 default_value) {
-    try {
-        return stoi(str);
-    } catch(...) {
-        return default_value;
-    }
-}
-
-double stof_or(std::string const &str, double default_value) {
-    try {
-        return stoi(str);
-    } catch(...) {
-        return default_value;
-    }
-}
-
-std::string get_trimmed_line(std::istream &is)
-{
-    std::string str;
-    std::getline(is, str);
-    return trim(str);
-}
-
-std::vector<std::string> get_lines(std::istream &is)
-{
-    std::vector<std::string> lines;
-    
-    while(is) {
-        auto line = get_trimmed_line(is);
-        if(is) { lines.push_back(line); }
-    }
-    
-    return lines;
-}
-
-template<class Container>
-std::optional<std::string> get_config_value(Container const &lines, std::string key)
-{
-    key = trim(key);
-    std::regex re("^\\s*" + key + "\\s*=\\s*(.*)$");
-    std::smatch m;
-    for(auto const &line: lines) {
-        if(std::regex_match(line, m, re)) {
-            std::stringstream ss;
-            ss.str(m[1]);
-            std::string tmp;
-            ss >> std::quoted(tmp);
-            return tmp;
-        }
-    }
-    return std::nullopt;
-}
-
 std::istream & operator>>(std::istream &is, Config &self)
 {
     is.exceptions(std::ios::badbit);
     
     auto const lines = get_lines(is);
     
-    if(auto val = get_config_value(lines, "format")) {
+    if(auto val = find_value(lines, "format")) {
         if(*val != kConfigFileFormatID_v1) {
             throw Config::FailedToParse("Unknown format.");
         }
     }
     
 #define READ_MEMBER(key, func) \
-    if(auto val = get_config_value(lines, #key)) { self. key ## _ = func(*val); }
+    if(auto val = find_value(lines, #key)) { self. key ## _ = func(*val); }
     
     READ_MEMBER(audio_input_driver_type, [](std::string const &str) {
         return to_audio_driver_type(str).value_or(AudioDriverType::kUnknown);
