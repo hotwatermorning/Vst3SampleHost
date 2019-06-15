@@ -16,8 +16,10 @@
 #include "gui/Gui.hpp"
 #include "gui/PCKeyboardInput.hpp"
 #include "gui/DeviceSettingDialog.hpp"
+#include "gui/PluginEditor.hpp"
 #include "processor/EventBuffer.hpp"
 #include "file/Config.hpp"
+#include "file/ProjectFile.hpp"
 
 NS_HWM_BEGIN
 
@@ -705,6 +707,73 @@ Config & App::GetConfig()
 Config const & App::GetConfig() const
 {
     return pimpl_->config_;
+}
+
+void App::LoadProjectFile(String path_to_load)
+{
+    ProjectFile file;
+    
+    std::ifstream ifs;
+#if defined(_MSC_VER)
+    ifs.open(path_to_load);
+#else
+    ifs.open(to_utf8(path_to_load));
+#endif
+    
+    try {
+        ifs >> file;
+    } catch(std::exception &e) {
+        hwm::dout << "failed to load project file: " << e.what() << std::endl;
+    }
+    
+    if(file.vst3_plugin_path_.empty()) { return; }
+    
+    if(!LoadVst3Module(file.vst3_plugin_path_)) {
+        return;
+    }
+    
+    if(!LoadVst3Plugin(file.vst3_plugin_cid_)) {
+        return;
+    }
+    
+    if(file.vst3_plugin_proc_data_.empty()) {
+        return;
+    }
+    
+    Vst3Plugin::DumpData dump;
+    dump.processor_data_ = file.vst3_plugin_proc_data_;
+    dump.edit_controller_data_ = file.vst3_plugin_edit_data_;
+    
+    GetPlugin()->LoadData(dump);
+    
+    if(file.editor_type_.empty() == false) {
+        auto frame = IMainFrame::GetInstance();
+        wxCommandEvent ev(wxEVT_COMMAND_MENU_SELECTED);
+        ev.SetId(IMainFrame::kID_View_PluginEditor);
+        ev.SetEventObject(frame);
+        frame->ProcessWindowEvent(ev);
+        
+        using VT = IPluginEditorFrame::ViewType;
+        auto editor = IPluginEditorFrame::GetInstance();
+        auto const vt = (file.editor_type_ == L"generic" ? VT::kGeneric : VT::kDedicated);
+        editor->SetViewType(vt);
+    }
+}
+
+void App::SaveProjectFile(String path_to_save)
+{
+    ProjectFile file;
+    file.ScanAudioDeviceStatus();
+    file.ScanPluginStatus();
+    
+    std::ofstream ofs;
+#if defined(_MSC_VER)
+    ofs.open(path_to_save);
+#else
+    ofs.open(to_utf8(path_to_save));
+#endif
+    
+    ofs << file;
 }
 
 NS_HWM_END

@@ -2,6 +2,7 @@
 #include "../App.hpp"
 
 #include <wx/filename.h>
+#include <wx/stdpaths.h>
 
 #include "../resource/ResourceHelper.hpp"
 #include "../plugin/vst3/Vst3Plugin.hpp"
@@ -430,10 +431,17 @@ private:
         editor_frame_ = nullptr;
         btn_open_editor_->Enable();
     }
+
+public:
+    bool CanOpenEditor() const
+    {
+        return btn_open_editor_->IsShown() && btn_open_editor_->IsEnabled();
+    }
     
     void OnOpenEditor()
     {
         if(editor_frame_) { return; }
+        if(CanOpenEditor() == false) { return; }
 
         editor_frame_ = CreatePluginEditorFrame(this,
                                                 App::GetInstance()->GetPlugin(),
@@ -450,35 +458,50 @@ private:
     }
 };
 
+template<class... Args>
+IMainFrame::IMainFrame(Args&&... args)
+:   wxFrame(std::forward<Args>(args)...)
+{
+}
+
 class MainFrame
-:   public wxFrame
+:   public IMainFrame
 ,   public App::PlaybackOptionChangeListener
 {
     wxSize const initial_size = { 480, 600 };
     
-    enum {
-        kID_Playback_EnableAudioInputs = wxID_HIGHEST + 1,
-        kID_Device_Preferences
-    };
-    
+    using base_type = IMainFrame;
 public:
     MainFrame()
-    :   wxFrame(nullptr, wxID_ANY, L"Vst3SampleHost", wxDefaultPosition, initial_size)
+    :   base_type(nullptr, wxID_ANY, L"Vst3SampleHost", wxDefaultPosition, initial_size)
     {
         SetMinClientSize(wxSize(350, 600));
-        
+       
+        auto menu_file = new wxMenu();
+
+        menu_file->Append(kID_File_Load, L"開く\tCTRL-O", L"プロジェクトファイルを開きます。");
+        menu_file->Append(kID_File_Save, L"保存\tCTRL-S", L"プロジェクトファイルを保存します。");
+
         auto menu_playback = new wxMenu();
         menu_enable_input_ = menu_playback->AppendCheckItem(kID_Playback_EnableAudioInputs,
                                                             L"オーディオ入力を有効化\tCTRL-I",
                                                             L"オーディオ入力を有効にします");
         
+        auto menu_view = new wxMenu();
+        menu_view->Append(kID_View_PluginEditor, L"プラグインエディターを開く\tCTRL-E", L"プラグインエディターを開きます");
+        
         auto menu_device = new wxMenu();
         menu_device->Append(kID_Device_Preferences, L"デバイス設定\tCTRL-,", L"デバイス設定を変更します");
         
         auto menubar = new wxMenuBar();
+        menubar->Append(menu_file, L"ファイル");
         menubar->Append(menu_playback, L"再生");
+        auto view_menu_item = menubar->Append(menu_view, L"表示");
         menubar->Append(menu_device, L"デバイス");
         SetMenuBar(menubar);
+        
+        Bind(wxEVT_COMMAND_MENU_SELECTED, [this](auto &) { OnLoadProject(); }, kID_File_Load);
+        Bind(wxEVT_COMMAND_MENU_SELECTED, [this](auto &) { OnSaveProject(); }, kID_File_Save);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
             auto app = App::GetInstance();
@@ -489,6 +512,14 @@ public:
             auto app = App::GetInstance();
             app->SelectAudioDevice();
         }, kID_Device_Preferences);
+        
+        Bind(wxEVT_COMMAND_MENU_SELECTED, [this](auto &ev) {
+            OnOpenEditor();
+        }, kID_View_PluginEditor);
+        
+        Bind(wxEVT_UPDATE_UI, [this](auto &ev) {
+            ev.Enable(wnd_->CanOpenEditor());
+        }, kID_View_PluginEditor);
         
         auto key_input = PCKeyboardInput::GetInstance();
         key_input->ApplyTo(this);
@@ -501,6 +532,8 @@ public:
         sizer->Add(wnd_, wxSizerFlags(1).Expand());
         
         SetSizer(sizer);
+        
+        project_file_dir_ = wxStandardPaths::Get().GetDocumentsDir().ToStdWstring();
         
         auto app = App::GetInstance();
         slr_pocl_.reset(app->GetPlaybackOptionChangeListenerService(), this);
@@ -517,13 +550,14 @@ public:
         DestroyChildren();
         wnd_ = nullptr;
         slr_pocl_.reset();
-        return wxFrame::Destroy();
+        return base_type::Destroy();
     }
     
 private:
-    wxWindow *wnd_;
+    MainWindow *wnd_;
     ScopedListenerRegister<App::PlaybackOptionChangeListener> slr_pocl_;
     wxMenuItem *menu_enable_input_;
+    String project_file_dir_;
     
     void OnAudioInputAvailabilityChanged(bool available) override
     {
@@ -534,9 +568,56 @@ private:
     {
         menu_enable_input_->Check(enabled);
     }
+    
+    void OnLoadProject()
+    {
+        // load
+        wxFileDialog openFileDialog(this,
+                                    "Open Project file",
+                                    project_file_dir_,
+                                    "",
+                                    "Vst3SampleHost Project files (*.vst3proj)|*.vst3proj",
+                                    wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+        
+        if (openFileDialog.ShowModal() == wxID_CANCEL) {
+            return;
+        }
+        
+        auto path = String(openFileDialog.GetPath().ToStdWstring());
+        project_file_dir_ = wxFileName(path).GetPath();
+        
+        auto app = App::GetInstance();
+        app->LoadProjectFile(path);
+    }
+    
+    void OnSaveProject()
+    {
+        // load
+        wxFileDialog saveFileDialog(this,
+                                    "Save Project file",
+                                    project_file_dir_,
+                                    "",
+                                    "Vst3SampleHost Project files (*.vst3proj)|*.vst3proj",
+                                    wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+        
+        if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+            return;
+        }
+        
+        auto path = String(saveFileDialog.GetPath().ToStdWstring());
+        project_file_dir_ = wxFileName(path).GetPath();
+        
+        auto app = App::GetInstance();
+        app->SaveProjectFile(path);
+    }
+    
+    void OnOpenEditor()
+    {
+        wnd_->OnOpenEditor();
+    }
 };
 
-wxFrame * CreateMainFrame()
+IMainFrame * CreateMainFrame()
 {
     return new MainFrame();
 }

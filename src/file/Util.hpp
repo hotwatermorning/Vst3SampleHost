@@ -39,4 +39,12 @@ template<>
 inline
 std::string to_s<AudioDriverType>(AudioDriverType const &s) { return to_string(s); }
 
+template<>
+inline
+std::string to_s<ClassInfo::CID>(ClassInfo::CID const &s) { return base64_encode(s.data(), s.size()); }
+
+template<>
+inline
+std::string to_s<std::vector<char>>(std::vector<char> const &s) { return base64_encode(s); }
+
 NS_HWM_END

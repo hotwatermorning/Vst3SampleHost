@@ -105,6 +105,9 @@ public:
     Config & GetConfig();
     Config const & GetConfig() const;
     
+    void LoadProjectFile(String path_to_load);
+    void SaveProjectFile(String path_to_save);
+    
 private:
     struct Impl;
     std::unique_ptr<Impl> pimpl_;
