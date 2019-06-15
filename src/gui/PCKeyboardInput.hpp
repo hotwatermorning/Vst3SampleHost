@@ -13,7 +13,7 @@ class PCKeyboardInput
     static constexpr Int32 kInvalidPitch = -1;
     
     enum KeyID {
-        kID_C = 12340, kID_Db, kID_D, kID_Eb, kID_E,
+        kID_C = wxID_HIGHEST + 100 , kID_Db, kID_D, kID_Eb, kID_E,
         kID_F, kID_Gb, kID_G, kID_Ab, kID_A, kID_Bb,
         kID_B, kID_hiC, kID_hiDb, kID_hiD, kID_hiEb,
         kID_OctDown, kID_OctUp, kID_Unknown,
