@@ -406,7 +406,7 @@ def createAzureCacheStrategy = {
 }
 
 def get_hash = { String submodule_name ->
-  def result = execute("git rev-parse HEAD", file("../ext/${submodule_name}"))
+  def result = execute("git rev-parse HEAD", file("../../ext/${submodule_name}"))
   return result.text.trim()
 }
 
@@ -450,7 +450,7 @@ def build_if_needed = { String archive_name, File cache_dir, String hash, Closur
 task build_rtmidi {
   doLast {
     println "Build RtMidi"
-    def build_dir = file("../ext/rtmidi/${build_dir_name}").getAbsolutePath()
+    def build_dir = file("../../ext/rtmidi/${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
 
     build_if_needed(
@@ -475,7 +475,7 @@ build_rtmidi.mustRunAfter update_submodules
 task build_portaudio {
   doLast {
     println "Build PortAudio"
-    def build_dir = file("../ext/portaudio/${build_dir_name}").getAbsolutePath()
+    def build_dir = file("../../ext/portaudio/${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
 
     build_if_needed(
@@ -523,7 +523,7 @@ build_portaudio.mustRunAfter update_submodules
 task build_vst3sdk {
   doLast {
     println "Build VST3 SDK"
-    def build_dir = file("../ext/vst3sdk/${build_dir_name}").getAbsolutePath()
+    def build_dir = file("../../ext/vst3sdk/${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
 
     build_if_needed(
@@ -561,7 +561,7 @@ build_vst3sdk.mustRunAfter update_submodules
 task build_wxwidgets {
   doLast {
     println "Build wxWidgets"
-    def build_dir = file("../ext/wxWidgets/${build_dir_name}").getAbsolutePath()
+    def build_dir = file("../../ext/wxWidgets/${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
 
     build_if_needed(
@@ -572,8 +572,8 @@ task build_wxwidgets {
 
         if(isWindows()) {
           copy {
-            from file("../ext/wxWidgets/include/wx/msw/setup0.h")
-            into file("../ext/wxWidgets/include/wx/msw")
+            from file("../../ext/wxWidgets/include/wx/msw/setup0.h")
+            into file("../../ext/wxWidgets/include/wx/msw")
             rename "setup0\\.h", "setup.h"
           }
           execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX='${build_dir}/install' " +
@@ -589,7 +589,7 @@ task build_wxwidgets {
             debug_flags = "--enable-debug --enable-debug-info --enable-debug-gdb"
           }
 
-          execute("./autogen.sh", "../ext/wxWidgets")
+          execute("./autogen.sh", "../../ext/wxWidgets")
           execute('../configure CXXFLAGS="-stdlib=libc++ -DHAVE_TYPE_TRAITS" OBJCXXFLAGS="-stdlib=libc++" ' +
                   'CPPFLAGS="-stdlib=libc++" LDFLAGS="-stdlib=libc++" ' +
                   '--with-macosx-version-min=10.9 --with-cocoa ' +
@@ -622,7 +622,7 @@ task copy_resources {
     dest_dir_names.each { def dir_name ->
       def output_dir = file("../${dir_name}/${project.config}").getAbsolutePath()
 
-      def src = file("../data")
+      def src = file("../../data")
       def dest = new File(output_dir, "Resource")
       assert(mkdirs_if_needed(output_dir))
       copy {
@@ -707,7 +707,7 @@ def delete_build_dir(def target_dir, def dir_name = build_dir_name) {
 
 task clean_submodules {
   doLast {
-    file("../ext").eachDir {
+    file("../../ext").eachDir {
       delete_build_dir(it)
     }
   }

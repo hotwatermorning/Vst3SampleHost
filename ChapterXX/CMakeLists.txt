@@ -137,8 +137,8 @@ if(IsMSVC)
       -D_CRT_SECURE_NO_WARNINGS /FI\"${PREFIX_HEADER_PATH}\"")
       set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -D_DEBUG /MDd")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG /MD")
-  get_filename_component(WX_INCLUDE_DIR "./ext/wxWidgets/${BUILD_DIR_NAME}/install/include" ABSOLUTE)
-  get_filename_component(WX_LIB_DIR "./ext/wxWidgets/${BUILD_DIR_NAME}/install/lib/vc_x64_lib" ABSOLUTE)
+  get_filename_component(WX_INCLUDE_DIR "../ext/wxWidgets/${BUILD_DIR_NAME}/install/include" ABSOLUTE)
+  get_filename_component(WX_LIB_DIR "../ext/wxWidgets/${BUILD_DIR_NAME}/install/lib/vc_x64_lib" ABSOLUTE)
   if(IsDebug)
     set(DP "d")
   else()
@@ -178,7 +178,7 @@ else()
     execute_process(COMMAND "${WX_CONFIG}" "--libs base,core" OUTPUT_VARIABLE WX_LIB_FLAGS)
   else()
     message("Use custom built wxWidgets")
-    get_filename_component(WX_CONFIG_PREFIX "./ext/wxWidgets/${BUILD_DIR_NAME}/install" ABSOLUTE)
+    get_filename_component(WX_CONFIG_PREFIX "../ext/wxWidgets/${BUILD_DIR_NAME}/install" ABSOLUTE)
     message("WX_CONFIG_PREFIX: ${WX_CONFIG_PREFIX}")
     set(WX_CONFIG "${WX_CONFIG_PREFIX}/bin/wx-config")
     message("WX_CONFIG: ${WX_CONFIG}")
@@ -200,16 +200,16 @@ if(ENABLE_BUILD_TESTS)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DENABLE_BUILD_TESTS")
 endif()
 
-find_library(VST3_SDK_LIB "sdk" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
-find_library(VST3_BASE_LIB "base" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
-find_library(VST3_PLUGINTERFACES_LIB "pluginterfaces" PATHS "./ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
+find_library(VST3_SDK_LIB "sdk" PATHS "../ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
+find_library(VST3_BASE_LIB "base" PATHS "../ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
+find_library(VST3_PLUGINTERFACES_LIB "pluginterfaces" PATHS "../ext/vst3sdk/${BUILD_DIR_NAME}/lib/${CAPITAL_CONFIG_NAME}" NO_DEFAULT_PATH)
 
 if(IsMSVC)
-  find_library(PORTAUDIO_LIB "portaudio_static_x64" PATHS "./ext/portaudio/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
-  find_library(RTMIDI_LIB "rtmidi_static" "rtmidi_staticd" PATHS "./ext/rtmidi/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
+  find_library(PORTAUDIO_LIB "portaudio_static_x64" PATHS "../ext/portaudio/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
+  find_library(RTMIDI_LIB "rtmidi_static" "rtmidi_staticd" PATHS "../ext/rtmidi/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
 else()
-  find_library(PORTAUDIO_LIB "libportaudio.a" PATHS "./ext/portaudio/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
-  find_library(RTMIDI_LIB "rtmidi_static" PATHS "./ext/rtmidi/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
+  find_library(PORTAUDIO_LIB "libportaudio.a" PATHS "../ext/portaudio/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
+  find_library(RTMIDI_LIB "rtmidi_static" PATHS "../ext/rtmidi/${BUILD_DIR_NAME}/install/lib" NO_DEFAULT_PATH)
   find_library(JACK_LIB jack)
 endif()
 
@@ -225,7 +225,7 @@ if(JACK_LIB)
   list(APPEND LINKLIBS ${JACK_LIB})
 endif()
 
-set(RESOURCE_DIR "./data")
+set(RESOURCE_DIR "../data")
 
 if(IsXcode)
   get_filename_component(RESOURCE_DIR ${RESOURCE_DIR} ABSOLUTE)
@@ -249,14 +249,14 @@ endif()
 
 include_directories(
   "./src"
-  "./ext/vst3sdk"
+  "../ext/vst3sdk"
   "./schema/cpp"
-  "./ext/portaudio/${BUILD_DIR_NAME}/install/include"
-  "./ext/rtmidi/${BUILD_DIR_NAME}/install/include"
+  "../ext/portaudio/${BUILD_DIR_NAME}/install/include"
+  "../ext/rtmidi/${BUILD_DIR_NAME}/install/include"
   )
 
 if(ENABLE_BUILD_TESTS)
-  include_directories("./ext/Catch2/single_include")
+  include_directories("../ext/Catch2/single_include")
 endif()
 
 if(IsXcode)

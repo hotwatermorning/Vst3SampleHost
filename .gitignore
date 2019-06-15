@@ -11,9 +11,9 @@
 !.gitignore
 !.gitmodules
 
-!gradle/*
-!gradle/**/*
-gradle/.gradle
+!*/**/gradle/*
+!*/**/gradle/**/*
+*/**/gradle/.gradle
 
 build_debug
 build_release
