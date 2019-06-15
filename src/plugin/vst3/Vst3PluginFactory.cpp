@@ -379,6 +379,15 @@ std::shared_ptr<Vst3PluginFactory> Vst3PluginFactoryList::FindOrCreateFactory(St
     return found->second;
 }
 
+String Vst3PluginFactoryList::GetModulePath(Vst3PluginFactory *p) const
+{
+    for(auto const &entry: pimpl_->table_) {
+        if(entry.second.get() == p) { return entry.first; }
+    }
+    
+    return {};
+}
+
 void Vst3PluginFactoryList::Shrink()
 {
     std::map<String, std::shared_ptr<Vst3PluginFactory>> tmp;

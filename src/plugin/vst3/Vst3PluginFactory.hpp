@@ -123,6 +123,9 @@ public:
     
     std::shared_ptr<Vst3PluginFactory> FindOrCreateFactory(String module_path);
     
+    //! 指定したVst3PluginFactory（このVst3PluginFactoryListでロード済みのもの）のパスを返す
+    String GetModulePath(Vst3PluginFactory *p) const;
+    
     //! Unload factories which not having any plugins.
     void Shrink();
     
