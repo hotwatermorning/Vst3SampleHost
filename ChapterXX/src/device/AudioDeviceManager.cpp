@@ -4,6 +4,7 @@
 #include "./AudioDeviceManager.hpp"
 #include "../misc/Buffer.hpp"
 #include "../misc/StrCnv.hpp"
+#include "../misc/MathUtil.hpp"
 
 NS_HWM_BEGIN
 
@@ -192,7 +193,8 @@ private:
         auto *po = reinterpret_cast<SampleType *>(output);
         for(int ch = 0; ch < num_outputs_; ++ch) {
             for(SampleCount smp = 0; smp < block_size; ++smp) {
-                po[smp * num_outputs_ + ch] = tmp_output_float_.data()[ch][smp];
+                po[smp * num_outputs_ + ch] = Clamp<AudioSample>(tmp_output_float_.data()[ch][smp],
+                                                                 -1.0, 1.0);
             }
         }
     }
