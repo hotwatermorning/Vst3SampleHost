@@ -296,7 +296,8 @@ struct App::Impl
         pi.time_info_.sample_rate_ = sample_rate_;
         pi.time_info_.sample_pos_ = continuous_sample_count_;
         pi.time_info_.ppq_pos_ = (continuous_sample_count_ / sample_rate_) * pi.time_info_.tempo_ / 60.0;
-
+        continuous_sample_count_ += block_size;
+        
         assert(input_event_buffers_.GetNumBuffers() >= 1);
         auto &buf0 = *input_event_buffers_.GetBuffer(0);
         for(UInt8 i = 0; i < 128; ++i) {
