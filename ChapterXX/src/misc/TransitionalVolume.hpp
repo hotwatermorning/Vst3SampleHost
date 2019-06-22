@@ -55,6 +55,13 @@ public:
      */
     void set_target_db(double db);
     
+    //! 出力レベルを設定する
+    /*! このクラスの現在の出力レベルも同時に変更される。
+     *  update_transition()/get_current_db()/get_current_linear_gain()と
+     *  同時に呼び出されないように注意すること。
+     */
+    void set_target_db_immediately(double db);
+    
 private:
     double amount_;
     double min_db_;
