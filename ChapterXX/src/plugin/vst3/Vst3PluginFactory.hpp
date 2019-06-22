@@ -50,6 +50,8 @@ public:
 	String const &	vendor() const { return vendor_;; }
 	String const &	version() const { return version_; }
 	String const &	sdk_version() const { return sdk_version_; }
+    
+    bool has_sub_category(String elem) const;
 
 private:
 	String	sub_categories_;
@@ -77,6 +79,9 @@ public:
 	bool has_classinfo2() const { return static_cast<bool>(classinfo2_data_); }
 	ClassInfo2Data const &
 			classinfo2() const { return *classinfo2_data_; }
+    
+    bool is_fx() const;
+    bool is_instrument() const;
 
 private:
     CID cid_ = {{}};
