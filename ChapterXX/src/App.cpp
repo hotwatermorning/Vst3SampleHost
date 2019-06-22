@@ -269,6 +269,7 @@ struct App::Impl
                                            kAudioOutputLevelTransientMillisec,
                                            kAudioOutputLevelMinDB,
                                            kAudioOutputLevelMaxDB);
+        output_level_.set_target_db_immediately(-10.0);
 
         if(plugin_) {
             plugin_->SetSamplingRate(sample_rate_);

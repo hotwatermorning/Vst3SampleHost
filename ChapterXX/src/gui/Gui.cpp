@@ -36,7 +36,10 @@ public:
         lbl_volume_->SetForegroundColour(kColLabel);
         lbl_volume_->SetBackgroundColour(kColOutputSlider);
         
-        sl_volume_ = new wxSlider(this, wxID_ANY, max_value * kVolumeSliderScale, min_value * kVolumeSliderScale, max_value * kVolumeSliderScale);
+        sl_volume_ = new wxSlider(this, wxID_ANY,
+                                  app->GetAudioOutputLevel() * kVolumeSliderScale,
+                                  min_value * kVolumeSliderScale,
+                                  max_value * kVolumeSliderScale);
         sl_volume_->SetBackgroundColour(kColOutputSlider);
         sl_volume_->SetLabel(L"出力レベル");
         
