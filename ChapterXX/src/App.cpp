@@ -262,8 +262,9 @@ struct App::Impl
         block_size_ = max_block_size;
         sample_rate_ = sample_rate;
         
-        silent_.resize(num_input_channels, max_block_size);
-        silent_.fill(0.0);
+        // App内部では、モノラル入力も必ずステレオにして扱う
+        input_buffer_.resize(std::max(num_input_channels, 2), max_block_size);
+        output_buffer_.resize(std::max(num_output_channels, 2), max_block_size);
         
         output_level_ = TransitionalVolume(sample_rate_,
                                            kAudioOutputLevelTransientMillisec,
@@ -278,27 +279,8 @@ struct App::Impl
         }
     }
     
-    void Process(SampleCount block_size,
-                 float const * const * input,
-                 float **output) override
+    void ProcessMidiEvents(SampleCount block_size)
     {
-        auto lock = lf_playback_.make_lock();
-        
-        if(!plugin_) { return; }
-        
-        auto const input_buf = enable_audio_input_.load() ? input : silent_.data();
-
-        ProcessInfo pi;
-        
-        pi.input_audio_buffer_ = BufferRef<AudioSample const>(input_buf, 0, num_input_channels_, 0, block_size);
-        pi.output_audio_buffer_ = BufferRef<AudioSample>(output, 0, num_output_channels_, 0, block_size);
-        pi.time_info_.is_playing_ = true;
-        pi.time_info_.sample_length_ = block_size;
-        pi.time_info_.sample_rate_ = sample_rate_;
-        pi.time_info_.sample_pos_ = continuous_sample_count_;
-        pi.time_info_.ppq_pos_ = (continuous_sample_count_ / sample_rate_) * pi.time_info_.tempo_ / 60.0;
-        continuous_sample_count_ += block_size;
-        
         assert(input_event_buffers_.GetNumBuffers() >= 1);
         auto &buf0 = *input_event_buffers_.GetBuffer(0);
         for(UInt8 i = 0; i < 128; ++i) {
@@ -326,7 +308,7 @@ struct App::Impl
         }
         buf0.Sort();
         
-        // playing_変数の更新はここでのみ行う。CASをしなくても問題ない。
+        // playing_変数の更新はここでのみ行う。
         for(int i = 0; i < buf0.GetCount(); ++i) {
             auto const &ev = buf0.GetEvent(i);
             if(auto p = ev.As<MidiDataType::NoteOn>()) {
@@ -337,14 +319,85 @@ struct App::Impl
                 playing_[p->pitch_].store(NoteStatus::CreateNoteOff(p->off_velocity_));
             }
         }
+    }
+    
+    void ProcessPlugin(SampleCount block_size, AudioSample **output)
+    {
+        ProcessInfo pi;
+        
+        pi.input_audio_buffer_ = BufferRef<AudioSample const>(input_buffer_, 0, input_buffer_.channels(), 0, block_size);
+        pi.output_audio_buffer_ = BufferRef<AudioSample>(output_buffer_, 0, input_buffer_.channels(), 0, block_size);
+        pi.time_info_.is_playing_ = true;
+        pi.time_info_.sample_length_ = block_size;
+        pi.time_info_.sample_rate_ = sample_rate_;
+        pi.time_info_.sample_pos_ = continuous_sample_count_;
+        pi.time_info_.ppq_pos_ = (continuous_sample_count_ / sample_rate_) * pi.time_info_.tempo_ / 60.0;
+        continuous_sample_count_ += block_size;
         
         pi.input_event_buffers_ = &input_event_buffers_;
         pi.output_event_buffers_ = &output_event_buffers_;
         
         plugin_->Process(pi);
         
+        int const num_po = plugin_->GetNumOutputs();
+        if(num_po >= 2 && num_output_channels_ == 1) {
+            // mixdown stereo channels to mono
+            auto const srcL = output_buffer_.data()[0];
+            auto const srcR = output_buffer_.data()[1];
+            auto dest = output[0];
+            for(int smp = 0; smp < block_size; ++smp) {
+                dest[smp] += (srcL[smp] + srcR[smp]) / 2.0;
+            }
+        } else if(num_po == 1 && num_output_channels_ >= 2) {
+            // spread mono channel to stereo
+            auto const src = output_buffer_.data()[0];
+            auto destL = output[0];
+            auto destR = output[1];
+            for(int smp = 0; smp < block_size; ++smp) {
+                destL[smp] = src[smp];
+                destR[smp] = src[smp];
+            }
+        } else {
+            auto const num_channels_to_copy = std::min(num_po, num_output_channels_);
+            for(int ch = 0; ch < num_channels_to_copy; ++ch) {
+                auto const src = output_buffer_.data()[ch];
+                auto dest = output[ch];
+                for(int smp = 0; smp < block_size; ++smp) {
+                    dest[smp] = src[smp];
+                }
+            }
+        }
+        
         input_event_buffers_.Clear();
         output_event_buffers_.Clear();
+    }
+    
+    void Process(SampleCount block_size,
+                 float const * const * input,
+                 float **output) override
+    {
+        auto lock = lf_playback_.make_lock();
+        
+        input_buffer_.fill(0.0);
+        output_buffer_.fill(0.0);
+        
+        
+        if(enable_audio_input_.load()) {
+            if(num_input_channels_ == 1) {
+                std::copy_n(input[0], block_size, input_buffer_.data()[0]);
+                std::copy_n(input[0], block_size, input_buffer_.data()[1]);
+            } else {
+                for(int ch = 0; ch < num_input_channels_; ++ch) {
+                    std::copy_n(input[ch], block_size, input_buffer_.data()[ch]);
+                }
+            }
+        }
+        
+        ProcessMidiEvents(block_size);
+        
+        if(plugin_) {
+            ProcessPlugin(block_size, output);
+        }
         
         output_level_.update_transition(block_size);
         double const gain = output_level_.get_current_linear_gain();
@@ -364,7 +417,8 @@ struct App::Impl
         }
     }
 
-    Buffer<AudioSample> silent_;
+    Buffer<AudioSample> input_buffer_;
+    Buffer<AudioSample> output_buffer_;
     int num_input_channels_ = 0;
     int num_output_channels_ = 0;
     int block_size_ = 0;
