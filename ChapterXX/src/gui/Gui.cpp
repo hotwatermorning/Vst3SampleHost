@@ -490,6 +490,15 @@ public:
                                                             L"オーディオ入力を有効化\tCTRL-I",
                                                             L"オーディオ入力を有効にします");
         
+        auto menu_waveform = new wxMenu();
+        menu_waveform->AppendRadioItem(kID_Playback_Waveform_Sine, L"サイン波");
+        menu_waveform->AppendRadioItem(kID_Playback_Waveform_Saw, L"のこぎり波");
+        menu_waveform->AppendRadioItem(kID_Playback_Waveform_Square, L"矩形波");
+        menu_waveform->AppendRadioItem(kID_Playback_Waveform_Triangle, L"三角波");
+
+        menu_playback->AppendSeparator();
+        menu_playback->AppendSubMenu(menu_waveform, L"テスト波形のタイプ");
+        
         auto menu_view = new wxMenu();
         menu_view->Append(kID_View_PluginEditor, L"プラグインエディターを開く\tCTRL-E", L"プラグインエディターを開きます");
         
@@ -499,7 +508,7 @@ public:
         auto menubar = new wxMenuBar();
         menubar->Append(menu_file, L"ファイル");
         menubar->Append(menu_playback, L"再生");
-        auto view_menu_item = menubar->Append(menu_view, L"表示");
+        menubar->Append(menu_view, L"表示");
         menubar->Append(menu_device, L"デバイス");
         SetMenuBar(menubar);
         
@@ -510,6 +519,22 @@ public:
             auto app = App::GetInstance();
             app->EnableAudioInput(app->IsAudioInputEnabled() == false);
         }, kID_Playback_EnableAudioInputs);
+        
+        Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
+            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kSine);
+        }, kID_Playback_Waveform_Sine);
+        
+        Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
+            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kSaw);
+        }, kID_Playback_Waveform_Saw);
+        
+        Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
+            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kSquare);
+        }, kID_Playback_Waveform_Square);
+        
+        Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
+            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kTriangle);
+        }, kID_Playback_Waveform_Triangle);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
             auto app = App::GetInstance();

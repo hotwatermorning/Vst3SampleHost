@@ -96,6 +96,16 @@ public:
     //! オーディオ出力レベルを変更する。
     void SetAudioOutputLevel(double db);
     
+    enum class TestWaveformType : Int32 {
+        kSine,
+        kSaw,
+        kSquare,
+        kTriangle,
+    };
+    
+    void SetTestWaveformType(TestWaveformType wt);
+    TestWaveformType GetTestWaveformType() const;
+    
     //! 再生中のノートを返す。
     std::bitset<128> GetPlayingNotes();
     

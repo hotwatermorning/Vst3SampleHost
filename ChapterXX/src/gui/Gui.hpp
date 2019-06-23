@@ -11,6 +11,10 @@ class IMainFrame
 public:
     enum {
         kID_Playback_EnableAudioInputs = wxID_HIGHEST + 1,
+        kID_Playback_Waveform_Sine,
+        kID_Playback_Waveform_Saw,
+        kID_Playback_Waveform_Square,
+        kID_Playback_Waveform_Triangle,
         kID_Device_Preferences,
         kID_File_Load,
         kID_File_Save,

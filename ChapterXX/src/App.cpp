@@ -29,6 +29,339 @@ double const kAudioOutputLevelMinDB = -48.0;
 double const kAudioOutputLevelMaxDB = 0.0;
 Int32 kAudioOutputLevelTransientMillisec = 30;
 
+struct alignas(4) NoteStatus {
+    enum Type : char {
+        kNull,
+        kNoteOn,
+        kNoteOff,
+    };
+    
+    static NoteStatus CreateNoteOn(UInt8 velocity)
+    {
+        assert(velocity != 0);
+        return NoteStatus { kNoteOn, velocity, 0 };
+    }
+    
+    static NoteStatus CreateNoteOff(UInt8 off_velocity)
+    {
+        return NoteStatus { kNoteOff, off_velocity, 0 };
+    }
+    
+    static NoteStatus CreateNull()
+    {
+        return NoteStatus {};
+    }
+    
+    bool is_null() const { return type_ == kNull; }
+    bool is_note_on() const { return type_ == kNoteOn; }
+    bool is_note_off() const { return type_ == kNoteOff; }
+    UInt8 get_velocity() const { return velocity_; }
+    
+    bool operator==(NoteStatus const &rhs) const
+    {
+        auto to_tuple = [](auto const &self) {
+            return std::tie(self.type_, self.velocity_);
+        };
+        
+        return to_tuple(*this) == to_tuple(rhs);
+    }
+    
+    bool operator!=(NoteStatus const &rhs) const
+    {
+        return !(*this == rhs);
+    }
+    
+    Type type_ = Type::kNull;
+    UInt8 velocity_ = 0;
+    UInt16 dummy_padding_ = 0;
+};
+
+using KeyboardStatus = std::array<std::atomic<NoteStatus>, 128>;
+
+struct TestSynth
+{
+    struct WaveTable
+    {
+        WaveTable(int length_as_shift_size)
+        {
+            assert(length_as_shift_size <= 31);
+
+            shift_ = length_as_shift_size;
+            wave_data_.resize(1 << shift_);
+        }
+        
+        //! Get the table value of the specified position.
+        //! @param pos is a normalized pos [0.0 - 1.0)
+        AudioSample GetValueSimple(double pos) const
+        {
+            auto const k = 1 << shift_;
+            auto const sample_pos = (SampleCount)std::round(pos * k) & (k - 1);
+            assert(0 <= sample_pos && sample_pos < wave_data_.size());
+            return wave_data_[sample_pos];
+        }
+        
+        std::vector<AudioSample> wave_data_;
+        int shift_;
+    };
+    
+    using WaveTablePtr = std::shared_ptr<WaveTable>;
+    using OscillatorType = App::TestWaveformType;
+    
+    //! This function calculates the PolyBLEPs
+    //! @param t 現在の位相。[0..1]で、[0..2*PI]を表す
+    //! @param dt 目的のピッチに対応する角速度を正規化周波数で表したもの。
+    static
+    double poly_blep(double t, double dt)
+    {
+        // t-t^2/2 +1/2
+        // 0 < t <= 1
+        // discontinuities between 0 & 1
+        if (t < dt)
+        {
+            t /= dt;
+            return t + t - t * t - 1.0;
+        }
+        
+        // t^2/2 +t +1/2
+        // -1 <= t <= 0
+        // discontinuities between -1 & 0
+        else if (t > 1.0 - dt)
+        {
+            t = (t - 1.0) / dt;
+            return t * t + t + t + 1.0;
+        }
+        
+        // no discontinuities
+        // 0 otherwise
+        else return 0.0;
+    }
+    
+    static
+    double note_number_to_freq(int n) {
+        return 440 * pow(2, (n - 69) / 12.0);
+    };
+    
+    static
+    WaveTablePtr GenerateSinTable()
+    {
+        auto table = std::make_unique<WaveTable>(16);
+        auto data = table->wave_data_.data();
+        auto const len = table->wave_data_.size();
+        for(int smp = 0; smp < len; ++smp) {
+            data[smp] = sin(2 * M_PI * smp / (double)len);
+        }
+
+        return table;
+    }
+    
+    static
+    WaveTable const * GetSinTable()
+    {
+        static WaveTablePtr table = GenerateSinTable();
+        return table.get();
+    }
+    
+    struct Voice
+    {
+        Voice() = default;
+        
+        Voice(OscillatorType ot,
+              double sample_rate,
+              double freq,
+              Int32 num_attack_samples,
+              Int32 num_release_samples)
+        {
+            num_attack_samples_ = num_attack_samples;
+            num_release_samples_ = num_release_samples;
+            ot_ = ot;
+            freq_ = freq;
+            sample_rate_ = sample_rate;
+        }
+        
+        double get_current_gain() const
+        {
+            double const kVolumeRange = 48.0;
+            
+            double gain = 1.0;
+            if(state_ == State::kAttack) {
+                assert(attack_sample_pos_ < num_attack_samples_);
+                if(attack_sample_pos_ == 0) {
+                    return 0; // gain == 0
+                } else {
+                    gain = DBToLinear((attack_sample_pos_ / (double)num_attack_samples_) * kVolumeRange - kVolumeRange);
+                }
+            } else if(state_ == State::kSustain) {
+                // do nothing.
+            } else if(state_ == State::kRelease) {
+                assert(release_sample_pos_ < num_release_samples_);
+                auto attack_pos_ratio = attack_sample_pos_ / (double)num_attack_samples_;
+                auto release_pos_ratio = Clamp<double>((release_sample_pos_ / (double)num_release_samples_) + (1 - attack_pos_ratio),
+                                                       -1.0, 1.0);
+                gain = DBToLinear(release_pos_ratio * -kVolumeRange);
+            }
+            
+            return gain;
+        }
+        
+        //! generate one sample and advance one step.
+        AudioSample generate()
+        {
+            if(is_alive() == false) { return 0; }
+            
+            auto const gain = get_current_gain();
+            
+            auto const dt = freq_ / sample_rate_;
+            auto const t = t_;
+            
+            double smp = 0;
+            
+            // based on http://www.martin-finke.de/blog/articles/audio-plugins-018-polyblep-oscillator/
+            if(ot_ == OscillatorType::kSine) {
+                auto const wave = GetSinTable();
+                assert(wave);
+                smp = wave->GetValueSimple(t);
+            } else if(ot_ == OscillatorType::kSaw) {
+                smp = ((2 * t) - 1.0) - poly_blep(t, dt);
+            } else if(ot_ == OscillatorType::kSquare) {
+                smp = t < 0.5 ? 1.0 : -1.0;
+                smp += poly_blep(t, dt);
+                smp -= poly_blep(fmod(t + 0.5, 1.0), dt);
+            } else if(ot_ == OscillatorType::kTriangle) {
+                smp = t < 0.5 ? 1.0 : -1.0;
+                smp += poly_blep(t, dt);
+                smp -= poly_blep(fmod(t + 0.5, 1.0), dt);
+                
+                auto dt2pi = dt * 2 * M_PI;
+                smp = dt2pi * smp + (1 - dt2pi) * last_smp_;
+                last_smp_ = smp;
+            }
+            
+            // advance one step
+            t_ += dt;
+            while(t_ >= 1.0) {
+                t_ -= 1.0;
+            }
+            
+            advance_envelope();
+            
+            double const master_volume = 0.5;
+            return smp * gain * master_volume;
+        }
+        
+        bool is_alive() const { return state_ != State::kFinished; }
+        
+        void start()
+        {
+            t_ = 0;
+            last_smp_ = 0;
+            attack_sample_pos_ = 0;
+            release_sample_pos_ = 0;
+            state_ = State::kAttack;
+        }
+        
+        void force_stop()
+        {
+            state_ = State::kFinished;
+        }
+        
+        void request_to_stop()
+        {
+            if(state_ != State::kFinished) {
+                state_ = State::kRelease;
+            }
+        }
+
+    private:
+        Int32 num_attack_samples_ = 0;
+        Int32 attack_sample_pos_ = 0;
+        Int32 num_release_samples_ = 0;
+        Int32 release_sample_pos_ = 0;
+        enum class State {
+            kAttack,
+            kSustain,
+            kRelease,
+            kFinished,
+        };
+        State state_ = State::kFinished;
+        
+        OscillatorType ot_;
+        double freq_;
+        double sample_rate_;
+        double t_ = 0;
+        double last_smp_ = 0;
+        
+        void advance_envelope()
+        {
+            if(state_ == State::kAttack) {
+                attack_sample_pos_ += 1;
+                if(attack_sample_pos_ == num_attack_samples_) {
+                    state_ = State::kSustain;
+                }
+            } else if(state_ == State::kSustain) {
+                // do nothing.
+            } else if(state_ == State::kRelease) {
+                release_sample_pos_ += 1;
+                if(release_sample_pos_ == num_release_samples_) {
+                    state_ = State::kFinished;
+                }
+            }
+        }
+    };
+    
+    std::array<Voice, 128> voices_;
+    using KeyboardStatus = std::array<std::atomic<NoteStatus>, 128>;
+    KeyboardStatus keys_;
+    double sample_rate_ = 0;
+    std::atomic<OscillatorType> ot_;
+    Int32 num_attack_samples_ = 0;
+    Int32 num_release_samples_ = 0;
+    
+    // デバイスダイアログを閉じて、デバイスを開始する前に段階で呼び出す
+    void SetSampleRate(double sample_rate)
+    {
+        sample_rate_ = sample_rate;
+        num_attack_samples_ = std::round(sample_rate * 0.03);
+        num_release_samples_ = std::round(sample_rate * 0.03);
+        
+        for(auto &v: voices_) { v.force_stop(); }
+        
+        GetSinTable(); // force generate the sin table.
+    }
+    
+    void SetOscillatorType(OscillatorType ot)
+    {
+        ot_.store(ot);
+    }
+    
+    OscillatorType GetOscillatorType() const
+    {
+        return ot_.load();
+    }
+    
+    void Process(AudioSample *dest, SampleCount length)
+    {
+        for(int n = 0; n < 128; ++n) {
+            auto st = keys_[n].load();
+            if(st.is_note_on() && voices_[n].is_alive() == false) {
+                voices_[n] = Voice {
+                    ot_, sample_rate_, note_number_to_freq(n),
+                    num_attack_samples_, num_release_samples_
+                };
+                voices_[n].start();
+            } else if(st.is_note_off()) {
+                voices_[n].request_to_stop();
+            }
+            
+            if(voices_[n].is_alive() == false) { continue; }
+            
+            auto &v = voices_[n];
+            for(int smp = 0; smp < length; ++smp) {
+                dest[smp] += v.generate();
+            }
+        }
+    }
+};
+
 bool OpenAudioDevice(Config const &conf)
 {
     if(conf.audio_output_device_name_.empty()) {
@@ -147,6 +480,7 @@ struct App::Impl
     ListenerService<ModuleLoadListener> mlls_;
     ListenerService<PluginLoadListener> plls_;
     ListenerService<PlaybackOptionChangeListener> pocls_;
+    TestSynth test_synth_;
     
     bool ReadConfigFile()
     {
@@ -199,55 +533,7 @@ struct App::Impl
             std::exit(-1);
         }
     }
-
-    struct alignas(4) NoteStatus {
-        enum Type : char {
-            kNull,
-            kNoteOn,
-            kNoteOff,
-        };
-        
-        static NoteStatus CreateNoteOn(UInt8 velocity)
-        {
-            assert(velocity != 0);
-            return NoteStatus { kNoteOn, velocity, 0 };
-        }
-        
-        static NoteStatus CreateNoteOff(UInt8 off_velocity)
-        {
-            return NoteStatus { kNoteOff, off_velocity, 0 };
-        }
-        
-        static NoteStatus CreateNull()
-        {
-            return NoteStatus {};
-        }
-        
-        bool is_null() const { return type_ == kNull; }
-        bool is_note_on() const { return type_ == kNoteOn; }
-        bool is_note_off() const { return type_ == kNoteOff; }
-        UInt8 get_velocity() const { return velocity_; }
-        
-        bool operator==(NoteStatus const &rhs) const
-        {
-            auto to_tuple = [](auto const &self) {
-                return std::tie(self.type_, self.velocity_);
-            };
-            
-            return to_tuple(*this) == to_tuple(rhs);
-        }
-        
-        bool operator!=(NoteStatus const &rhs) const
-        {
-            return !(*this == rhs);
-        }
-
-        Type type_ = Type::kNull;
-        UInt8 velocity_ = 0;
-        UInt16 dummy_padding_ = 0;
-    };
     
-    using KeyboardStatus = std::array<std::atomic<NoteStatus>, 128>;
     KeyboardStatus requested_; //!< 再生待ちのノート
     KeyboardStatus playing_;   //!< 再生中のノート
     
@@ -277,6 +563,8 @@ struct App::Impl
             plugin_->SetBlockSize(block_size_);
             plugin_->Resume();
         }
+        
+        test_synth_.SetSampleRate(sample_rate);
     }
     
     void ProcessMidiEvents(SampleCount block_size)
@@ -381,6 +669,12 @@ struct App::Impl
         input_buffer_.fill(0.0);
         output_buffer_.fill(0.0);
         
+        bool const use_dummy_synth = (!plugin_ || plugin_->GetComponentInfo().is_fx());
+
+        if(use_dummy_synth) {
+            test_synth_.Process(input_buffer_.data()[0], block_size);
+            std::copy_n(input_buffer_.data()[0], block_size, input_buffer_.data()[1]);
+        }
         
         if(enable_audio_input_.load()) {
             if(num_input_channels_ == 1) {
@@ -397,6 +691,20 @@ struct App::Impl
         
         if(plugin_) {
             ProcessPlugin(block_size, output);
+        } else {
+            if(num_output_channels_ == 1) {
+                auto const srcL = input_buffer_.data()[0];
+                auto const srcR = input_buffer_.data()[1];
+                auto dest = output[0];
+                for(int smp = 0; smp < block_size; ++smp) {
+                    dest[smp] += (srcL[smp] + srcR[smp]) / 2.0;
+                }
+            } else {
+                auto const num_channels_to_copy = std::min<int>(input_buffer_.channels(), num_output_channels_);
+                for(int ch = 0; ch < num_channels_to_copy; ++ch) {
+                    std::copy_n(input_buffer_.data()[ch], block_size, output[ch]);
+                }
+            }
         }
         
         output_level_.update_transition(block_size);
@@ -636,12 +944,14 @@ void App::SendNoteOn(Int32 note_number, Int32 velocity)
         return;
     }
     
-    pimpl_->requested_[note_number] = Impl::NoteStatus::CreateNoteOn((UInt8)velocity);
+    pimpl_->requested_[note_number] = NoteStatus::CreateNoteOn((UInt8)velocity);
+    pimpl_->test_synth_.keys_[note_number] = NoteStatus::CreateNoteOn((UInt8)velocity);
 }
 
 void App::SendNoteOff(Int32 note_number, int off_velocity)
 {
-    pimpl_->requested_[note_number] = Impl::NoteStatus::CreateNoteOff((UInt8)off_velocity);
+    pimpl_->requested_[note_number] = NoteStatus::CreateNoteOff((UInt8)off_velocity);
+    pimpl_->test_synth_.keys_[note_number] = NoteStatus::CreateNoteOff((UInt8)off_velocity);
 }
 
 void App::StopAllNotes()
@@ -699,6 +1009,16 @@ double App::GetAudioOutputLevel() const
 void App::SetAudioOutputLevel(double db)
 {
     pimpl_->output_level_.set_target_db(db);
+}
+
+void App::SetTestWaveformType(TestWaveformType wt)
+{
+    pimpl_->test_synth_.SetOscillatorType(wt);
+}
+
+App::TestWaveformType App::GetTestWaveformType() const
+{
+    return pimpl_->test_synth_.GetOscillatorType();
 }
 
 std::bitset<128> App::GetPlayingNotes()
