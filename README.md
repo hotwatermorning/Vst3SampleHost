@@ -64,19 +64,23 @@ start ..\build_debug\Debug\Vst3SampleHost.exe
 ./gradlew prepare_app build_app [-Pconfig=Debug]
 ```
 
-## License and dependencies.
+## ライセンスと依存ライブラリ
 
-Terra is licensed under MIT License.
-
-Terra uses these libraries.
+Vst3SampleHostは、MIT Licenseで公開します。
+また、以下のライブラリに依存しています。
 
 * [wxWidgets](http://www.wxwidgets.org/)
 * [PortAudio](http://www.portaudio.com/)
 * [VST3 SDK](https://github.com/steinbergmedia/vst3sdk)
 * [RtMidi](https://github.com/thestk/rtmidi)
-* [midifile](https://github.com/craigsapp/midifile)
 
-## Contact
+## 商標について
+
+VST is a trademark of Steinberg Media Technologies GmbH, registered in Europe and other countries.
+
+![VST Logo](./misc/VST_Compatible_Logo_Steinberg_negative.png)
+
+## 連絡先
 
 hotwatermorning@gmail.com
 
