@@ -82,7 +82,9 @@ endfunction()
 # set target extension list
 set(TARGET_EXTENSION_LIST "*.c" "*.cc" "*.cpp" "*.h" "*.hpp")
 
-if(IsXcode)
+if(IsMSVC)
+  list(APPEND TARGET_EXTENSION_LIST "*.rc")
+elseif(IsXcode)
   list(APPEND TARGET_EXTENSION_LIST "*.mm")
 endif()
 
@@ -194,6 +196,18 @@ else()
 
   set_target_properties(${PROJECT_NAME} PROPERTIES XCODE_ATTRIBUTE_GCC_PREFIX_HEADER "${PREFIX_HEADER_PATH}")
   set_target_properties(${PROJECT_NAME} PROPERTIES XCODE_ATTRIBUTE_GCC_PRECOMPILE_PREFIX_HEADER "YES")
+
+  set(ICON_FILE_NAME "app_icon.icns")
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    MACOSX_BUNDLE_INFO_STRING "Copyright 2019, @hotwatermorning"
+    MACOSX_BUNDLE_COPYRIGHT "Copyright 2019, @hotwatermorning"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "jp.diatonic.vst3samplehost"
+    MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
+    MACOSX_BUNDLE_BUNDLE_VERSION 0 0 1
+    MACOSX_BUNDLE_BUNDLE_SHORT_VERSION_STRING "0.0.1"
+    MACOSX_BUNDLE_BUNDLE_LONG_VERSION_STRING "0.0.1"
+    MACOSX_BUNDLE_ICON_FILE "${ICON_FILE_NAME}"
+    )
 endif()
 
 if(ENABLE_BUILD_TESTS)

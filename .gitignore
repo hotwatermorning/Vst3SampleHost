@@ -8,6 +8,9 @@
 !*.png
 !*.in
 !*.yml
+!*.ico
+!*.icns
+!*.rc
 !.gitignore
 !.gitmodules
 
