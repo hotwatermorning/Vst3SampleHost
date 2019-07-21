@@ -31,7 +31,7 @@ Vst3SampleHostは、以下の環境でビルドできます。
 ### macOS環境でのビルドコマンド
 
 ```sh
-cd ./gradle
+cd ./ChapterXX/gradle
 
 ./gradlew build_all [-Pconfig=Debug]
 # `config` プロパティはデフォルトで `Debug` が指定されます。リリースビルド時は、 `-Pconfig=Release` を指定します。
@@ -66,8 +66,9 @@ start ..\build_debug\Debug\Vst3SampleHost.exe
 
 ## ライセンスと依存ライブラリ
 
-Vst3SampleHostは、MIT Licenseで公開します。
-また、以下のライブラリに依存しています。
+Vst3SampleHostのソースコードは MIT License で公開します。配布するバイナリにはさらに "Proprietary Steinberg VST3" license が適用されます。
+
+Vst3SampleHostは以下のライブラリに依存しています。
 
 * [wxWidgets](http://www.wxwidgets.org/)
 * [PortAudio](http://www.portaudio.com/)
@@ -78,7 +79,7 @@ Vst3SampleHostは、MIT Licenseで公開します。
 
 VST is a trademark of Steinberg Media Technologies GmbH, registered in Europe and other countries.
 
-![VST Logo](./misc/VST_Compatible_Logo_Steinberg_negative.png)
+<img src="./misc/VST_Compatible_Logo_Steinberg_negative.png" width="20%" height="20%" alt="VST Compatible Logo"></img>
 
 ## 連絡先
 
