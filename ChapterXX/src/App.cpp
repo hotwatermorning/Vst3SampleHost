@@ -1084,6 +1084,7 @@ void App::SelectAudioDevice()
 void App::ShowAboutDialog()
 {
     auto dlg = CreateAboutDialog();
+ 
     if(dlg->IsOk() == false) {
         wxMessageBox("Aboutダイアログの作成に失敗しました。", "Error", wxOK|wxCENTER|wxICON_ERROR);
         return;

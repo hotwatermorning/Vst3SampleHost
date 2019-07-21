@@ -13,58 +13,82 @@ IAboutDialog::IAboutDialog(Args&&... args)
 :   wxDialog(std::forward<Args>(args)...)
 {}
 
+// 子ウィンドウを用意しないでwxDialogをそのまま使うとマウスイベントが正しくハンドリングできなかった。
+// なので、マウスイベントを扱うためだけの仮のPanelを用意してそれを使用している。
 class AboutDialogPanel
 :   public wxWindow
 {
 public:
-    AboutDialogPanel(wxWindow *parent)
-    :   wxWindow()
+    AboutDialogPanel(wxWindow *parent = nullptr,
+                     wxWindowID id = wxID_ANY,
+                     wxPoint pos = wxDefaultPosition,
+                     wxSize size = wxDefaultSize)
+    :   wxWindow(parent, wxID_ANY, pos, size)
+    {         
+        Bind(wxEVT_LEFT_UP, [this](auto &ev) { GetParent()->Close(true); });
+        Show(true);
+    }
+};
+
+class AboutDialog
+:   public IAboutDialog
+{
+public:
+    AboutDialog()
+    :   IAboutDialog()
     {
 #if defined(_MSC_VER)
-        Create(parent, wxID_ANY);
-        SetWindowLong(GetHWND(), GWL_EXSTYLE, GetWindowLong(GetHWND(), GWL_EXSTYLE) | WS_EX_LAYERED);
-        int const font_point = 16;
-        font_ = wxFont(wxFontInfo(font_point).Family(wxFONTFAMILY_TELETYPE).FaceName("Arial").AntiAliased(true));
+        Create(nullptr, wxID_ANY, kAppName, wxDefaultPosition, wxDefaultSize,
+               wxFRAME_NO_TASKBAR | wxBORDER_NONE);
+        SetWindowLong(GetHWND(), GWL_EXSTYLE, GetWindowLong(GetHWND(), GWL_EXSTYLE) | WS_EX_LAYERED);        
 #else
         SetBackgroundStyle(wxBG_STYLE_TRANSPARENT);
-        Create(parent, wxID_ANY);
-        int const font_point = 16;
-        font_ = wxFont(wxFontInfo(font_point).Family(wxFONTFAMILY_MODERN).FaceName("Arial"));
+        Create(nullptr, wxID_ANY, kAppName, wxDefaultPosition, wxDefaultSize,
+               wxFRAME_NO_TASKBAR | wxBORDER_NONE);
 #endif
-        SetFocus();
-        
+        int const font_point = 16;
+        font_ = wxFont(wxFontInfo(font_point).Family(wxFONTFAMILY_TELETYPE).FaceName("Arial").AntiAliased(true));
+
         image_ = GetResourceAs<wxImage>(image_path);
-        
-        SetSize(image_.GetWidth(), image_.GetHeight());
-        
-        back_buffer_ = GraphicsBuffer(GetSize());
-        
-        //Bind(wxEVT_CLOSE_WINDOW, [this](auto &ev) { StartClosingWithEffect(); });
-        Bind(wxEVT_PAINT, [this](auto &ev) { OnPaint(); });
-        Bind(wxEVT_LEFT_UP, [this](auto &ev) { GetParent()->Close(true); });
-        Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent &ev) {
+        if(image_.IsOk() == false) {
+            return;
+        }
+
+        SetClientSize(image_.GetWidth(), image_.GetHeight());
+        back_buffer_ = GraphicsBuffer(GetClientSize());
+        panel_ = new AboutDialogPanel(this);
+        panel_->SetFocus();
+         
+        auto sizer = new wxBoxSizer(wxHORIZONTAL);
+        sizer->Add(panel_, wxSizerFlags(1).Expand());
+        SetSizer(sizer);
+
+        Bind(wxEVT_PAINT, [this](auto &) { OnPaint(); }); 
+
+        // 子ウィンドウのwxEVT_KEY_UPでは、WXK_RETURNがハンドリングできないので、親ウィンドウの側でwxEVT_CHAR_HOOKでキーイベントをハンドリングする
+        Bind(wxEVT_CHAR_HOOK, [this](wxKeyEvent& ev) {
             OnKeyDown(ev);
         });
         
-        Show(true);
+        CentreOnScreen();
     }
     
+    bool IsOk() const override
+    {
+        return image_.IsOk();
+    }
+
     void OnKeyDown(wxKeyEvent &ev)
     {
         auto const uc = ev.GetUnicodeKey();
         auto const ac = ev.GetKeyCode();
         if(uc != wxKEY_NONE) {
-            if(uc == WXK_RETURN || uc == WXK_ESCAPE) { GetParent()->Close(); }
+            if(uc == WXK_RETURN || uc == WXK_ESCAPE) { Close(); }
         } else {
-            if(ac == WXK_RETURN || ac == WXK_ESCAPE) { GetParent()->Close(); }
+            if(ac == WXK_RETURN || ac == WXK_ESCAPE) { Close(); }
         }
     }
-    
-    bool IsOk() const
-    {
-        return image_.IsOk();
-    }
-    
+
     void OnPaint()
     {
         Render();
@@ -111,45 +135,16 @@ public:
         dc.SetTextForeground(*wxWHITE);
     }
     
+private:
+    AboutDialogPanel *panel_ = 0;
     wxImage image_;
     wxFont font_;
     GraphicsBuffer back_buffer_;
 };
 
-class AboutDialog
-:   public IAboutDialog
+std::unique_ptr<IAboutDialog, Destroyer> CreateAboutDialog()
 {
-public:
-    AboutDialog()
-    :   IAboutDialog()
-    {
-#if defined(_MSC_VER)
-        Create(nullptr, wxID_ANY, kAppName, wxDefaultPosition, wxDefaultSize,
-               wxFRAME_NO_TASKBAR | wxBORDER_NONE);
-        SetWindowLong(GetHWND(), GWL_EXSTYLE, GetWindowLong(GetHWND(), GWL_EXSTYLE) | WS_EX_LAYERED);
-#else
-        SetBackgroundStyle(wxBG_STYLE_TRANSPARENT);
-        Create(nullptr, wxID_ANY, kAppName, wxDefaultPosition, wxDefaultSize,
-               wxFRAME_NO_TASKBAR | wxBORDER_NONE);
-#endif
-        panel_ = new AboutDialogPanel(this);
-        SetClientSize(panel_->GetClientSize());
-        
-        CentreOnScreen();
-    }
-    
-    bool IsOk() const override
-    {
-        return panel_->IsOk();
-    }
-    
-private:
-    AboutDialogPanel *panel_;
-};
-
-IAboutDialog * CreateAboutDialog()
-{
-    return new AboutDialog();
+    return std::unique_ptr<IAboutDialog, Destroyer>(new AboutDialog());
 }
 
 NS_HWM_END
