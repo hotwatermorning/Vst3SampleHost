@@ -11,6 +11,7 @@
 #include "misc/MathUtil.hpp"
 #include "misc/TransitionalVolume.hpp"
 #include "misc/LockFactory.hpp"
+#include "misc/Algorithm.hpp"
 #include "resource/ResourceHelper.hpp"
 #include "App.hpp"
 #include "gui/Gui.hpp"
@@ -677,12 +678,16 @@ struct App::Impl
         }
         
         if(enable_audio_input_.load()) {
+            auto ss = input;
+            auto ds = input_buffer_.data();
+            auto len = block_size;
+            
             if(num_input_channels_ == 1) {
-                std::copy_n(input[0], block_size, input_buffer_.data()[0]);
-                std::copy_n(input[0], block_size, input_buffer_.data()[1]);
+                add(ss[0], ss[0] + len, ds[0], ds[0] + len, ds[0]);
+                add(ss[0], ss[0] + len, ds[1], ds[1] + len, ds[1]);
             } else {
                 for(int ch = 0; ch < num_input_channels_; ++ch) {
-                    std::copy_n(input[ch], block_size, input_buffer_.data()[ch]);
+                    add(ss[ch], ss[ch] + len, ds[ch], ds[ch] + len, ds[ch]);
                 }
             }
         }
