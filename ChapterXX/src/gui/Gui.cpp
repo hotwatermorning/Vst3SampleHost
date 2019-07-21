@@ -481,9 +481,12 @@ public:
         SetMinClientSize(wxSize(350, 600));
        
         auto menu_file = new wxMenu();
+        
+        menu_file->Append(wxID_ABOUT, L"&Vst3SampleHostについて...", L"Vst3SampleHostについて");
+        menu_file->Append(wxID_EXIT, L"&Quit\tCTRL-Q", L"アプリケーションを終了します");
 
-        menu_file->Append(kID_File_Load, L"開く\tCTRL-O", L"プロジェクトファイルを開きます。");
-        menu_file->Append(kID_File_Save, L"保存\tCTRL-S", L"プロジェクトファイルを保存します。");
+        menu_file->Append(kID_File_Load, L"開く\tCTRL-O", L"プロジェクトファイルを開きます");
+        menu_file->Append(kID_File_Save, L"保存\tCTRL-S", L"プロジェクトファイルを保存します");
 
         auto menu_playback = new wxMenu();
         menu_enable_input_ = menu_playback->AppendCheckItem(kID_Playback_EnableAudioInputs,
@@ -500,7 +503,7 @@ public:
         menu_playback->AppendSubMenu(menu_waveform, L"テスト波形のタイプ");
         
         auto menu_view = new wxMenu();
-        menu_view->Append(kID_View_PluginEditor, L"プラグインエディターを開く\tCTRL-E", L"プラグインエディターを開きます");
+        menu_view->Append(kID_View_PluginEditor, L"プラグインエディターを開く...\tCTRL-E", L"プラグインエディターを開きます");
         
         auto menu_device = new wxMenu();
         menu_device->Append(kID_Device_Preferences, L"デバイス設定\tCTRL-,", L"デバイス設定を変更します");
@@ -511,6 +514,11 @@ public:
         menubar->Append(menu_view, L"表示");
         menubar->Append(menu_device, L"デバイス");
         SetMenuBar(menubar);
+        
+        Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &) {
+            auto app = App::GetInstance();
+            app->ShowAboutDialog();
+        }, wxID_ABOUT);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [this](auto &) { OnLoadProject(); }, kID_File_Load);
         Bind(wxEVT_COMMAND_MENU_SELECTED, [this](auto &) { OnSaveProject(); }, kID_File_Save);

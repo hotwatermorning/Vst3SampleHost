@@ -111,6 +111,7 @@ public:
     
     //! オーディオデバイスを選択し、オープンに成功したらコンフィグファイルを更新する
     void SelectAudioDevice();
+    void ShowAboutDialog();
     
     Config & GetConfig();
     Config const & GetConfig() const;
