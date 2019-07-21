@@ -478,9 +478,10 @@ public:
     MainFrame()
     :   base_type(nullptr, wxID_ANY, L"Vst3SampleHost", wxDefaultPosition, initial_size)
     {
-        auto icon_path = GetResourcePath(L"app_icon.ico");
+#if defined(_MSC_VER)
         auto icon = wxIcon("IDI_ICON1", wxBITMAP_TYPE_ICO_RESOURCE, 32, 32);
         SetIcon(icon);
+#endif
 
         SetMinClientSize(wxSize(350, 600));
        
