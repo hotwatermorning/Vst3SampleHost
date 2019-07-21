@@ -18,6 +18,7 @@
 #include "gui/PCKeyboardInput.hpp"
 #include "gui/DeviceSettingDialog.hpp"
 #include "gui/PluginEditor.hpp"
+#include "gui/AboutDialog.hpp"
 #include "processor/EventBuffer.hpp"
 #include "file/Config.hpp"
 #include "file/ProjectFile.hpp"
@@ -1078,6 +1079,18 @@ void App::SelectAudioDevice()
             li->OnAudioInputAvailabilityChanged(new_inputtability);
         });
     }
+}
+
+void App::ShowAboutDialog()
+{
+    auto dlg = CreateAboutDialog();
+ 
+    if(dlg->IsOk() == false) {
+        wxMessageBox("Aboutダイアログの作成に失敗しました。", "Error", wxOK|wxCENTER|wxICON_ERROR);
+        return;
+    }
+    
+    dlg->ShowModal();
 }
 
 Config & App::GetConfig()
