@@ -1,10 +1,22 @@
 #pragma once
 
+#include "./Algorithm.hpp"
+
 //! @file
 /*! simple range operations.
  */
 
 NS_HWM_BEGIN
+
+//! 2つのRangeの要素同士を加算して、OutputIteratorに順番に書き込む。
+/*! Range1とRange2の長さが異なる場合は、短い方の長さの分だけ処理する。
+ */
+template<class Range1, class Range2, class OutputIterator>
+static constexpr
+auto add(Range &range1, Range &range2, OutputIterator dest)
+{
+    return add(std::begin(range1), std::end(range1), std::begin(range2), std::end(range2), dest);
+}
 
 template<class Range, class Elem>
 static constexpr
