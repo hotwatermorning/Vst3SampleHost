@@ -18,13 +18,15 @@ Vst3SampleHostは、以下の環境でビルドできます。
 
 * macOS 10.13.4 & Xcode 10.1
 * Windows 10 & Visual Studio 2017
+* Windows 10 & Visual Studio 2019
 
-### 要件
+### 必須要件
 
+* Java JRE (or JDK) version 8 or later (Gradleを使用するため)
 * Git 2.8.1 or later
 * CMake 3.14.1 or later
 * Xcode 10.1 or later
-* Visual Studio 2017
+* Visual Studio 2017 or later
 
 ### macOS環境でのビルドコマンド
 
@@ -40,10 +42,15 @@ open ../build_debug/Debug/Vst3SampleHost.app
 ### Windows環境でのビルドコマンド
 
 ```bat
-cd .\gradle
+cd .\ChapterXX\gradle
 
-gradlew build_all [-Pconfig=Debug]
+gradlew build_all [-Pconfig=Debug] [-Pmsvc_version="..."]
 : `config` プロパティはデフォルトで `Debug` が指定されます。リリースビルド時は、 `-Pconfig=Release` を指定します。
+:
+: `msvc_version` プロパティには、`"Visual Studio 16 2019"` または `"Visual Studio 15 2017"` を指定できます。
+: デフォルトでは `"Visual Studio 16 2019"` が使用されます。
+: そのため、Visual Studio 2017のみをインストールしている環境ではこのオプションに明示的に `"Visual Studio 15 2017"` を指定してください。
+:
 : 非英語ロケール環境でのビルド時に文字化けが発生する場合は、 `-Dfile.encoding=UTF-8` オプションを追加してください。
 
 start ..\build_debug\Debug\Vst3SampleHost.exe

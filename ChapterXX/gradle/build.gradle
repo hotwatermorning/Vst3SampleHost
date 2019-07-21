@@ -25,6 +25,15 @@ ensure_property(project, "use_ccache", ["true", "false"])
 // build libraries even if cache archives are available.
 ensure_property(project, "renew_cache", ["false", "true"])
 
+ensure_property(project, "msvc_version", ["Visual Studio 16 2019", "Visual Studio 15 2017"])
+
+// enable setting cache title to distiguish stored caches with titles.
+if(project.hasProperty("cache_title") == false) {
+  project.metaClass.setProperty("cache_title", "")
+}
+
+project.cache_title = project.cache_title.trim().replaceAll(/ /, "_")
+
 ext {
   isWindows = { return System.properties['os.name'].toLowerCase().startsWith("windows") }
   build_dir_name = "build_${project.config.toLowerCase()}"
@@ -34,7 +43,7 @@ ext {
   ccache_envvars = (enable_ccache ? [CC: "${ccache_path} clang", CXX: "${ccache_path} clang++"] : [CCACHE_DISABLE: "true"])
   should_renew_cache = (project.renew_cache == "true")
   getCMakeGenerator = {
-    return isWindows() ? "-G \"Visual Studio 15 2017 Win64\" -Tv141,host=x64" : "-G Xcode"
+    return isWindows() ? "-G \"${project.msvc_version}\" -A x64" : "-G Xcode"
   }
 }
 
@@ -258,7 +267,9 @@ def createCacheParam = { File cache_dir, String archive_name, String build_confi
     build_config: build_config,
     hash: hash,
     getArchiveFileName: {
-      def name = "${archive_name}_${getOsName()}_${build_config}_${hash}.tar.gz"
+      def name = project.cache_title
+      if(name != "") { name += "_" }
+      name += "${archive_name}_${getOsName()}_${build_config}_${hash}.tar.gz"
       assert(name.contains(" ") == false)
       return name
     }

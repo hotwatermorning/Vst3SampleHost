@@ -1,3 +1,7 @@
+trigger:
+- '*'
+pr:
+- '*'
 jobs:
 - job: build_osx_10_13_xcode10_1
   pool:
@@ -38,12 +42,12 @@ jobs:
   steps:
   - script: |
       cd Chapter01/gradle
-      call gradlew test -Pconfig=Debug
-      call gradlew build_all -Pconfig=Release
+      call gradlew test -Pconfig=Debug -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
+      call gradlew build_all -Pconfig=Release -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
       cd ../..
       cd ChapterXX/gradle
-      call gradlew test -Pconfig=Debug
-      call gradlew build_all -Pconfig=Release
+      call gradlew test -Pconfig=Debug -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
+      call gradlew build_all -Pconfig=Release -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
       cd ../..
     env:
       AZURE_STORAGE_ACCOUNT: $(azure.storage.account)
@@ -61,3 +65,33 @@ jobs:
       pathtoPublish: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
       artifactName: vst3samplehost_release_win_msvc2017_chapterXX
     displayName: "publish chapterXX"
+- job: build_win_msvc_2019
+  pool:
+    vmImage: 'windows-2019'
+  steps:
+  - script: |
+      cd Chapter01/gradle
+      call gradlew test -Pconfig=Debug -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
+      call gradlew build_all -Pconfig=Release -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
+      cd ../..
+      cd ChapterXX/gradle
+      call gradlew test -Pconfig=Debug -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
+      call gradlew build_all -Pconfig=Release -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
+      cd ../..
+    env:
+      AZURE_STORAGE_ACCOUNT: $(azure.storage.account)
+      AZURE_STORAGE_KEY: $(azure.storage.key)
+      AZURE_STORAGE_CONTAINER_NAME: $(azure.storage.container.name)
+      ORG_GRADLE_PROJECT_renew_cache: $(cache.renew)
+    displayName: build all
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
+      artifactName: vst3samplehost_release_win_msvc2019_chapter01
+    displayName: "publish chapter01"
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
+      artifactName: vst3samplehost_release_win_msvc2019_chapterXX
+    displayName: "publish chapterXX"
+
