@@ -1,8 +1,21 @@
 ## Vst3SampleHost
 
+[![Build Status](https://dev.azure.com/vst3host-dev/vst3host-dev/_apis/build/status/hotwatermorning.Vst3SampleHost?branchName=master)](https://dev.azure.com/vst3host-dev/vst3host-dev/_build/latest?definitionId=1&branchName=master)
+
 このプロジェクトは、VST3プラグインをホストするサンプルホストアプリケーションのプロジェクトです。
 
 ![ScreenShot](./misc/ScreenShot.png)
+
+## ダウンロード
+
+最新のビルド済みパッケージは、以下のURLからダウンロードできます。
+
+* [Win (MSVC2017)](https://vst3hostdev.blob.core.windows.net/vst3samplehost-release/refs/heads/update_ci_settings/vst3samplehost_release_win_msvc2017.zip)
+* [Win (MSVC2019)](https://vst3hostdev.blob.core.windows.net/vst3samplehost-release/refs/heads/update_ci_settings/vst3samplehost_release_win_msvc2019.zip)
+* [macOS (Xcode10.1)](https://vst3hostdev.blob.core.windows.net/vst3samplehost-release/refs/heads/update_ci_settings/vst3samplehost_release_osx_xcode10_1.zip)
+
+#### 免責事項
+@hotwatermorningは、このソフトウェアの使用によって生じたいかなる損害に対しても責任を負いません。
 
 ## 機能
 
