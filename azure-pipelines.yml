@@ -26,16 +26,23 @@ jobs:
       AZURE_STORAGE_CONTAINER_NAME: $(azure.storage.container.name)
       ORG_GRADLE_PROJECT_renew_cache: $(cache.renew)
     displayName: build all
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
+      contents:  '**'
+      targetFolder: '$(Build.ArchiveStagingDirectory)/Chapter01'
+    displayName: Copy Chapter01
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
+      contents:  '**'
+      targetFolder: '$(Build.ArchiveStagingDirectory)/ChapterXX'
+    displayName: Copy ChapterXX
   - task: PublishBuildArtifacts@1
     inputs:
-      pathtoPublish: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
-      artifactName: vst3samplehost_release_osx_10_13_xcode10_1_chapter01
-    displayName: publish chapter01
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
-      artifactName: vst3samplehost_release_osx_10_13_xcode10_1_chapterXX
-    displayName: publish chapterXX
+      pathtoPublish: '$(Build.ArchiveStagingDirectory)'
+      artifactName: vst3samplehost_release_osx_xcode10_1
+    displayName: publish artifacts
 - job: build_win_msvc_2017
   pool:
     vmImage: 'vs2017-win2016'
@@ -55,16 +62,23 @@ jobs:
       AZURE_STORAGE_CONTAINER_NAME: $(azure.storage.container.name)
       ORG_GRADLE_PROJECT_renew_cache: $(cache.renew)
     displayName: build all
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
+      contents:  '**'
+      targetFolder: '$(Build.ArchiveStagingDirectory)/Chapter01'
+    displayName: Copy Chapter01
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
+      contents:  '**'
+      targetFolder: '$(Build.ArchiveStagingDirectory)/ChapterXX'
+    displayName: Copy ChapterXX
   - task: PublishBuildArtifacts@1
     inputs:
-      pathtoPublish: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
-      artifactName: vst3samplehost_release_win_msvc2017_chapter01
-    displayName: "publish chapter01"
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
-      artifactName: vst3samplehost_release_win_msvc2017_chapterXX
-    displayName: "publish chapterXX"
+      pathtoPublish: '$(Build.ArchiveStagingDirectory)'
+      artifactName: vst3samplehost_release_win_msvc2017
+    displayName: publish artifacts
 - job: build_win_msvc_2019
   pool:
     vmImage: 'windows-2019'
@@ -84,14 +98,20 @@ jobs:
       AZURE_STORAGE_CONTAINER_NAME: $(azure.storage.container.name)
       ORG_GRADLE_PROJECT_renew_cache: $(cache.renew)
     displayName: build all
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
+      contents:  '**'
+      targetFolder: '$(Build.ArchiveStagingDirectory)/Chapter01'
+    displayName: Copy Chapter01
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
+      contents:  '**'
+      targetFolder: '$(Build.ArchiveStagingDirectory)/ChapterXX'
+    displayName: Copy ChapterXX
   - task: PublishBuildArtifacts@1
     inputs:
-      pathtoPublish: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
-      artifactName: vst3samplehost_release_win_msvc2019_chapter01
-    displayName: "publish chapter01"
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
-      artifactName: vst3samplehost_release_win_msvc2019_chapterXX
-    displayName: "publish chapterXX"
-
+      pathtoPublish: '$(Build.ArchiveStagingDirectory)'
+      artifactName: vst3samplehost_release_win_msvc2019
+    displayName: publish artifacts
