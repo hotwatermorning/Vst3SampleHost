@@ -12,6 +12,7 @@ jobs:
   - script: brew install libtool automake
     displayName: brew install
   - script: |
+      set -e
       cd gradle
       ./gradlew test_all -Pconfig=Debug
       ./gradlew build_all -Pconfig=Release
