@@ -717,23 +717,29 @@ chapters.each { ch ->
     group = "run"
     doLast {
       def build_dir = file("../${build_dir_name}").getAbsolutePath()
+      def executable_path = ""
       if(isWindows()) {
-        execute("${project.config}\\${ch}\\Vst3SampleHost.exe", build_dir)
+        executable_path = file(".\\${build_dir_name}\\${project.config}\\${ch}\\Vst3SampleHost.exe")
       } else {
-        execute("./Debug/${ch}/Vst3SampleHost.app", build_dir)
+        executable_path = file("./${build_dir_name}/${project.config}/${ch}/Vst3SampleHost.app")
       }
+      execute("${executable_path}", build_dir)
     }
   }
 
   task "run_test_${lch}" {
     group = "run"
     doLast {
+      assert(project.config == "Debug")
+
       def build_dir = file("../${build_dir_name}").getAbsolutePath()
+      def executable_path = ""
       if(isWindows()) {
-        execute("${project.config}\\${ch}-Test\\Vst3SampleHost-Test.exe", build_dir)
+        executable_path = file(".\\${build_dir_name}\\${project.config}\\${ch}-Test\\Vst3SampleHost-Test.exe")
       } else {
-        execute("./Debug/${ch}-Test/Vst3SampleHost-Test.app/Contents/MacOS/Vst3SampleHost-Test", build_dir)
+        executable_path = file("./${build_dir_name}/${project.config}/${ch}-Test/Vst3SampleHost-Test.app/Contents/MacOS/Vst3SampleHost-Test")
       }
+      execute("${executable_path}", build_dir)
     }
   }
 
