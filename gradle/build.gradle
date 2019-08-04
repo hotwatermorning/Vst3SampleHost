@@ -697,7 +697,7 @@ chapters.each { ch ->
   task "build_app_${lch}" {
     group = "build"
     doLast {
-      def build_dir = file("../build").getAbsolutePath()
+      def build_dir = file("../${build_dir_name}").getAbsolutePath()
       execute("cmake --build . ${parallel_option} --target ${ch} --config ${project.config}", build_dir, ccache_envvars)
     }
   }
@@ -708,7 +708,7 @@ chapters.each { ch ->
       // test project must be built with Debug configuration
       assert(project.config == "Debug")
 
-      def build_dir = file("../build").getAbsolutePath()
+      def build_dir = file("../${build_dir_name}").getAbsolutePath()
       execute("cmake --build . ${parallel_option} --target ${ch}-Test --config ${project.config}", build_dir)
     }
   }
@@ -716,7 +716,7 @@ chapters.each { ch ->
   task "run_app_${lch}" {
     group = "run"
     doLast {
-      def build_dir = file("../build").getAbsolutePath()
+      def build_dir = file("../${build_dir_name}").getAbsolutePath()
       if(isWindows()) {
         execute("${project.config}\\${ch}\\Vst3SampleHost.exe", build_dir)
       } else {
@@ -728,7 +728,7 @@ chapters.each { ch ->
   task "run_test_${lch}" {
     group = "run"
     doLast {
-      def build_dir = file("../build").getAbsolutePath()
+      def build_dir = file("../${build_dir_name}").getAbsolutePath()
       if(isWindows()) {
         execute("${project.config}\\${ch}-Test\\Vst3SampleHost-Test.exe", build_dir)
       } else {
