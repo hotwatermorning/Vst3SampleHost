@@ -13,12 +13,12 @@
 !*.rc
 !.gitignore
 !.gitmodules
+!*.cmake
+!*.bat
+!*.properties
 
-!*/**/gradle/*
-!*/**/gradle/**/*
-*/**/gradle/.gradle
+!gradle/*
+!gradle/**/*
+gradle/.gradle
 
-build_debug
-build_release
-test_debug
-test_release
+build_*
