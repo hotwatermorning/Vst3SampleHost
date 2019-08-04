@@ -12,14 +12,10 @@ jobs:
   - script: brew install libtool automake
     displayName: brew install
   - script: |
-      cd Chapter01/gradle
+      cd gradle
       ./gradlew test -Pconfig=Debug
       ./gradlew build_all -Pconfig=Release
-      cd ../..
-      cd ChapterXX/gradle
-      ./gradlew test -Pconfig=Debug
-      ./gradlew build_all -Pconfig=Release
-      cd ../..
+      cd ..
     env:
       AZURE_STORAGE_ACCOUNT: $(azure.storage.account)
       AZURE_STORAGE_KEY: $(azure.storage.key)
@@ -28,16 +24,10 @@ jobs:
     displayName: build all
   - task: CopyFiles@2
     inputs:
-      sourceFolder: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
+      sourceFolder: '$(System.DefaultWorkingDirectory)/build_release/Release'
       contents:  '**'
-      targetFolder: '$(Build.ArchiveStagingDirectory)/Chapter01'
-    displayName: Copy Chapter01
-  - task: CopyFiles@2
-    inputs:
-      sourceFolder: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
-      contents:  '**'
-      targetFolder: '$(Build.ArchiveStagingDirectory)/ChapterXX'
-    displayName: Copy ChapterXX
+      targetFolder: '$(Build.ArchiveStagingDirectory)'
+    displayName: Copy binaries
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArchiveStagingDirectory)'
@@ -48,14 +38,10 @@ jobs:
     vmImage: 'vs2017-win2016'
   steps:
   - script: |
-      cd Chapter01/gradle
+      cd gradle
       call gradlew test -Pconfig=Debug -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
       call gradlew build_all -Pconfig=Release -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
-      cd ../..
-      cd ChapterXX/gradle
-      call gradlew test -Pconfig=Debug -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
-      call gradlew build_all -Pconfig=Release -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
-      cd ../..
+      cd ..
     env:
       AZURE_STORAGE_ACCOUNT: $(azure.storage.account)
       AZURE_STORAGE_KEY: $(azure.storage.key)
@@ -64,16 +50,10 @@ jobs:
     displayName: build all
   - task: CopyFiles@2
     inputs:
-      sourceFolder: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
+      sourceFolder: '$(System.DefaultWorkingDirectory)/build_release/Release'
       contents:  '**'
-      targetFolder: '$(Build.ArchiveStagingDirectory)/Chapter01'
-    displayName: Copy Chapter01
-  - task: CopyFiles@2
-    inputs:
-      sourceFolder: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
-      contents:  '**'
-      targetFolder: '$(Build.ArchiveStagingDirectory)/ChapterXX'
-    displayName: Copy ChapterXX
+      targetFolder: '$(Build.ArchiveStagingDirectory)'
+    displayName: Copy binaries
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArchiveStagingDirectory)'
@@ -84,14 +64,10 @@ jobs:
     vmImage: 'windows-2019'
   steps:
   - script: |
-      cd Chapter01/gradle
+      cd gradle
       call gradlew test -Pconfig=Debug -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
       call gradlew build_all -Pconfig=Release -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
-      cd ../..
-      cd ChapterXX/gradle
-      call gradlew test -Pconfig=Debug -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
-      call gradlew build_all -Pconfig=Release -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
-      cd ../..
+      cd ..
     env:
       AZURE_STORAGE_ACCOUNT: $(azure.storage.account)
       AZURE_STORAGE_KEY: $(azure.storage.key)
@@ -100,16 +76,10 @@ jobs:
     displayName: build all
   - task: CopyFiles@2
     inputs:
-      sourceFolder: '$(System.DefaultWorkingDirectory)/Chapter01/build_release/Release'
+      sourceFolder: '$(System.DefaultWorkingDirectory)/build_release/Release'
       contents:  '**'
-      targetFolder: '$(Build.ArchiveStagingDirectory)/Chapter01'
-    displayName: Copy Chapter01
-  - task: CopyFiles@2
-    inputs:
-      sourceFolder: '$(System.DefaultWorkingDirectory)/ChapterXX/build_release/Release'
-      contents:  '**'
-      targetFolder: '$(Build.ArchiveStagingDirectory)/ChapterXX'
-    displayName: Copy ChapterXX
+      targetFolder: '$(Build.ArchiveStagingDirectory)'
+    displayName: Copy binaries
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArchiveStagingDirectory)'

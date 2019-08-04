@@ -17,8 +17,10 @@ def ensure_property(def obj, String keyname, List candidates, Integer default_va
   assert(candidates.contains(obj.getProperty(keyname)))
 }
 
+def build_configs = ["Debug", "Release", "MinSizeRel", "RelWithDebInfo"]
+
 // Property about build configuration
-ensure_property(project, "config", ["Debug", "Release"])
+ensure_property(project, "config", build_configs)
 // Property about ccache.
 // (note: ccache is not used if not installed even if this property is true.)
 ensure_property(project, "use_ccache", ["true", "false"])
@@ -36,15 +38,28 @@ project.cache_title = project.cache_title.trim().replaceAll(/ /, "_")
 
 ext {
   isWindows = { return System.properties['os.name'].toLowerCase().startsWith("windows") }
-  build_dir_name = "build_${project.config.toLowerCase()}"
-  test_build_dir_name = "test_${project.config.toLowerCase()}"
+  get_build_dir_name = { conf -> return "build_${conf.toLowerCase()}" }
+  build_dir_name = get_build_dir_name(project.config)
   enable_ccache = ((project.use_ccache == "true" && isWindows() == false) ? "which ccache".execute().waitFor() == 0 : false)
   ccache_path = (enable_ccache ? "which ccache".execute().text.trim() : "")
   ccache_envvars = (enable_ccache ? [CC: "${ccache_path} clang", CXX: "${ccache_path} clang++"] : [CCACHE_DISABLE: "true"])
   should_renew_cache = (project.renew_cache == "true")
+  install_target = isWindows() ? "INSTALL" : "install"
+  all_build_target = isWindows() ? "ALL_BUILD" : "all"
+  parallel_option = "-j ${Runtime.getRuntime().availableProcessors() + 1}"
   getCMakeGenerator = {
     return isWindows() ? "-G \"${project.msvc_version}\" -A x64" : "-G Xcode"
   }
+  getCMakeGeneratorForSubmodule = {
+    return isWindows() ? "-G \"${project.msvc_version}\" -A x64" : "-G \"Unix Makefiles\""
+  }
+  collect_files = { def dir, def pattern ->
+    def tmp = []
+    file(dir).eachDirMatch(pattern) { tmp << it }
+    return tmp
+  }
+
+  chapters = collect_files("..", ~/^Chapter.*$/)
 }
 
 //! @param options is a map to customize getenv behavior.
@@ -244,6 +259,7 @@ def execute = { String params, def working_dir = ".", Map env_vars = [:] ->
 }
 
 task update_submodules {
+  group = "other"
   doLast {
     execute("git submodule update --init --recursive", "..")
   }
@@ -417,7 +433,7 @@ def createAzureCacheStrategy = {
 }
 
 def get_hash = { String submodule_name ->
-  def result = execute("git rev-parse HEAD", file("../../ext/${submodule_name}"))
+  def result = execute("git rev-parse HEAD", file("../ext/${submodule_name}"))
   return result.text.trim()
 }
 
@@ -459,9 +475,10 @@ def build_if_needed = { String archive_name, File cache_dir, String hash, Closur
 }
 
 task build_rtmidi {
+  group = "build"
   doLast {
     println "Build RtMidi"
-    def build_dir = file("../../ext/rtmidi/${build_dir_name}").getAbsolutePath()
+    def build_dir = file("../ext/rtmidi/${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
 
     build_if_needed(
@@ -469,24 +486,19 @@ task build_rtmidi {
       file("${build_dir}/install"),
       get_hash("rtmidi"),
       {
-        if(isWindows()) {
-          execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF ..", build_dir)
-          execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
-          execute("cmake --build . -j --target INSTALL --config ${project.config}", build_dir)
-        } else {
-          execute("cmake -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${project.config} ..", build_dir, ccache_envvars)
-          execute("make -j", build_dir, ccache_envvars)
-          execute("make install", build_dir)
-        }
+        execute("cmake ${getCMakeGeneratorForSubmodule()} -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF ..", build_dir, ccache_envvars)
+        execute("cmake --build . ${parallel_option} --target ${all_build_target} --config ${project.config}", build_dir, ccache_envvars)
+        execute("cmake --build . ${parallel_option} --target ${install_target} --config ${project.config}", build_dir)
       })
   }
 }
 build_rtmidi.mustRunAfter update_submodules
 
 task build_portaudio {
+  group = "build"
   doLast {
     println "Build PortAudio"
-    def build_dir = file("../../ext/portaudio/${build_dir_name}").getAbsolutePath()
+    def build_dir = file("../ext/portaudio/${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
 
     build_if_needed(
@@ -511,20 +523,16 @@ task build_portaudio {
             from zipTree(asiosdk_zip_path)
             into build_dir
           }
-
-          execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" " +
-                  "-DPA_BUILD_STATIC=ON -DPA_DLL_LINK_WITH_STATIC_RUNTIME=OFF " +
-                  "-DPA_BUILD_SHARED=OFF -DPA_USE_WDMKS=OFF " +
-                  "-DPA_USE_ASIO=ON -DASIOSDK_ROOT_DIR=\"${asiosdk_dir}\" " +
-                  "..",
-                  build_dir)
-          execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
-          execute("cmake --build . -j --target INSTALL --config ${project.config}", build_dir)
-        } else {
-          execute("cmake -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" -DPA_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=${project.config} ..", build_dir, ccache_envvars)
-          execute("make -j", build_dir, ccache_envvars)
-          execute("make install", build_dir)
         }
+
+        execute("cmake ${getCMakeGeneratorForSubmodule()} -DCMAKE_INSTALL_PREFIX=\"${build_dir}/install\" " +
+                " -DCMAKE_BUILD_TYPE=${project.config} " +
+                "-DPA_BUILD_STATIC=ON -DPA_DLL_LINK_WITH_STATIC_RUNTIME=OFF -DPA_BUILD_SHARED=OFF " +
+                " ${isWindows() ? "-DPA_USE_WDMKS=OFF -DPA_USE_ASIO=ON -DASIOSDK_ROOT_DIR=\"${asiosdk_dir}\"" : ""} " +
+                "..",
+                build_dir)
+        execute("cmake --build . ${parallel_option} --target ${all_build_target} --config ${project.config}", build_dir)
+        execute("cmake --build . ${parallel_option} --target ${install_target} --config ${project.config}", build_dir)
       })
   }
 }
@@ -532,9 +540,10 @@ build_portaudio.mustRunAfter update_submodules
 
 
 task build_vst3sdk {
+  group = "build"
   doLast {
     println "Build VST3 SDK"
-    def build_dir = file("../../ext/vst3sdk/${build_dir_name}").getAbsolutePath()
+    def build_dir = file("../ext/vst3sdk/${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
 
     build_if_needed(
@@ -542,37 +551,26 @@ task build_vst3sdk {
       file(build_dir),
       get_hash("vst3sdk"),
       {
-        if(isWindows()) {
-          // VST3SDKは、makeのinstallターゲットを用意しない
-          execute(
-            " cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX='${build_dir}/install' "
-            + " -DSMTG_ADD_VST3_PLUGINS_SAMPLES=OFF "
-            + " -DSMTG_ADD_VST3_HOSTING_SAMPLES=OFF "
-            + " -DSMTG_ADD_VSTGUI=OFF "
-            + ".."
-            , build_dir)
-          execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
-        } else {
-          // VST3SDKは、makeのinstallターゲットを用意しない
-          execute(
-            " cmake -DCMAKE_BUILD_TYPE=${project.config} "
-            + " -DSMTG_ADD_VST3_PLUGINS_SAMPLES=OFF "
-            + " -DSMTG_ADD_VST3_HOSTING_SAMPLES=OFF "
-            + " -DSMTG_ADD_VSTGUI=OFF "
-            + ".."
-            , build_dir, ccache_envvars)
-          execute("make -j", build_dir, ccache_envvars)
-        }
+        // VST3SDKは、makeのinstallターゲットを用意しない
+        execute(
+          " cmake ${getCMakeGeneratorForSubmodule()} -DCMAKE_BUILD_TYPE=${project.config} " +
+          " -DCMAKE_INSTALL_PREFIX='${build_dir}/install' " +
+          " -DSMTG_ADD_VST3_PLUGINS_SAMPLES=OFF " +
+          " -DSMTG_ADD_VST3_HOSTING_SAMPLES=OFF " +
+          " -DSMTG_ADD_VSTGUI=OFF " +
+          ".."
+          , build_dir)
+        execute("cmake --build . ${parallel_option} --target ${all_build_target} --config ${project.config}", build_dir, ccache_envvars)
       })
   }
 }
 build_vst3sdk.mustRunAfter update_submodules
 
-
 task build_wxwidgets {
+  group = "build"
   doLast {
     println "Build wxWidgets"
-    def build_dir = file("../../ext/wxWidgets/${build_dir_name}").getAbsolutePath()
+    def build_dir = file("../ext/wxWidgets/${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
 
     build_if_needed(
@@ -580,11 +578,11 @@ task build_wxwidgets {
       file("${build_dir}/install"),
       get_hash("wxWidgets"),
       {
-
+        def platform_dir = isWindows() ? "msw" : "osx"
         if(isWindows()) {
           copy {
-            from file("../../ext/wxWidgets/include/wx/msw/setup0.h")
-            into file("../../ext/wxWidgets/include/wx/msw")
+            from file("../ext/wxWidgets/include/wx/msw/setup0.h")
+            into file("../ext/wxWidgets/include/wx/msw")
             rename "setup0\\.h", "setup.h"
           }
           execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX='${build_dir}/install' " +
@@ -592,15 +590,17 @@ task build_wxwidgets {
                   "-DwxBUILD_USE_STATIC_RUNTIME=OFF -DwxBUILD_MSVC_MULTIPROC=ON " +
                   "-DCMAKE_CXX_STANDARD=14 .."
                   , build_dir)
-          execute("cmake --build . -j --target ALL_BUILD --config ${project.config}", build_dir)
-          execute("cmake --build . -j --target INSTALL --config ${project.config}", build_dir)
+          execute("cmake --build . ${parallel_option} --target ALL_BUILD --config ${project.config}", build_dir)
+          execute("cmake --build . ${parallel_option} --target INSTALL --config ${project.config}", build_dir)
         } else {
           def debug_flags = ""
           if(project.config == "Debug") {
             debug_flags = "--enable-debug --enable-debug-info --enable-debug-gdb"
           }
 
-          execute("./autogen.sh", "../../ext/wxWidgets")
+          // wxWidgetsをCMakeでビルドした場合は、wx-configが正しく設定されずリンクオプションが不十分な状態になるようなので、
+          // 旧来通りの方法としてconfigureスクリプトとmakeを使用するようにしている。
+          execute("./autogen.sh", "../ext/wxWidgets")
           execute('../configure CXXFLAGS="-stdlib=libc++ -DHAVE_TYPE_TRAITS" OBJCXXFLAGS="-stdlib=libc++" ' +
                   'CPPFLAGS="-stdlib=libc++" LDFLAGS="-stdlib=libc++" ' +
                   '--with-macosx-version-min=10.9 --with-cocoa ' +
@@ -610,7 +610,7 @@ task build_wxwidgets {
                   build_dir,
                   ccache_envvars
                   )
-          execute("make -j4", build_dir, ccache_envvars)
+          execute("make ${parallel_option}", build_dir, ccache_envvars)
           execute("make install", build_dir)
         }
       })
@@ -619,26 +619,30 @@ task build_wxwidgets {
 build_wxwidgets.mustRunAfter update_submodules
 
 task build_submodules {
+  group = "build"
   dependsOn { [build_rtmidi, build_portaudio, build_vst3sdk, build_wxwidgets] }
 }
 
 task copy_resources {
+  group = "other"
   doLast {
     // there is no need to copy resources with this task on macOS,
     // because the resources are copied into a bundle directory by cmake script.
     if(isWindows() == false) { return; }
 
-    def dest_dir_names = [ build_dir_name, test_build_dir_name ]
+    chapters.each { ch ->
+      def lch = ch.toLowerCase()
+      def src = file("../data")
+      def app_output_dir = file("../${build_dir_name}/${ch}/${project.config}").getAbsolutePath()
+      def test_output_dir = file("../${build_dir_name}/${ch}-Test/${project.config}").getAbsolutePath()
 
-    dest_dir_names.each { def dir_name ->
-      def output_dir = file("../${dir_name}/${project.config}").getAbsolutePath()
-
-      def src = file("../../data")
-      def dest = new File(output_dir, "Resource")
-      assert(mkdirs_if_needed(output_dir))
-      copy {
-        from src
-        into dest
+      [app_output_dir, test_output_dir].each { dir ->
+        def dest = new File(dir, "Resource")
+        assert(mkdirs_if_needed(dir))
+        copy {
+          from src
+          into dest
+        }
       }
     }
   }
@@ -646,69 +650,19 @@ task copy_resources {
   description = """copy resource data into the output directory."""
 }
 
-task prepare_app {
+task prepare_project {
+  group = "build"
   doLast {
     def build_dir = file("../${build_dir_name}").getAbsolutePath()
     assert(mkdirs_if_needed(build_dir))
-    execute("cmake ${getCMakeGenerator()} -DCMAKE_BUILD_TYPE=${project.config} ..", build_dir, ccache_envvars)
+    execute("cmake ${getCMakeGenerator()} -DCMAKE_CONFIGURATION_TYPES=Debug ..", build_dir, ccache_envvars)
   }
 }
-prepare_app.mustRunAfter build_submodules
-
-task build_app {
-  doLast {
-    def build_dir = file("../${build_dir_name}").getAbsolutePath()
-    // for macOS, Xcode build performs parallel builds by default and
-    // requires a number of concurrency for this option.
-    def parallel_option = isWindows() ? "-j" : ""
-    execute("cmake --build . ${parallel_option} --target ALL_BUILD --config ${project.config}", build_dir, ccache_envvars)
-  }
-}
-build_app.mustRunAfter copy_resources
-build_app.mustRunAfter prepare_app
-
-task prepare_test {
-  doLast {
-    // test project must be built with Debug configuration
-    assert(project.config == "Debug")
-
-    def build_dir = file("../${test_build_dir_name}").getAbsolutePath()
-    assert(mkdirs_if_needed(build_dir))
-    execute("cmake ${getCMakeGenerator()} -DCMAKE_BUILD_TYPE=${project.config} -DENABLE_BUILD_TESTS=ON ..", build_dir, ccache_envvars)
-  }
-}
-prepare_test.mustRunAfter build_submodules
-
-task build_test {
-  doLast {
-    // test project must be built with Debug configuration
-    assert(project.config == "Debug")
-
-    def build_dir = file("../${test_build_dir_name}").getAbsolutePath()
-    // for macOS, Xcode build performs parallel builds by default and
-    // requires a number of concurrency for this option.
-    def parallel_option = isWindows() ? "-j" : ""
-    execute("cmake --build . ${parallel_option} --target ALL_BUILD --config ${project.config}", build_dir)
-  }
-}
-build_test.mustRunAfter copy_resources
-build_test.mustRunAfter prepare_test
-
-task run_test {
-  doLast {
-    def build_dir = file("../${test_build_dir_name}").getAbsolutePath()
-    if(isWindows()) {
-      execute("Debug\\Vst3SampleHost-Test.exe", build_dir)
-    } else {
-      execute("./Debug/Vst3SampleHost-Test.app/Contents/MacOS/Vst3SampleHost-Test", build_dir)
-    }
-  }
-}
-run_test.mustRunAfter build_test
+prepare_project.mustRunAfter build_submodules
 
 //! 指定したディレクトリの直下にあるディレクトリのうち、
 //! 現在のビルド構成によって決まるディレクトリ名と同じディレクトリがあれば、それを削除する。
-def delete_build_dir(def target_dir, def dir_name = build_dir_name) {
+def delete_build_dir(def target_dir, def dir_name) {
   def target_path = new File(target_dir, dir_name)
   if(target_path.exists()) {
     println "dir path to delete: '${target_path}'"
@@ -717,35 +671,94 @@ def delete_build_dir(def target_dir, def dir_name = build_dir_name) {
 }
 
 task clean_submodules {
+  group = "clean"
   doLast {
-    file("../../ext").eachDir {
-      delete_build_dir(it)
+    file("../ext").eachDir {
+      delete_build_dir(it, build_dir_name)
     }
   }
 }
 
-task clean_app {
+task clean_project {
+  group = "clean"
   doLast {
-    delete_build_dir("..")
+    delete_build_dir("..", build_dir_name)
   }
 }
 
-task clean_test {
-  doLast {
-    delete_build_dir("..", "test")
+def build_app_tasks = []
+def build_test_tasks = []
+def run_test_tasks = []
+
+chapters.each { ch ->
+  ch = ch.getName()
+  def lch = ch.toLowerCase()
+  // generatorがXcodeのときは不要
+  task "build_app_${lch}" {
+    group = "build"
+    doLast {
+      def build_dir = file("../build").getAbsolutePath()
+      execute("cmake --build . ${parallel_option} --target ${ch} --config ${project.config}", build_dir, ccache_envvars)
+    }
   }
+
+  task "build_test_${lch}" {
+    group = "build"
+    doLast {
+      // test project must be built with Debug configuration
+      assert(project.config == "Debug")
+
+      def build_dir = file("../build").getAbsolutePath()
+      execute("cmake --build . ${parallel_option} --target ${ch}-Test --config ${project.config}", build_dir)
+    }
+  }
+
+  task "run_app_${lch}" {
+    group = "run"
+    doLast {
+      def build_dir = file("../build").getAbsolutePath()
+      if(isWindows()) {
+        execute("${project.config}\\${ch}\\Vst3SampleHost.exe", build_dir)
+      } else {
+        execute("./Debug/${ch}/Vst3SampleHost.app", build_dir)
+      }
+    }
+  }
+
+  task "run_test_${lch}" {
+    group = "run"
+    doLast {
+      def build_dir = file("../build").getAbsolutePath()
+      if(isWindows()) {
+        execute("${project.config}\\${ch}-Test\\Vst3SampleHost-Test.exe", build_dir)
+      } else {
+        execute("./Debug/${ch}-Test/Vst3SampleHost-Test.app/Contents/MacOS/Vst3SampleHost-Test", build_dir)
+      }
+    }
+  }
+
+  tasks["build_app_${lch}"].mustRunAfter copy_resources, prepare_project, clean_project
+  tasks["build_test_${lch}"].mustRunAfter copy_resources, prepare_project, clean_project
+  tasks["run_test_${lch}"].mustRunAfter copy_resources, prepare_project, clean_project, tasks["build_test_${lch}"]
+
+  build_app_tasks << tasks["build_app_${lch}"]
+  build_test_tasks << tasks["build_test_${lch}"]
+  run_test_tasks << tasks["run_test_${lch}"]
 }
 
 task clean_all {
-  dependsOn { [clean_submodules, clean_app, clean_test] }
+  group = "clean"
+  dependsOn { [clean_submodules, clean_project] }
 }
 
 task build_all {
-  dependsOn { [update_submodules, build_submodules, prepare_app, copy_resources, build_app] }
+  group = "build"
+  dependsOn { [update_submodules, build_submodules, prepare_project, copy_resources] + build_app_tasks }
 }
 
-task test {
-  dependsOn { [update_submodules, build_submodules, prepare_test, copy_resources, build_test, run_test] }
+task test_all {
+  group = "run"
+  dependsOn { [update_submodules, build_submodules, prepare_project, copy_resources] + build_test_tasks + run_test_tasks }
 }
 
 defaultTasks 'build_all'
