@@ -13,7 +13,7 @@ jobs:
     displayName: brew install
   - script: |
       cd gradle
-      ./gradlew test -Pconfig=Debug
+      ./gradlew test_all -Pconfig=Debug
       ./gradlew build_all -Pconfig=Release
       cd ..
     env:
@@ -39,7 +39,7 @@ jobs:
   steps:
   - script: |
       cd gradle
-      call gradlew test -Pconfig=Debug -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
+      call gradlew test_all -Pconfig=Debug -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
       call gradlew build_all -Pconfig=Release -Pmsvc_version="Visual Studio 15 2017" -Pcache_title=win2016-vs2017 || exit /b
       cd ..
     env:
@@ -65,7 +65,7 @@ jobs:
   steps:
   - script: |
       cd gradle
-      call gradlew test -Pconfig=Debug -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
+      call gradlew test_all -Pconfig=Debug -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
       call gradlew build_all -Pconfig=Release -Pmsvc_version="Visual Studio 16 2019" -Pcache_title=win2019-vs2019 || exit /b
       cd ..
     env:
