@@ -228,7 +228,9 @@ function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
 
   if(IsXcode)
     find_library(LIB_JACK jack)
-    target_link_libraries(${TARGET_NAME} PRIVATE ${LIB_JACK})
+    if(LIB_JACK)
+      target_link_libraries(${TARGET_NAME} PRIVATE ${LIB_JACK})
+    endif()
   endif()
 
   if(IsXcode)
