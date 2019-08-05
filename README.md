@@ -44,18 +44,18 @@ Vst3SampleHostは、以下の環境でビルドできます。
 ### macOS環境でのビルドコマンド
 
 ```sh
-cd ./ChapterXX/gradle
+cd ./gradle
 
 ./gradlew build_all [-Pconfig=Debug]
 # `config` プロパティはデフォルトで `Debug` が指定されます。リリースビルド時は、 `-Pconfig=Release` を指定します。
 
-open ../build_debug/Debug/Vst3SampleHost.app
+open ../build_debug/Debug/ChapterXX/Vst3SampleHost.app
 ```
 
 ### Windows環境でのビルドコマンド
 
 ```bat
-cd .\ChapterXX\gradle
+cd .\gradle
 
 gradlew build_all [-Pconfig=Debug] [-Pmsvc_version="..."]
 : `config` プロパティはデフォルトで `Debug` が指定されます。リリースビルド時は、 `-Pconfig=Release` を指定します。
@@ -66,15 +66,15 @@ gradlew build_all [-Pconfig=Debug] [-Pmsvc_version="..."]
 :
 : 非英語ロケール環境でのビルド時に文字化けが発生する場合は、 `-Dfile.encoding=UTF-8` オプションを追加してください。
 
-start ..\build_debug\Debug\Vst3SampleHost.exe
+start ..\build_debug\Debug\ChapterXX\Vst3SampleHost.exe
 ```
 
 ### TIPS
 
-* サブモジュールのビルドが完了していてVst3SampleHost自体の再ビルドのみが必要な場合は、以下のようにコマンドを実行することで、不要なサブモジュールの再ビルドをスキップできます。
+* サブモジュールのビルドが完了していてVst3SampleHost自体の再ビルドのみが必要な場合は、以下のようにコマンドを実行することで、不要なサブモジュールの再ビルドをスキップして、プロジェクトファイルの再生成と指定したチャプターのVst3SampleHostの再ビルドを実行できます。
 
 ```sh
-./gradlew prepare_app build_app [-Pconfig=Debug]
+./gradlew prepare_project build_app_chapterxx [-Pconfig=Debug]
 ```
 
 ## ライセンスと依存ライブラリ
