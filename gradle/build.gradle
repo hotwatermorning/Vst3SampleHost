@@ -58,8 +58,7 @@ ext {
     file(dir).eachDirMatch(pattern) { tmp << it }
     return tmp
   }
-
-  chapters = collect_files("..", ~/^Chapter.*$/)
+  chapters = collect_files("..", ~/^Chapter.*$/).collect { path -> return path.getName() }
 }
 
 //! @param options is a map to customize getenv behavior.
@@ -691,7 +690,6 @@ def build_test_tasks = []
 def run_test_tasks = []
 
 chapters.each { ch ->
-  ch = ch.getName()
   def lch = ch.toLowerCase()
   // generatorがXcodeのときは不要
   task "build_app_${lch}" {
