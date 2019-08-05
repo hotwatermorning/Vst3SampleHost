@@ -691,12 +691,14 @@ def run_test_tasks = []
 
 chapters.each { ch ->
   def lch = ch.toLowerCase()
+  def app_target_name = "${ch}"
+  def test_target_name = "${ch}-Test"
   // generatorがXcodeのときは不要
   task "build_app_${lch}" {
     group = "build"
     doLast {
       def build_dir = file("../${build_dir_name}").getAbsolutePath()
-      execute("cmake --build . ${parallel_option} --target ${ch} --config ${project.config}", build_dir, ccache_envvars)
+      execute("cmake --build . ${parallel_option} --target ${app_target_name} --config ${project.config}", build_dir, ccache_envvars)
     }
   }
 
@@ -707,7 +709,7 @@ chapters.each { ch ->
       assert(project.config == "Debug")
 
       def build_dir = file("../${build_dir_name}").getAbsolutePath()
-      execute("cmake --build . ${parallel_option} --target ${ch}-Test --config ${project.config}", build_dir)
+      execute("cmake --build . ${parallel_option} --target ${test_target_name} --config ${project.config}", build_dir)
     }
   }
 
@@ -717,9 +719,9 @@ chapters.each { ch ->
       def build_dir = file("../${build_dir_name}").getAbsolutePath()
       def executable_path = ""
       if(isWindows()) {
-        executable_path = new File(build_dir_name, "${project.config}\\${ch}\\Vst3SampleHost.exe")
+        executable_path = new File(build_dir_name, "${project.config}\\${app_target_name}\\Vst3SampleHost.exe")
       } else {
-        executable_path = new File(build_dir_name, "${project.config}/${ch}/Vst3SampleHost.app")
+        executable_path = new File(build_dir_name, "${project.config}/${app_target_name}/Vst3SampleHost.app")
       }
       execute("${executable_path}", build_dir)
     }
@@ -733,9 +735,9 @@ chapters.each { ch ->
       def build_dir = file("../${build_dir_name}").getAbsolutePath()
       def executable_path = ""
       if(isWindows()) {
-        executable_path = new File(build_dir, "${project.config}\\${ch}-Test\\Vst3SampleHost-Test.exe")
+        executable_path = new File(build_dir, "${project.config}\\${test_target_name}\\Vst3SampleHost-Test.exe")
       } else {
-        executable_path = new File(build_dir, "${project.config}/${ch}-Test/Vst3SampleHost-Test.app/Contents/MacOS/Vst3SampleHost-Test")
+        executable_path = new File(build_dir, "${project.config}/${test_target_name}/Vst3SampleHost-Test.app/Contents/MacOS/Vst3SampleHost-Test")
       }
       execute("${executable_path}", build_dir)
     }

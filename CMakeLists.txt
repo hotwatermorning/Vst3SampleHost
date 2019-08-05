@@ -44,6 +44,8 @@ project("Vst3SampleHost")
 
 set(CMAKE_CXX_STANDARD 17)
 
+get_filename_component(WX_DIR "./ext/wxWidgets" ABSOLUTE)
+
 # add_vst3samplehost_project(<exe_name> <chapter_dir> [ENABLE_BUILD_TESTS])
 function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
   cmake_parse_arguments(AVP "ENABLE_BUILD_TESTS" "" "" ${ARGN})
@@ -97,10 +99,6 @@ function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
     endif()
   endif()
 
-  set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "${EXE_NAME}")
-
-  get_filename_component(WX_DIR "./ext/wxWidgets" ABSOLUTE)
-
   target_include_directories(
     ${TARGET_NAME}
     PRIVATE
@@ -117,10 +115,14 @@ function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
     target_compile_definitions(${TARGET_NAME} PRIVATE ENABLE_BUILD_TESTS)
   endif()
 
-  foreach(CONF ${CMAKE_CONFIGURATION_TYPES})
-    string(TOUPPER ${CONF} UCONF)
-    set_target_properties(${TARGET_NAME} PROPERTIES "RUNTIME_OUTPUT_DIRECTORY_${UCONF}" "${CMAKE_CURRENT_BINARY_DIR}/${BUILD_DIR_NAME}/${CMAKE_BUILD_TYPE}/${TARGET_NAME}/bin")
-  endforeach()
+  set_target_properties(${TARGET_NAME} PROPERTIES
+    "RUNTIME_OUTPUT_DIRECTORY_${UCONF}"
+    "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${TARGET_NAME}"
+    )
+  set_target_properties(${TARGET_NAME} PROPERTIES
+    OUTPUT_NAME
+    "${EXE_NAME}"
+    )
 
   if(IsMSVC)
     target_compile_options(${TARGET_NAME} PRIVATE
@@ -233,6 +235,7 @@ function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
     endif()
   endif()
 
+  # Resourceディレクトリに含めるデータのセットアップ
   if(IsXcode)
     get_filename_component(RESOURCE_DIR "./data" ABSOLUTE)
     file(GLOB_RECURSE RESOURCE_FILES "${RESOURCE_DIR}/*")
