@@ -505,12 +505,12 @@ task build_portaudio {
       file("${build_dir}/install"),
       get_hash("portaudio"),
       {
-        if(isWindows()) {
-          def asiosdk_zip_name = "asiosdk2.3.zip"
-          def asiosdk_zip_path = new File(build_dir, asiosdk_zip_name)
-          def asiosdk_url = "https://www.steinberg.net/sdk_downloads/${asiosdk_zip_name}"
-          def asiosdk_dir = new File(build_dir, "ASIOSDK2.3")
+        def asiosdk_zip_name = "asiosdk2.3.zip"
+        def asiosdk_zip_path = new File(build_dir, asiosdk_zip_name)
+        def asiosdk_url = "https://www.steinberg.net/sdk_downloads/${asiosdk_zip_name}"
+        def asiosdk_dir = new File(build_dir, "ASIOSDK2.3")
 
+        if(isWindows()) {
           download {
             src asiosdk_url
             dest build_dir
@@ -586,7 +586,7 @@ task build_wxwidgets {
           }
           execute("cmake ${getCMakeGenerator()} -DCMAKE_INSTALL_PREFIX='${build_dir}/install' " +
                   " -DwxBUILD_SHARED=OFF -DwxBUILD_MONOLITHIC=OFF " +
-                  "-DwxBUILD_USE_STATIC_RUNTIME=OFF -DwxBUILD_MSVC_MULTIPROC=ON " +
+                  " -DwxBUILD_USE_STATIC_RUNTIME=OFF -DwxBUILD_MSVC_MULTIPROC=ON " +
                   "-DCMAKE_CXX_STANDARD=14 .."
                   , build_dir)
           execute("cmake --build . ${parallel_option} --target ALL_BUILD --config ${project.config}", build_dir)
@@ -632,8 +632,8 @@ task copy_resources {
     chapters.each { ch ->
       def lch = ch.toLowerCase()
       def src = file("../data")
-      def app_output_dir = file("../${build_dir_name}/${ch}/${project.config}").getAbsolutePath()
-      def test_output_dir = file("../${build_dir_name}/${ch}-Test/${project.config}").getAbsolutePath()
+      def app_output_dir = file("../${build_dir_name}/${project.config}/${ch}").getAbsolutePath()
+      def test_output_dir = file("../${build_dir_name}/${project.config}/${ch}-Test").getAbsolutePath()
 
       [app_output_dir, test_output_dir].each { dir ->
         def dest = new File(dir, "Resource")

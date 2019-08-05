@@ -31,6 +31,12 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" UCONF)
 string(TOLOWER "${CMAKE_BUILD_TYPE}" LCONF)
 set(BUILD_DIR_NAME "build_${LCONF}")
 
+if("${LCONF}" STREQUAL "debug")
+  set(DP "d") # debug postfix
+else()
+  set(DP "")
+endif()
+
 ####################################################################
 # optoins
 ####################################################################
@@ -137,9 +143,14 @@ function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
       target_compile_options(${TARGET_NAME} PRIVATE /MD)
     endif()
 
-    target_include_directories(${TARGET_NAME} PRIVATE "${WX_DIR}${BUILD_DIR_NAME}/install/include")
-    get_wxwidgets_libraries("${WX_DIR}/install/vc_x64_lib" ${CMAKE_BUILD_TYPE} WX_LIBS)
-    target_link_libraries(${TARGET_NAME} PRIVATE ${WX_LIBS})
+    target_include_directories(${TARGET_NAME} PRIVATE
+      "${WX_DIR}/${BUILD_DIR_NAME}/install/include"
+      "${WX_DIR}/${BUILD_DIR_NAME}/install/lib/vc_x64_lib/mswu${DP}"
+      )
+    get_wxwidgets_libraries("${WX_DIR}/${BUILD_DIR_NAME}/install/lib/vc_x64_lib" ${CMAKE_BUILD_TYPE} WX_LIBS)
+    # message("WX_LIBS: ${WX_LIBS}")
+    # target_link_libraries(${TARGET_NAME} PRIVATE ${WX_LIBS})
+    target_link_options(${TARGET_NAME} PRIVATE ${WX_LIBS})
   else()
     target_compile_options(${TARGET_NAME} PRIVATE -Werror=return-type -stdlib=libc++)
 
@@ -203,12 +214,6 @@ function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
       MACOSX_BUNDLE_BUNDLE_LONG_VERSION_STRING "0.0.1"
       MACOSX_BUNDLE_ICON_FILE "${ICON_FILE_NAME}"
       )
-  endif()
-
-  if("${LCONF}" STREQUAL "debug")
-    set(DP "d") # debug postfix
-  else()
-    set(DP "")
   endif()
 
   set(LIB_VST3_SDK_NAME "$<IF:$<CXX_COMPILER_ID:MSVC>,sdk.lib,libsdk.a>")

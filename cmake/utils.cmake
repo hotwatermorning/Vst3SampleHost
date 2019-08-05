@@ -69,7 +69,8 @@ function(CREATE_SOURCE_LIST BASE_DIR SOURCE_DIRS EXTENSIONS EXCLUDE_PATTERNS OUT
 endfunction()
 
 function(GET_WXWIDGETS_LIBRARIES WX_LIB_DIR BUILD_TYPE OUTPUT)
-  if(not IsMSVC)
+  #  message("WX_LIB_DIR: ${WX_LIB_DIR}")
+  if(NOT IsMSVC)
     message(FATAL_ERROR "This function is only useful for Windows.")
   endif()
 
@@ -82,6 +83,9 @@ function(GET_WXWIDGETS_LIBRARIES WX_LIB_DIR BUILD_TYPE OUTPUT)
   endif()
 
   set(${OUTPUT}
+    # https://wiki.wxwidgets.org/Compiling_WxWidgets_with_MSVC_%282%29
+    "comctl32.lib" "rpcrt4.lib" "shell32.lib" "gdi32.lib" "kernel32.lib"
+    "user32.lib" "comdlg32.lib" "ole32.lib" "oleaut32.lib" "advapi32.lib"
     "${WX_LIB_DIR}/wxbase31u${DP}.lib" "${WX_LIB_DIR}/wxbase31u${DP}_net.lib"
     "${WX_LIB_DIR}/wxbase31u${DP}_xml.lib" "${WX_LIB_DIR}/wxmsw31u${DP}_core.lib"
     "${WX_LIB_DIR}/wxmsw31u${DP}_xrc.lib" "${WX_LIB_DIR}/wxmsw31u${DP}_webview.lib"
