@@ -58,7 +58,8 @@ ext {
     file(dir).eachDirMatch(pattern) { tmp << it }
     return tmp
   }
-  chapters = collect_files("..", ~/^Chapter.*$/).collect { path -> return path.getName() }
+  app_target_name = "Vst3SampleHost"
+  test_target_name = "Vst3SampleHost-Test"
 }
 
 //! @param options is a map to customize getenv behavior.
@@ -629,19 +630,16 @@ task copy_resources {
     // because the resources are copied into a bundle directory by cmake script.
     if(isWindows() == false) { return; }
 
-    chapters.each { ch ->
-      def lch = ch.toLowerCase()
-      def src = file("../data")
-      def app_output_dir = file("../${build_dir_name}/${project.config}/${ch}").getAbsolutePath()
-      def test_output_dir = file("../${build_dir_name}/${project.config}/${ch}-Test").getAbsolutePath()
+    def src = file("../data")
 
-      [app_output_dir, test_output_dir].each { dir ->
-        def dest = new File(dir, "Resource")
-        assert(mkdirs_if_needed(dir))
-        copy {
-          from src
-          into dest
-        }
+    def targets = [app_target_name, test_target_name]
+
+    targets.each { target_name ->
+      def dest = file("../${build_dir_name}/${project.config}/${target_name}/Resource").getAbsolutePath()
+      assert(mkdirs_if_needed(dest))
+      copy {
+        from src
+        into dest
       }
     }
   }
@@ -685,72 +683,60 @@ task clean_project {
   }
 }
 
-def build_app_tasks = []
-def build_test_tasks = []
-def run_test_tasks = []
-
-chapters.each { ch ->
-  def lch = ch.toLowerCase()
-  def app_target_name = "${ch}"
-  def test_target_name = "${ch}-Test"
-  // generatorがXcodeのときは不要
-  task "build_app_${lch}" {
-    group = "build"
-    doLast {
-      def build_dir = file("../${build_dir_name}").getAbsolutePath()
-      execute("cmake --build . ${parallel_option} --target ${app_target_name} --config ${project.config}", build_dir, ccache_envvars)
-    }
+// generatorがXcodeのときは不要
+task build_app {
+  group = "build"
+  doLast {
+    def build_dir = file("../${build_dir_name}").getAbsolutePath()
+    execute("cmake --build . ${parallel_option} --target ${app_target_name} --config ${project.config}", build_dir, ccache_envvars)
   }
-
-  task "build_test_${lch}" {
-    group = "build"
-    doLast {
-      // test project must be built with Debug configuration
-      assert(project.config == "Debug")
-
-      def build_dir = file("../${build_dir_name}").getAbsolutePath()
-      execute("cmake --build . ${parallel_option} --target ${test_target_name} --config ${project.config}", build_dir)
-    }
-  }
-
-  task "run_app_${lch}" {
-    group = "run"
-    doLast {
-      def build_dir = file("../${build_dir_name}").getAbsolutePath()
-      def executable_path = ""
-      if(isWindows()) {
-        executable_path = new File(build_dir_name, "${project.config}\\${app_target_name}\\Vst3SampleHost.exe")
-      } else {
-        executable_path = new File(build_dir_name, "${project.config}/${app_target_name}/Vst3SampleHost.app")
-      }
-      execute("${executable_path}", build_dir)
-    }
-  }
-
-  task "run_test_${lch}" {
-    group = "run"
-    doLast {
-      assert(project.config == "Debug")
-
-      def build_dir = file("../${build_dir_name}").getAbsolutePath()
-      def executable_path = ""
-      if(isWindows()) {
-        executable_path = new File(build_dir, "${project.config}\\${test_target_name}\\Vst3SampleHost-Test.exe")
-      } else {
-        executable_path = new File(build_dir, "${project.config}/${test_target_name}/Vst3SampleHost-Test.app/Contents/MacOS/Vst3SampleHost-Test")
-      }
-      execute("${executable_path}", build_dir)
-    }
-  }
-
-  tasks["build_app_${lch}"].mustRunAfter copy_resources, prepare_project, clean_project
-  tasks["build_test_${lch}"].mustRunAfter copy_resources, prepare_project, clean_project
-  tasks["run_test_${lch}"].mustRunAfter copy_resources, prepare_project, clean_project, tasks["build_test_${lch}"]
-
-  build_app_tasks << tasks["build_app_${lch}"]
-  build_test_tasks << tasks["build_test_${lch}"]
-  run_test_tasks << tasks["run_test_${lch}"]
 }
+
+task build_test {
+  group = "build"
+  doLast {
+    // test project must be built with Debug configuration
+    assert(project.config == "Debug")
+
+    def build_dir = file("../${build_dir_name}").getAbsolutePath()
+    execute("cmake --build . ${parallel_option} --target ${test_target_name} --config ${project.config}", build_dir)
+  }
+}
+
+task run_app {
+  group = "run"
+  doLast {
+    def build_dir = file("../${build_dir_name}").getAbsolutePath()
+    def executable_path = ""
+    if(isWindows()) {
+      executable_path = new File(build_dir_name, "${project.config}\\${app_target_name}\\Vst3SampleHost.exe")
+    } else {
+      executable_path = new File(build_dir_name, "${project.config}/${app_target_name}/Vst3SampleHost.app")
+    }
+    execute("${executable_path}", build_dir)
+  }
+}
+
+task run_test {
+  group = "run"
+  doLast {
+    assert(project.config == "Debug")
+
+    def build_dir = file("../${build_dir_name}").getAbsolutePath()
+    def executable_path = ""
+    if(isWindows()) {
+      executable_path = new File(build_dir, "${project.config}\\${test_target_name}\\Vst3SampleHost-Test.exe")
+    } else {
+      executable_path = new File(build_dir, "${project.config}/${test_target_name}/Vst3SampleHost-Test.app/Contents/MacOS/Vst3SampleHost-Test")
+    }
+    execute("${executable_path}", build_dir)
+  }
+}
+
+build_app.mustRunAfter copy_resources, prepare_project, clean_project
+build_test.mustRunAfter copy_resources, prepare_project, clean_project
+run_app.mustRunAfter copy_resources, prepare_project, clean_project, build_app
+run_test.mustRunAfter copy_resources, prepare_project, clean_project, build_test
 
 task clean_all {
   group = "clean"
@@ -759,12 +745,12 @@ task clean_all {
 
 task build_all {
   group = "build"
-  dependsOn { [update_submodules, build_submodules, prepare_project, copy_resources] + build_app_tasks }
+  dependsOn { [update_submodules, build_submodules, prepare_project, copy_resources, build_app] }
 }
 
 task test_all {
   group = "run"
-  dependsOn { [update_submodules, build_submodules, prepare_project, copy_resources] + build_test_tasks + run_test_tasks }
+  dependsOn { [update_submodules, build_submodules, prepare_project, copy_resources, build_test, run_test] }
 }
 
 defaultTasks 'build_all'
