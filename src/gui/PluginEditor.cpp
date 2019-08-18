@@ -1,6 +1,6 @@
 #include "PluginEditor.hpp"
 
-#include "../App.hpp"
+#include "../app/App.hpp"
 #include "./UnitData.hpp"
 #include "./PCKeyboardInput.hpp"
 #include <pluginterfaces/base/keycodes.h>

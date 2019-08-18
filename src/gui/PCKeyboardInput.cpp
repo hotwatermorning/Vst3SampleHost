@@ -1,6 +1,6 @@
 #include "PCKeyboardInput.hpp"
 
-#include "../App.hpp"
+#include "../app/App.hpp"
 
 NS_HWM_BEGIN
 

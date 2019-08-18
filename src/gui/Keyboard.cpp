@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "../App.hpp"
+#include "../app/App.hpp"
 #include "../resource/ResourceHelper.hpp"
 #include "./Util.hpp"
 #include "../misc/MathUtil.hpp"

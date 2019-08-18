@@ -3,30 +3,28 @@
 
 #include <wx/filename.h>
 
-#include "device/AudioDeviceManager.hpp"
-#include "device/MidiDeviceManager.hpp"
-#include "plugin/vst3/Vst3Plugin.hpp"
-#include "plugin/vst3/Vst3PluginFactory.hpp"
-#include "misc/StrCnv.hpp"
-#include "misc/MathUtil.hpp"
-#include "misc/TransitionalVolume.hpp"
-#include "misc/LockFactory.hpp"
-#include "misc/Algorithm.hpp"
-#include "resource/ResourceHelper.hpp"
 #include "App.hpp"
-#include "gui/Gui.hpp"
-#include "gui/PCKeyboardInput.hpp"
-#include "gui/DeviceSettingDialog.hpp"
-#include "gui/PluginEditor.hpp"
-#include "gui/AboutDialog.hpp"
-#include "processor/EventBuffer.hpp"
-#include "file/Config.hpp"
-#include "file/ProjectFile.hpp"
+#include "../device/AudioDeviceManager.hpp"
+#include "../device/MidiDeviceManager.hpp"
+#include "../plugin/vst3/Vst3Plugin.hpp"
+#include "../plugin/vst3/Vst3PluginFactory.hpp"
+#include "../misc/StrCnv.hpp"
+#include "../misc/MathUtil.hpp"
+#include "../misc/TransitionalVolume.hpp"
+#include "../misc/LockFactory.hpp"
+#include "../misc/Algorithm.hpp"
+#include "../resource/ResourceHelper.hpp"
+#include "../gui/Gui.hpp"
+#include "../gui/PCKeyboardInput.hpp"
+#include "../gui/DeviceSettingDialog.hpp"
+#include "../gui/PluginEditor.hpp"
+#include "../gui/AboutDialog.hpp"
+#include "../processor/EventBuffer.hpp"
+#include "../file/Config.hpp"
+#include "../file/ProjectFile.hpp"
 
 NS_HWM_BEGIN
 
-SampleCount const kSampleRate = 44100;
-SampleCount const kBlockSize = 256;
 double const kAudioOutputLevelMinDB = -48.0;
 double const kAudioOutputLevelMaxDB = 0.0;
 Int32 kAudioOutputLevelTransientMillisec = 30;

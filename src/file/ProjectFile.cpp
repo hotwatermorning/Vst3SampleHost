@@ -4,7 +4,7 @@
 
 #include "./Util.hpp"
 #include "./ProjectFile.hpp"
-#include "../App.hpp"
+#include "../app/App.hpp"
 #include "../misc/StringAlgo.hpp"
 #include "../misc/MathUtil.hpp"
 #include "../device/AudioDeviceManager.hpp"

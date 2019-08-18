@@ -3,9 +3,9 @@
 #include <memory>
 #include <bitset>
 
-#include "./misc/SingleInstance.hpp"
-#include "./plugin/vst3/Vst3Plugin.hpp"
-#include "./file/Config.hpp"
+#include "../misc/SingleInstance.hpp"
+#include "../plugin/vst3/Vst3Plugin.hpp"
+#include "../file/Config.hpp"
 
 NS_HWM_BEGIN
 

@@ -1,5 +1,5 @@
 #include "Gui.hpp"
-#include "../App.hpp"
+#include "../app/App.hpp"
 
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
