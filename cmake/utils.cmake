@@ -35,20 +35,49 @@ endfunction()
 # DIRSに指定されたディレクトリの中からEXTERNSIONに指定された拡張子のファイルを探索し、
 # ${OUTPUT}に追加する。
 # 各ファイルは、BASE_DIRからの相対パスでSOURCE_GROUPが設定される。
-function(CREATE_SOURCE_LIST BASE_DIR SOURCE_DIRS EXTENSIONS EXCLUDE_PATTERNS OUTPUT)
-#   message("SOURCE_DIRS: ${SOURCE_DIRS}")
+# create_source_list(
+#   <source_dir_list>
+#   [BASE_DIR <base_directory>]
+#   EXTENSIONS <target_extension_list>
+#   [EXCLUDE_PATTERNS <exclude_patten_list>
+#   OUTPUT_VARIABLE <output_variable>
+#   )
+# if BASE_DIR is not specified, the first element of source_dir_list will be used as the base directory.
+
+function(CREATE_SOURCE_LIST SOURCE_DIR_LIST)
+  cmake_parse_arguments(CSL "" "BASE_DIR;OUTPUT_VARIABLE" "EXTENSIONS;EXCLUDE_PATTERNS" ${ARGN})
+  # message("SOURCE_DIR_LIST: ${SOURCE_DIR_LIST}")
+
+  list(LENGTH SOURCE_DIR_LIST NUM_SOURCE_DIRS)
+  if(${NUM_SOURCE_DIRS} EQUAL 0)
+    message(FATAL_ERROR "SOURCE_DIR_LIST must not be empty.")
+  endif()
+
+  if(NOT CSL_BASE_DIR)
+    list(GET SOURCE_DIR_LIST 0 CSL_BASE_DIR)
+  endif()
+
+  if(NOT CSL_EXTENSIONS)
+    message(FATAL_ERROR "target extension list must be specified.")
+  endif()
+
+  message("CSL_BASE_DIR: ${CSL_BASE_DIR}")
+  message("CSL_EXTENSIONS: ${CSL_EXTENSIONS}")
+  message("CSL_EXCLUDE_PATTERNS: ${CSL_EXCLUDE_PATTERNS}")
+  message("CSL_OUTPUT_VARIABLE: ${CSL_OUTPUT_VARIABLE}")
+
   unset(TMP_LIST)
-  foreach(DIR ${SOURCE_DIRS})
-    set(PATTERNS "")
-    foreach(EXT ${EXTENSIONS})
-      list(APPEND PATTERNS "${DIR}/${EXT}")
+  foreach(DIR ${SOURCE_DIR_LIST})
+    set(TARGET_PATTERNS "")
+    foreach(EXT ${CSL_EXTENSIONS})
+      list(APPEND TARGET_PATTERNS "${DIR}/${EXT}")
     endforeach()
 
-    file(GLOB_RECURSE FILES ${PATTERNS})
+    file(GLOB_RECURSE FILES ${TARGET_PATTERNS})
 
     # Define SourceGroup reflecting filesystem hierarchy.
     foreach(FILE_PATH ${FILES})
-      check_exclusion_status(${FILE_PATH} "${EXCLUDE_PATTERNS}" IS_EXCLUDED)
+      check_exclusion_status(${FILE_PATH} "${CSL_EXCLUDE_PATTERNS}" IS_EXCLUDED)
       if(IS_EXCLUDED)
         message("Excluded: ${FILE_PATH}")
         continue()
@@ -56,16 +85,16 @@ function(CREATE_SOURCE_LIST BASE_DIR SOURCE_DIRS EXTENSIONS EXCLUDE_PATTERNS OUT
 
       get_filename_component(FILE_PATH "${FILE_PATH}" ABSOLUTE)
       get_filename_component(DIR "${FILE_PATH}" DIRECTORY)
-      file(RELATIVE_PATH GROUP_NAME "${BASE_DIR}" "${DIR}")
+      file(RELATIVE_PATH GROUP_NAME "${CSL_BASE_DIR}" "${DIR}")
       string(REPLACE "/" "\\" GROUP_NAME "${GROUP_NAME}")
       source_group("${GROUP_NAME}" FILES "${FILE_PATH}")
       list(APPEND TMP_LIST "${FILE_PATH}")
     endforeach()
   endforeach()
 
-#   message("SOURCES for ${BASE_DIR}: ${TMP_LIST}")
+  # message("SOURCES: ${TMP_LIST}")
 
-  set(${OUTPUT} ${TMP_LIST} PARENT_SCOPE)
+  set(${CSL_OUTPUT_VARIABLE} ${TMP_LIST} PARENT_SCOPE)
 endfunction()
 
 function(GET_WXWIDGETS_LIBRARIES WX_LIB_DIR BUILD_TYPE OUTPUT)

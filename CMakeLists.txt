@@ -52,19 +52,16 @@ set(CMAKE_CXX_STANDARD 17)
 
 get_filename_component(WX_DIR "./ext/wxWidgets" ABSOLUTE)
 
-# add_vst3samplehost_project(<exe_name> <chapter_dir> [ENABLE_BUILD_TESTS])
-function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
+# add_vst3samplehost_target(<exe_name> [ENABLE_BUILD_TESTS])
+function(ADD_VST3SAMPLEHOST_TARGET EXE_NAME)
   cmake_parse_arguments(AVP "ENABLE_BUILD_TESTS" "" "" ${ARGN})
 
-  get_filename_component(CHAPTER_DIR "${CHAPTER_DIR}" ABSOLUTE)
-  get_filename_component(CHAPTER_NAME "${CHAPTER_DIR}" NAME_WLE)
+  set(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
 
-  if(${AVP_ENABLE_BUILD_TESTS})
-    set(TARGET_NAME "${CHAPTER_NAME}-Test")
-    set(EXE_NAME "${EXE_NAME}-Test")
-  else()
-    set(TARGET_NAME "${CHAPTER_NAME}")
-    set(EXCLUDE_PATTERNS "${CHAPTER_DIR}/src/test")
+  set(TARGET_NAME "${EXE_NAME}")
+
+  if(NOT ${AVP_ENABLE_BUILD_TESTS})
+    set(EXCLUDE_PATTERNS "src/test")
   endif()
 
   message("Target Name: ${TARGET_NAME}")
@@ -77,16 +74,15 @@ function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
     list(APPEND TARGET_EXTENSIONS "*.mm")
   endif()
 
-  set(PREFIX_HEADER_PATH "${CHAPTER_DIR}/src/prefix.hpp")
+  set(PREFIX_HEADER_PATH "${PROJECT_ROOT}/src/prefix.hpp")
 
   unset(SOURCE_FILES)
 
   create_source_list(
-    "${CHAPTER_DIR}/src"
-    "${CHAPTER_DIR}/src"
-    "${TARGET_EXTENSIONS}"
-    "${EXCLUDE_PATTERNS}"
-    SOURCE_FILES
+    "${PROJECT_ROOT}/src"
+    EXTENSIONS "${TARGET_EXTENSIONS}"
+    EXCLUDE_PATTERNS "${EXCLUDE_PATTERNS}"
+    OUTPUT_VARIABLE SOURCE_FILES
     )
 
 #   message("Files ${SOURCE_FILES}")
@@ -108,7 +104,7 @@ function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
   target_include_directories(
     ${TARGET_NAME}
     PRIVATE
-    "./${CHAPTER_DIR}/src"
+    "./${PROJECT_ROOT}/src"
     "./ext/vst3sdk"
     "./schema/cpp"
     "./ext/portaudio/${BUILD_DIR_NAME}/install/include"
@@ -262,10 +258,8 @@ function(ADD_VST3SAMPLEHOST_PROJECT EXE_NAME CHAPTER_DIR)
   endif()
 endfunction()
 
-add_vst3samplehost_project(${PROJECT_NAME} "./Chapter01")
-add_vst3samplehost_project(${PROJECT_NAME} "./Chapter01" ENABLE_BUILD_TESTS)
-add_vst3samplehost_project(${PROJECT_NAME} "./ChapterXX")
-add_vst3samplehost_project(${PROJECT_NAME} "./ChapterXX" ENABLE_BUILD_TESTS)
+add_vst3samplehost_target("${PROJECT_NAME}")
+add_vst3samplehost_target("${PROJECT_NAME}-Test" ENABLE_BUILD_TESTS)
 
 ####################################################################
 # configure ccache
