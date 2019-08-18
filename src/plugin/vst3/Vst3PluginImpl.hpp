@@ -23,6 +23,8 @@
 #include "Vst3Utils.hpp"
 #include "Vst3Plugin.hpp"
 #include "Vst3PluginFactory.hpp"
+#include "MidiBusesInfo.hpp"
+#include "AudioBusesInfo.hpp"
 
 #include "../../misc/Flag.hpp"
 #include "../../misc/Buffer.hpp"
@@ -57,72 +59,6 @@ public:
     
     using ParameterInfoList = IdentifiedValueList<ParameterInfo>;
     using UnitInfoList = IdentifiedValueList<UnitInfo>;
-    
-    struct MidiBusesInfo
-    {
-        void Initialize(Impl *owner, Vst::BusDirections dir);
-        
-        size_t GetNumBuses() const;
-        
-        BusInfo const & GetBusInfo(UInt32 bus_index) const;
-        
-        bool IsActive(size_t bus_index) const;
-        void SetActive(size_t bus_index, bool state = true);
-        
-        UInt32 GetNumActiveBuses() const;
-        UInt32 GetBusIndexFromActiveBusIndex(UInt32 active_bus_index) const;
-        UInt32 GetActiveBusIndexFromBusIndex(UInt32 bus_index) const;
-        
-        Vst::AudioBusBuffers * GetBusBuffers();
-        
-    private:
-        Impl *owner_ = nullptr;
-        std::vector<BusInfo> bus_infos_;
-        Vst::BusDirections dir_;
-        std::unordered_map<UInt32, UInt32> bus_index_to_active_bus_index_;
-        std::unordered_map<UInt32, UInt32> active_bus_index_to_bus_index_;
-        
-        void SetupActiveBusTable();
-    };
-    
-    struct AudioBusesInfo
-    {
-        void Initialize(Impl *owner, Vst::BusDirections dir);
-        
-        size_t GetNumBuses() const;
-        
-        BusInfo const & GetBusInfo(UInt32 bus_index) const;
-        
-        //! すべてのバスのチャンネル数の総計
-        //! これは、各バスのSpeakerArrangement状態によって変化する。
-        //! バスのアクティブ状態には影響を受けない。
-        //!  (つまり、各バスがアクティブかそうでないかに関わらず、すべてのバスのチャンネルが足し合わされる。)
-        size_t GetNumChannels() const;
-
-        //! すべてのアクティブなバスのチャンネル数の総計
-        //! これは、各バスのアクティブ状態やSpeakerArrangement状態によって変化する。
-        size_t GetNumActiveChannels() const;
-        
-        bool IsActive(size_t bus_index) const;
-        void SetActive(size_t bus_index, bool state = true);
-        
-        //! @return true if this speaker arrangement is accepted to the plugin successfully,
-        //! false otherwise.
-        bool SetSpeakerArrangement(size_t bus_index, Vst::SpeakerArrangement arr);
-        
-        std::vector<Vst::SpeakerArrangement> GetSpeakers() const;
-        Vst::AudioBusBuffers * GetBusBuffers();
-        
-    private:
-        Impl *owner_ = nullptr;
-        std::vector<BusInfo> bus_infos_;
-        Vst::BusDirections dir_; // determine direction even if the bus_infos_ is empty.
-        
-        //! bus_infos_のis_active_状態によらず、定義されているすべてのバスと同じ数だけ用意される。
-        std::vector<Vst::AudioBusBuffers> bus_buffers_;
-        
-        void UpdateBusBuffers();
-    };
 
 public:
 	Impl(IPluginFactory *factory,
@@ -232,7 +168,7 @@ private:
 
 	void UnloadPlugin();
 
-private:
+public:
     ClassInfo               class_info_;
     FactoryInfo             factory_info_;
 	component_ptr_t			component_;
@@ -257,6 +193,29 @@ private:
 	int block_size_;
     
     void UpdateBusBuffers();
+    
+    class AudioBusesInfoOwner : public IAudioBusesInfoOwner {
+    public:
+        AudioBusesInfoOwner(Impl *pimpl);
+        
+        Steinberg::Vst::IComponent * GetComponent() override;
+        Steinberg::Vst::IAudioProcessor * GetAudioProcessor() override;
+        
+    private:
+        Impl *impl_ = nullptr;
+    };
+    
+    class MidiBusesInfoOwner : public IMidiBusesInfoOwner {
+    public:
+        MidiBusesInfoOwner(Impl *impl);
+        Vst::IComponent * GetComponent() override;
+        
+    private:
+        Impl *impl_ = nullptr;
+    };
+
+    std::unique_ptr<IAudioBusesInfoOwner> audio_buses_info_owner_;
+    std::unique_ptr<IMidiBusesInfoOwner> midi_buses_info_owner_;
     
     AudioBusesInfo input_audio_buses_info_;
     AudioBusesInfo output_audio_buses_info_;
