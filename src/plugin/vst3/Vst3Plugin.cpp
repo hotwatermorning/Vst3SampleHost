@@ -166,9 +166,30 @@ Vst3Plugin::SpeakerArrangement Vst3Plugin::GetSpeakerArrangementForBus(BusDirect
     return pimpl_->GetAudioBusesInfo(dir).GetBusInfo(index).speaker_;
 }
 
-bool Vst3Plugin::SetSpeakerArrangement(BusDirections dir, UInt32 index, SpeakerArrangement arr)
+Vst3Plugin::IOSpeakerSet Vst3Plugin::GetSpeakerArrangements() const
+{
+    return pimpl_->audio_buses_info_owner_->GetSpeakerArrangements();
+}
+
+Vst3Plugin::IOSpeakerSet Vst3Plugin::GetAppliedSpeakerArrangements() const
+{
+    return pimpl_->audio_buses_info_owner_->GetAppliedSpeakerArrangements();
+}
+
+void Vst3Plugin::SetSpeakerArrangements(IOSpeakerSet const &speakers)
+{
+    return pimpl_->audio_buses_info_owner_->SetSpeakerArrangements(speakers);
+}
+
+void Vst3Plugin::SetSpeakerArrangement(BusDirections dir, UInt32 index, SpeakerArrangement arr)
 {
     return pimpl_->GetAudioBusesInfo(dir).SetSpeakerArrangement(index, arr);
+}
+
+std::pair<Steinberg::tresult, Vst3Plugin::IOSpeakerSet>
+Vst3Plugin::ApplySpeakerArrangement()
+{
+    return pimpl_->audio_buses_info_owner_->ApplySpeakerArrangements();
 }
 
 void Vst3Plugin::Resume()

@@ -87,6 +87,12 @@ public:
     using MediaTypes = Steinberg::Vst::MediaTypes;
     using BusDirections = Steinberg::Vst::BusDirections;
     using BusTypes = Steinberg::Vst::BusTypes;
+    using SpeakerList = std::vector<SpeakerArrangement>;
+    
+    struct IOSpeakerSet {
+        SpeakerList input_;
+        SpeakerList output_;
+    };
     
     struct ParameterInfo
     {
@@ -209,7 +215,12 @@ public:
     void SetBusActive(MediaTypes media, BusDirections dir, UInt32 index, bool state = true);
     UInt32 GetNumActiveBuses(MediaTypes media, BusDirections dir) const;
     SpeakerArrangement GetSpeakerArrangementForBus(BusDirections dir, UInt32 index) const;
-    bool SetSpeakerArrangement(BusDirections dir, UInt32 index, SpeakerArrangement arr);
+    
+    IOSpeakerSet GetSpeakerArrangements() const;
+    IOSpeakerSet GetAppliedSpeakerArrangements() const;
+    void SetSpeakerArrangements(IOSpeakerSet const &speakers);
+    void SetSpeakerArrangement(BusDirections dir, UInt32 index, SpeakerArrangement arr);
+    std::pair<Steinberg::tresult, IOSpeakerSet> ApplySpeakerArrangement();
     
 	void	Resume();
 	void	Suspend();
