@@ -144,6 +144,24 @@ std::string to_s(PluginViewType const &v)
     }
 }
 
+template<>
+std::string to_s(OscillatorType const &v)
+{
+    switch(v) {
+        case OscillatorType::kSine:
+            return "sine";
+        case OscillatorType::kSaw:
+            return "saw";
+        case OscillatorType::kSquare:
+            return "square";
+        case OscillatorType::kTriangle:
+            return "triangle";
+        default:
+            assert(false && "unsupported");
+            return "";
+    }
+}
+
 template<> bool from_s(std::string const &str, String &v)
 {
     v = to_wstr(str);
@@ -194,6 +212,27 @@ template<> bool from_s(std::string const &str, PluginViewType &v)
         return true;
     } else if(str == "dedicated") {
         v = PluginViewType::kDedicated;
+        return true;
+    } else {
+        return false;
+    }
+    
+    assert(false && "never reach here");
+}
+
+template<> bool from_s(std::string const &str, OscillatorType &v)
+{
+    if(str == "sine") {
+        v = OscillatorType::kSine;
+        return true;
+    } else if(str == "saw") {
+        v = OscillatorType::kSaw;
+        return true;
+    } else if(str == "square") {
+        v = OscillatorType::kSquare;
+        return true;
+    } else if(str == "triangle") {
+        v = OscillatorType::kTriangle;
         return true;
     } else {
         return false;

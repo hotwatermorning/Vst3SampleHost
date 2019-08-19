@@ -3,6 +3,7 @@
 #include <iostream>
 #include "../device/DeviceType.hpp"
 #include "../gui/PluginViewType.hpp"
+#include "../app/OscillatorType.hpp"
 
 NS_HWM_BEGIN
 
@@ -19,9 +20,14 @@ struct ProjectFile
     double sample_rate_ = kSupportedSampleRateDefault;
     Int32 block_size_ = kSupportedBlockSizeDefault;
     
+    std::optional<OscillatorType> oscillator_type_;
+    double audio_output_level_ = 0.0; // as dB.
+    bool is_audio_input_enabled_ = false;
+    
     //! 現在のオーディオデバイスの状態を読み込み
     void ScanAudioDeviceStatus();
     void ScanPluginStatus();
+    void ScanAppStatus();
     
     //! ostreamにコンフィグデータを書き出し
     friend

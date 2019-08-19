@@ -71,6 +71,18 @@ void ProjectFile::ScanPluginStatus()
     }
 }
 
+void ProjectFile::ScanAppStatus()
+{
+    oscillator_type_ = std::nullopt;
+    audio_output_level_ = 0.0;
+    is_audio_input_enabled_ = false;
+    
+    auto app = App::GetInstance();
+    oscillator_type_ = app->GetTestWaveformType();
+    audio_output_level_ = app->GetAudioOutputLevel();
+    is_audio_input_enabled_ = app->IsAudioInputEnabled();
+}
+
 std::ostream & operator<<(std::ostream &os, ProjectFile const &self)
 {
 #define WRITE_MEMBER(name) \
@@ -87,6 +99,9 @@ std::ostream & operator<<(std::ostream &os, ProjectFile const &self)
     WRITE_MEMBER(editor_type)
     WRITE_MEMBER(sample_rate)
     WRITE_MEMBER(block_size)
+    WRITE_MEMBER(oscillator_type)
+    WRITE_MEMBER(audio_output_level)
+    WRITE_MEMBER(is_audio_input_enabled)
     ;
     
 #undef WRITE_MEMBER
@@ -124,6 +139,16 @@ if(auto val = find_value(lines, #key)) { from_s(*val, self. key ## _); }
     self.block_size_ = Clamp<double>(self.block_size_,
                                      kSupportedBlockSizeMin,
                                      kSupportedBlockSizeMax);
+    
+    READ_MEMBER(oscillator_type);
+    
+    auto app = App::GetInstance();
+    READ_MEMBER(audio_output_level);
+    self.audio_output_level_ = Clamp<double>(self.audio_output_level_,
+                                             app->GetAudioOutputMinLevel(),
+                                             app->GetAudioOutputMaxLevel());
+    
+    READ_MEMBER(is_audio_input_enabled);
     
 #undef READ_MEMBER
     

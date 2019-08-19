@@ -100,6 +100,11 @@ private:
     {
         btn_enable_input_->SetValue(enabled);
     }
+    
+    void OnAudioOutputLevelChanged(double new_level) override
+    {
+        sl_volume_->SetValue(new_level * kVolumeSliderScale);
+    }
 };
 
 class MainWindow
@@ -574,6 +579,22 @@ public:
         Bind(wxEVT_COMMAND_MENU_SELECTED, [this](auto &ev) {
             OnOpenEditor();
         }, kID_View_PluginEditor);
+        
+        Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent &ev) {
+            auto const app = App::GetInstance();
+            auto const wt = app->GetTestWaveformType();
+            
+            if( (ev.GetId() == kID_Playback_Waveform_Sine && wt == OscillatorType::kSine) ||
+                (ev.GetId() == kID_Playback_Waveform_Saw && wt == OscillatorType::kSaw) ||
+                (ev.GetId() == kID_Playback_Waveform_Square && wt == OscillatorType::kSquare) ||
+                (ev.GetId() == kID_Playback_Waveform_Triangle && wt == OscillatorType::kTriangle)
+               )
+            {
+                ev.Check(true);
+            } else {
+                ev.Check(false);
+            }
+        }, kID_Playback_Waveform_Sine, kID_Playback_Waveform_Triangle);
         
         Bind(wxEVT_UPDATE_UI, [this](auto &ev) {
             ev.Enable(wnd_->CanOpenEditor());

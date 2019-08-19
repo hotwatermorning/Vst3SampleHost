@@ -7,6 +7,7 @@
 #include "../device/DeviceType.hpp"
 #include "../plugin/vst3/Vst3PluginFactory.hpp"
 #include "../gui/PluginViewType.hpp"
+#include "../app/OscillatorType.hpp"
 
 NS_HWM_BEGIN
 
@@ -78,12 +79,14 @@ extern template std::string to_s(AudioDriverType const &v);
 extern template std::string to_s(ClassInfo::CID const &v);
 extern template std::string to_s(std::vector<char> const &v);
 extern template std::string to_s(PluginViewType const &v);
+extern template std::string to_s(OscillatorType const &v);
 
 extern template bool from_s(std::string const &str, String &s);
 extern template bool from_s(std::string const &str, AudioDriverType &v);
 extern template bool from_s(std::string const &str, std::vector<char> &v);
 extern template bool from_s(std::string const &str, ClassInfo::CID &v);
 extern template bool from_s(std::string const &str, PluginViewType &v);
+extern template bool from_s(std::string const &str, OscillatorType &v);
 
 #endif
 

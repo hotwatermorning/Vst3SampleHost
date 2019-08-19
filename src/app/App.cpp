@@ -682,11 +682,17 @@ double App::GetAudioOutputLevel() const
 void App::SetAudioOutputLevel(double db)
 {
     pimpl_->output_level_.set_target_db(db);
+    pimpl_->pocls_.Invoke([db](auto *li) {
+        li->OnAudioOutputLevelChanged(db);
+    });
 }
 
 void App::SetTestWaveformType(OscillatorType ot)
 {
     pimpl_->test_synth_.SetOscillatorType(ot);
+    pimpl_->pocls_.Invoke([ot](auto *li) {
+        li->OnTestWaveformTypeChanged(ot);
+    });
 }
 
 OscillatorType App::GetTestWaveformType() const
@@ -787,6 +793,13 @@ void App::LoadProjectFile(String path_to_load)
         hwm::dout << "failed to load project file: " << e.what() << std::endl;
     }
     
+    if(file.oscillator_type_) {
+        SetTestWaveformType(*file.oscillator_type_);
+    }
+    
+    SetAudioOutputLevel(file.audio_output_level_);
+    EnableAudioInput(file.is_audio_input_enabled_);
+    
     if(file.vst3_plugin_path_.empty()) { return; }
     
     if(!LoadVst3Module(file.vst3_plugin_path_)) {
@@ -824,6 +837,7 @@ void App::SaveProjectFile(String path_to_save)
     ProjectFile file;
     file.ScanAudioDeviceStatus();
     file.ScanPluginStatus();
+    file.ScanAppStatus();
     
     std::ofstream ofs;
 #if defined(_MSC_VER)
