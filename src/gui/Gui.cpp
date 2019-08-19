@@ -551,19 +551,19 @@ public:
         }, kID_Playback_EnableAudioInputs);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
-            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kSine);
+            App::GetInstance()->SetTestWaveformType(OscillatorType::kSine);
         }, kID_Playback_Waveform_Sine);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
-            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kSaw);
+            App::GetInstance()->SetTestWaveformType(OscillatorType::kSaw);
         }, kID_Playback_Waveform_Saw);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
-            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kSquare);
+            App::GetInstance()->SetTestWaveformType(OscillatorType::kSquare);
         }, kID_Playback_Waveform_Square);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
-            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kTriangle);
+            App::GetInstance()->SetTestWaveformType(OscillatorType::kTriangle);
         }, kID_Playback_Waveform_Triangle);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {

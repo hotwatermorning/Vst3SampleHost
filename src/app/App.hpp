@@ -6,6 +6,7 @@
 #include "../misc/SingleInstance.hpp"
 #include "../plugin/vst3/Vst3Plugin.hpp"
 #include "../file/Config.hpp"
+#include "./OscillatorType.hpp"
 
 NS_HWM_BEGIN
 
@@ -96,15 +97,8 @@ public:
     //! オーディオ出力レベルを変更する。
     void SetAudioOutputLevel(double db);
     
-    enum class TestWaveformType : Int32 {
-        kSine,
-        kSaw,
-        kSquare,
-        kTriangle,
-    };
-    
-    void SetTestWaveformType(TestWaveformType wt);
-    TestWaveformType GetTestWaveformType() const;
+    void SetTestWaveformType(OscillatorType wt);
+    OscillatorType GetTestWaveformType() const;
     
     //! 再生中のノートを返す。
     std::bitset<128> GetPlayingNotes();
