@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "../device/DeviceType.hpp"
+#include "../gui/PluginViewType.hpp"
 
 NS_HWM_BEGIN
 
@@ -12,8 +13,8 @@ struct ProjectFile
     ClassInfo::CID vst3_plugin_cid_;
     std::vector<char> vst3_plugin_proc_data_;
     std::vector<char> vst3_plugin_edit_data_;
-    
-    String editor_type_; // L"generic" or L"dedicated" or L""
+
+    std::optional<PluginViewType> editor_type_;
     
     double sample_rate_ = kSupportedSampleRateDefault;
     Int32 block_size_ = kSupportedBlockSizeDefault;

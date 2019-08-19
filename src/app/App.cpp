@@ -807,17 +807,15 @@ void App::LoadProjectFile(String path_to_load)
     
     GetPlugin()->LoadData(dump);
     
-    if(file.editor_type_.empty() == false) {
+    if(file.editor_type_) {
         auto frame = IMainFrame::GetInstance();
         wxCommandEvent ev(wxEVT_COMMAND_MENU_SELECTED);
         ev.SetId(IMainFrame::kID_View_PluginEditor);
         ev.SetEventObject(frame);
         frame->ProcessWindowEvent(ev);
         
-        using VT = IPluginEditorFrame::ViewType;
         auto editor = IPluginEditorFrame::GetInstance();
-        auto const vt = (file.editor_type_ == L"generic" ? VT::kGeneric : VT::kDedicated);
-        editor->SetViewType(vt);
+        editor->SetViewType(*file.editor_type_);
     }
 }
 

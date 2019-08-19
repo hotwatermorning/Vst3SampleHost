@@ -40,7 +40,7 @@ void ProjectFile::ScanPluginStatus()
     vst3_plugin_path_.clear();
     vst3_plugin_proc_data_.clear();
     vst3_plugin_edit_data_.clear();
-    editor_type_ = L"";
+    editor_type_ = std::nullopt;
     
     auto factory = app->GetPluginFactory();
     if(!factory) {
@@ -67,19 +67,14 @@ void ProjectFile::ScanPluginStatus()
     if(!editor) {
         // do nothing.
     } else {
-        auto vt = editor->GetViewType();
-        if(vt == IPluginEditorFrame::ViewType::kDedicated) {
-            editor_type_ = L"dedicated";
-        } else {
-            editor_type_ = L"generic";
-        }
+        editor_type_ = editor->GetViewType();
     }
 }
 
 std::ostream & operator<<(std::ostream &os, ProjectFile const &self)
 {
 #define WRITE_MEMBER(name) \
-<< (#name + std::string(" = ")) << std::quoted(to_s(self. name ## _)) << "\n"
+<< write_line(#name, to_s(self. name ## _)) << "\n"
     
     os
     << "format = " << kProjectFileFormatID_v1 << "\n"
@@ -103,59 +98,32 @@ std::istream & operator>>(std::istream &is, ProjectFile &self)
 {
     is.exceptions(std::ios::badbit);
     
-    auto const lines = get_lines(is);
+    auto const lines = read_lines(is);
     
     if(auto val = find_value(lines, "format")) {
         if(*val != kProjectFileFormatID_v1) {
             throw Config::FailedToParse("Unknown format.");
         }
     }
+
+#define READ_MEMBER(key) \
+if(auto val = find_value(lines, #key)) { from_s(*val, self. key ## _); }
     
-#define READ_MEMBER(key, func) \
-if(auto val = find_value(lines, #key)) { self. key ## _ = func(*val); }
+    READ_MEMBER(vst3_plugin_path);
+    READ_MEMBER(vst3_plugin_cid);
+    READ_MEMBER(vst3_plugin_proc_data);
+    READ_MEMBER(vst3_plugin_edit_data);
+    READ_MEMBER(editor_type);
     
-    READ_MEMBER(vst3_plugin_path, [](std::string const &str) {
-        return to_wstr(str);
-    });
+    READ_MEMBER(sample_rate);
+    self.sample_rate_ = Clamp<double>(self.sample_rate_,
+                                      kSupportedSampleRateMin,
+                                      kSupportedSampleRateMax);
     
-    READ_MEMBER(vst3_plugin_cid, [](std::string const &str) {
-        auto buf = base64_decode(str);
-        
-        ClassInfo::CID cid;
-        if(buf.size() == cid.size()) {
-            std::copy_n(buf.data(), cid.size(), cid.data());
-        }
-        
-        return cid;
-    });
-    
-    READ_MEMBER(vst3_plugin_proc_data, [](std::string const &str) {
-        return std::vector<char>(base64_decode(str));
-    });
-    
-    READ_MEMBER(vst3_plugin_edit_data, [](std::string const &str) {
-        return std::vector<char>(base64_decode(str));
-    });
-    
-    READ_MEMBER(editor_type, [](std::string const &str) {
-        if(str == "generic" || str == "dedicated") {
-            return to_wstr(str);
-        } else {
-            return String();
-        }
-    });
-    
-    READ_MEMBER(sample_rate, [](std::string const &str) {
-        return Clamp<double>(stof_or(str, kSupportedSampleRateDefault),
-                             kSupportedSampleRateMin,
-                             kSupportedSampleRateMax);
-    });
-    
-    READ_MEMBER(block_size, [](std::string const &str) {
-        return Clamp<double>(stoi_or(str, kSupportedBlockSizeDefault),
-                             kSupportedBlockSizeMin,
-                             kSupportedBlockSizeMax);
-    });
+    READ_MEMBER(block_size);
+    self.block_size_ = Clamp<double>(self.block_size_,
+                                     kSupportedBlockSizeMin,
+                                     kSupportedBlockSizeMax);
     
 #undef READ_MEMBER
     
