@@ -40,7 +40,7 @@ endif()
 ####################################################################
 # options
 ####################################################################
-option(ENABLE_BUILD_TESTS "Build test project" OFF)
+option(ENABLE_BUILD_TESTS "Build test executable" OFF)
 
 ####################################################################
 # define project
@@ -49,8 +49,26 @@ project("Vst3SampleHost")
 set(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
 
 ####################################################################
-# update commit id file
+# prepare product info
 ####################################################################
+set(VST3SAMPLEHOST_EXE_ICON_FILE_PATH "${PROJECT_ROOT}/data/app_icon.ico")
+set(VST3SAMPLEHOST_BUNDLE_ICON_FILE_NAME "app_icon.icns")
+set(VST3SAMPLEHOST_COMPANY_NAME "diatonic.jp")
+set(VST3SAMPLEHOST_PRODUCT_NAME "Vst3SampleHost")
+set(VST3SAMPLEHOST_VERSION_NUMBER_LIST_BASE 0 9 0)
+set(VST3SAMPLEHOST_COPYRIGHT "Copyright 2019, diatonic.jp")
+set(VST3SAMPLEHOST_GUI_IDENTIFIER "jp.diatonic.vst3samplehost")
+
+string(JOIN "." VST3SAMPLEHOST_VERSION_STRING ${VST3SAMPLEHOST_VERSION_NUMBER_LIST_BASE})
+string(JOIN "," VST3SAMPLEHOST_VERSION_NUMBER_LIST ${VST3SAMPLEHOST_VERSION_NUMBER_LIST_BASE})
+
+configure_file("${PROJECT_ROOT}/src/Resource.rc.in" "${PROJECT_ROOT}/src/AutoGen_Resource.rc")
+
+####################################################################
+# update inc files
+####################################################################
+set(APP_APPNAME_INC "${PROJECT_ROOT}/src/app/AppName.inc")
+set(APP_VERSION_INC "${PROJECT_ROOT}/src/app/Version.inc")
 set(APP_COMMIT_ID_INC "${PROJECT_ROOT}/src/app/CommitID.inc")
 
 execute_process(
@@ -65,24 +83,9 @@ endif()
 
 string(STRIP ${APP_COMMIT_ID} APP_COMMIT_ID)
 
-if(EXISTS "${APP_COMMIT_ID_INC}")
-  file(READ "${APP_COMMIT_ID_INC}" PREV_APP_COMMIT_ID)
-  message("PREV : ${PREV_APP_COMMIT_ID}")
-  string(REGEX MATCH "L\"[^\"]+\"" PREV_APP_COMMIT_ID "${PREV_APP_COMMIT_ID}")
-  if(NOT PREV_APP_COMMIT_ID)
-    message(FATAL_ERROR "failed to get previous commit id")
-  endif()
-else()
-  unset(PREV_APP_COMMIT_ID)
-endif()
-
-if((DEFINED PREV_APP_COMMIT_ID) AND ("${PREV_APP_COMMIT_ID}" STREQUAL "${APP_COMMIT_ID}"))
-  # do nothing
-  # message("same commit id")
-else()
-  message("write commit id to ${APP_COMMIT_ID_INC}")
-  file(WRITE "${APP_COMMIT_ID_INC}" "L\"${APP_COMMIT_ID}\"")
-endif()
+file(WRITE "${APP_APPNAME_INC}" "L\"${VST3SAMPLEHOST_PRODUCT_NAME}\"")
+file(WRITE "${APP_VERSION_INC}" "L\"${VST3SAMPLEHOST_VERSION_STRING}\"")
+file(WRITE "${APP_COMMIT_ID_INC}" "L\"${APP_COMMIT_ID}\"")
 
 ####################################################################
 # configure project
@@ -239,16 +242,15 @@ function(ADD_VST3SAMPLEHOST_TARGET EXE_NAME)
     set_target_properties(${TARGET_NAME} PROPERTIES XCODE_ATTRIBUTE_GCC_PREFIX_HEADER "${PREFIX_HEADER_PATH}")
     set_target_properties(${TARGET_NAME} PROPERTIES XCODE_ATTRIBUTE_GCC_PRECOMPILE_PREFIX_HEADER "YES")
 
-    set(ICON_FILE_NAME "app_icon.icns")
     set_target_properties(${TARGET_NAME} PROPERTIES
-      MACOSX_BUNDLE_INFO_STRING "Copyright 2019, @hotwatermorning"
-      MACOSX_BUNDLE_COPYRIGHT "Copyright 2019, @hotwatermorning"
-      MACOSX_BUNDLE_GUI_IDENTIFIER "jp.diatonic.vst3samplehost"
+      MACOSX_BUNDLE_INFO_STRING "${VST3SAMPLEHOST_COPYRIGHT}"
+      MACOSX_BUNDLE_COPYRIGHT "${VST3SAMPLEHOST_COPYRIGHT}"
+      MACOSX_BUNDLE_GUI_IDENTIFIER "${VST3SAMPLEHOST_GUI_IDENTIFIER}"
       MACOSX_BUNDLE_BUNDLE_NAME "${TARGET_NAME}"
-      MACOSX_BUNDLE_BUNDLE_VERSION 0 0 1
-      MACOSX_BUNDLE_BUNDLE_SHORT_VERSION_STRING "0.0.1"
-      MACOSX_BUNDLE_BUNDLE_LONG_VERSION_STRING "0.0.1"
-      MACOSX_BUNDLE_ICON_FILE "${ICON_FILE_NAME}"
+      MACOSX_BUNDLE_BUNDLE_VERSION ${VST3SAMPLEHOST_VERSION_NUMBER_LIST_BASE}
+      MACOSX_BUNDLE_BUNDLE_SHORT_VERSION_STRING "${VST3SAMPLEHOST_VERSION_STRING}"
+      MACOSX_BUNDLE_BUNDLE_LONG_VERSION_STRING "${VST3SAMPLEHOST_VERSION_STRING}"
+      MACOSX_BUNDLE_ICON_FILE "${VST3SAMPLEHOST_BUNDLE_ICON_FILE_NAME}"
       )
   endif()
 

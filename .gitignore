@@ -10,7 +10,6 @@
 !*.yml
 !*.ico
 !*.icns
-!*.rc
 !.gitignore
 !.gitmodules
 !*.cmake

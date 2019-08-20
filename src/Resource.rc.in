@@ -1,0 +1,94 @@
+#pragma code_page(65001)
+
+#include "winres.h"
+
+#cmakedefine VST3SAMPLEHOST_EXE_ICON_FILE_PATH
+#if !defined(VST3SAMPLEHOST_EXE_ICON_FILE_PATH)
+#error icon file path must be set
+#endif
+
+#cmakedefine VST3SAMPLEHOST_COMPANY_NAME
+#if !defined(VST3SAMPLEHOST_COMPANY_NAME)
+#error company name must be set
+#endif
+
+#cmakedefine VST3SAMPLEHOST_PRODUCT_NAME
+#if !defined(VST3SAMPLEHOST_PRODUCT_NAME)
+#error product name must be set
+#endif
+
+#cmakedefine VST3SAMPLEHOST_VERSION_STRING
+#if !defined(VST3SAMPLEHOST_VERSION_STRING)
+#error version string must be set
+#endif
+
+#cmakedefine VST3SAMPLEHOST_VERSION_NUMBER_LIST
+#if !defined(VST3SAMPLEHOST_VERSION_NUMBER_LIST)
+#error version number list must be set
+#endif
+
+#cmakedefine VST3SAMPLEHOST_COPYRIGHT
+#if !defined(VST3SAMPLEHOST_COPYRIGHT)
+#error copyright must be set
+#endif
+
+#ifdef _DEBUG
+#define VER_DEBUG VS_FF_DEBUG
+#else
+#define VER_DEBUG 0
+#endif
+
+//////////////////////////////////////////////////////
+// アイコンファイルの設定
+APPICON ICON DISCARDABLE "@VST3SAMPLEHOST_EXE_ICON_FILE_PATH@"
+
+//////////////////////////////////////////////////////
+// アプリケーション情報の設定
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION @VST3SAMPLEHOST_VERSION_NUMBER_LIST@
+PRODUCTVERSION @VST3SAMPLEHOST_EXECUTABLE_VERSION_NUMBER_LIST@
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+FILEFLAGS VER_DEBUG
+FILEOS VOS__WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE VFT2_UNKNOWN
+{
+    // Application Info in Japanese
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "041104b0"
+        {
+            VALUE "CompanyName", "@VST3SAMPLEHOST_COMPANY_NAME@"
+            VALUE "FileDescription", "@VST3SAMPLEHOST_PRODUCT_NAME@"
+            VALUE "FileVersion", "@VST3SAMPLEHOST_VERSION_STRING@"
+            VALUE "InternalName", "@VST3SAMPLEHOST_PRODUCT_NAME@"
+            VALUE "LegalCopyright", "@VST3SAMPLEHOST_COPYRIGHT@"
+            VALUE "OriginalFileName", "@VST3SAMPLEHOST_PRODUCT_NAME@"
+            VALUE "ProductName", "@VST3SAMPLEHOST_PRODUCT_NAME@"
+            VALUE "ProductVersion", "@VST3SAMPLEHOST_VERSION_STRING@"
+        }
+    }
+
+    // Application Info in English
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "040904b0"
+        {
+            VALUE "CompanyName", "@VST3SAMPLEHOST_COMPANY_NAME@"
+            VALUE "FileDescription", "@VST3SAMPLEHOST_PRODUCT_NAME@"
+            VALUE "FileVersion", "@VST3SAMPLEHOST_VERSION_STRING@"
+            VALUE "InternalName", "@VST3SAMPLEHOST_PRODUCT_NAME@"
+            VALUE "LegalCopyright", "@VST3SAMPLEHOST_COPYRIGHT@"
+            VALUE "OriginalFileName", "@VST3SAMPLEHOST_PRODUCT_NAME@"
+            VALUE "ProductName", "@VST3SAMPLEHOST_PRODUCT_NAME@"
+            VALUE "ProductVersion", "@VST3SAMPLEHOST_VERSION_STRING@"
+        }
+    }
+
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0411, 1200
+        VALUE "Translation", 0x0409, 1200
+    }
+}
+
