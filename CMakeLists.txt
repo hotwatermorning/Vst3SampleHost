@@ -38,15 +38,57 @@ else()
 endif()
 
 ####################################################################
-# optoins
+# options
 ####################################################################
 option(ENABLE_BUILD_TESTS "Build test project" OFF)
 
 ####################################################################
+# define project
+####################################################################
+project("Vst3SampleHost")
+set(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
+
+####################################################################
+# update commit id file
+####################################################################
+set(APP_COMMIT_ID_INC "${PROJECT_ROOT}/src/app/CommitID.inc")
+
+execute_process(
+  COMMAND "git" "rev-parse" "HEAD"
+  OUTPUT_VARIABLE APP_COMMIT_ID
+  RESULT_VARIABLE RESULT_REV_PARSE
+  )
+
+if(NOT (RESULT_REV_PARSE EQUAL 0))
+  message(FATAL_ERROR "failed to get current commit id: ${RESULT_REV_PARSE}")
+endif()
+
+string(STRIP ${APP_COMMIT_ID} APP_COMMIT_ID)
+
+if(EXISTS "${APP_COMMIT_ID_INC}")
+  file(READ "${APP_COMMIT_ID_INC}" PREV_APP_COMMIT_ID)
+  message("PREV : ${PREV_APP_COMMIT_ID}")
+  string(REGEX MATCH "L\"[^\"]+\"" PREV_APP_COMMIT_ID "${PREV_APP_COMMIT_ID}")
+  if(NOT PREV_APP_COMMIT_ID)
+    message(FATAL_ERROR "failed to get previous commit id")
+  endif()
+else()
+  unset(PREV_APP_COMMIT_ID)
+endif()
+
+if((DEFINED PREV_APP_COMMIT_ID) AND ("${PREV_APP_COMMIT_ID}" STREQUAL "${APP_COMMIT_ID}"))
+  # do nothing
+  # message("same commit id")
+else()
+  message("write commit id to ${APP_COMMIT_ID_INC}")
+  file(WRITE "${APP_COMMIT_ID_INC}" "L\"${APP_COMMIT_ID}\"")
+endif()
+
+####################################################################
 # configure project
 ####################################################################
-
 project("Vst3SampleHost")
+set(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -55,8 +97,6 @@ get_filename_component(WX_DIR "./ext/wxWidgets" ABSOLUTE)
 # add_vst3samplehost_target(<exe_name> [ENABLE_BUILD_TESTS])
 function(ADD_VST3SAMPLEHOST_TARGET EXE_NAME)
   cmake_parse_arguments(AVP "ENABLE_BUILD_TESTS" "" "" ${ARGN})
-
-  set(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
 
   set(TARGET_NAME "${EXE_NAME}")
 
