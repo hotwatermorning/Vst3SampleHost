@@ -133,6 +133,19 @@ public:
         
         dc.SetFont(font_);
         dc.SetTextForeground(*wxWHITE);
+        
+        auto font_size = font_.GetPixelSize();
+        auto padding = 62;
+        auto text_rect = wxRect{
+            wxPoint{ padding, img.GetHeight() / 2 },
+            wxSize { img.GetWidth() - padding * 2, font_size.GetHeight() }
+        };
+        
+        auto const version_str =
+        String(L"Version: ") + kAppVersion +
+        L" (" + String(kAppCommitID).substr(0, 8) + L")";
+        
+        dc.DrawLabel(version_str, text_rect, wxALIGN_CENTER_VERTICAL);
     }
     
 private:
