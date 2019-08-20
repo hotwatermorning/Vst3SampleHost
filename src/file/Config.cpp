@@ -55,7 +55,7 @@ void Config::ScanAudioDeviceStatus()
 std::ostream & operator<<(std::ostream &os, Config const &self)
 {
 #define WRITE_MEMBER(name) \
-    << (#name + std::string(" = ")) << std::quoted(to_s(self. name ## _)) << "\n"
+<< write_line(#name, to_s(self. name ## _)) << "\n"
     
     os
     << "format = " << kConfigFileFormatID_v1 << "\n"
@@ -80,7 +80,7 @@ std::istream & operator>>(std::istream &is, Config &self)
 {
     is.exceptions(std::ios::badbit);
     
-    auto const lines = get_lines(is);
+    auto const lines = read_lines(is);
     
     if(auto val = find_value(lines, "format")) {
         if(*val != kConfigFileFormatID_v1) {
@@ -88,44 +88,26 @@ std::istream & operator>>(std::istream &is, Config &self)
         }
     }
     
-#define READ_MEMBER(key, func) \
-    if(auto val = find_value(lines, #key)) { self. key ## _ = func(*val); }
+#define READ_MEMBER(key) \
+if(auto val = find_value(lines, #key)) { from_s(*val, self. key ## _); }
     
-    READ_MEMBER(audio_input_driver_type, [](std::string const &str) {
-        return to_audio_driver_type(str).value_or(AudioDriverType::kUnknown);
-    });
+    READ_MEMBER(audio_input_driver_type);
+    READ_MEMBER(audio_input_device_name);
+    READ_MEMBER(audio_input_channel_count);
+    READ_MEMBER(audio_output_driver_type);
+    READ_MEMBER(audio_output_device_name);
+    READ_MEMBER(audio_output_channel_count);
     
-    READ_MEMBER(audio_input_device_name, [](std::string const &str) {
-        return to_wstr(str);
-    });
+    READ_MEMBER(sample_rate);
     
-    READ_MEMBER(audio_input_channel_count, [](std::string const &str) {
-        return std::max<Int32>(stoi_or(str, 0), 0);
-    });
+    self.sample_rate_ = Clamp<double>(self.sample_rate_,
+                                      kSupportedSampleRateMin,
+                                      kSupportedSampleRateMax);
     
-    READ_MEMBER(audio_output_driver_type, [](std::string const &str) {
-        return to_audio_driver_type(str).value_or(AudioDriverType::kUnknown);
-    });
-    
-    READ_MEMBER(audio_output_device_name, [](std::string const &str) {
-        return to_wstr(str);
-    });
-    
-    READ_MEMBER(audio_output_channel_count, [](std::string const &str) {
-        return std::max<Int32>(stoi_or(str, 0), 0);
-    });
-    
-    READ_MEMBER(sample_rate, [](std::string const &str) {
-        return Clamp<double>(stof_or(str, kSupportedSampleRateDefault),
-                             kSupportedSampleRateMin,
-                             kSupportedSampleRateMax);
-    });
-    
-    READ_MEMBER(block_size, [](std::string const &str) {
-        return Clamp<double>(stoi_or(str, kSupportedBlockSizeDefault),
-                             kSupportedBlockSizeMin,
-                             kSupportedBlockSizeMax);
-    });
+    READ_MEMBER(block_size);
+    self.block_size_ = Clamp<double>(self.block_size_,
+                                     kSupportedBlockSizeMin,
+                                     kSupportedBlockSizeMax);
 
 #undef READ_MEMBER
     

@@ -1,6 +1,6 @@
 #include "PluginEditor.hpp"
 
-#include "../App.hpp"
+#include "../app/App.hpp"
 #include "./UnitData.hpp"
 #include "./PCKeyboardInput.hpp"
 #include <pluginterfaces/base/keycodes.h>
@@ -417,7 +417,7 @@ public:
     
     IListenerService & GetListeners() { return listeners_; }
     
-    using VT = IPluginEditorFrame::ViewType;
+    using VT = PluginViewType;
     //! 現在のViewTypeを返す
     VT GetViewType() const
     {
@@ -733,13 +733,13 @@ private:
     }
     
     //! 現在のViewTypeを返す
-    ViewType GetViewType() const override
+    PluginViewType GetViewType() const override
     {
         return control_->GetViewType();
     }
     
     //! ViewTypeの切り替えに失敗した場合はfalseを返す
-    bool SetViewType(ViewType type) override
+    bool SetViewType(PluginViewType type) override
     {
         return control_->SetViewType(type);
     }

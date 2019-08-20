@@ -1,5 +1,5 @@
 #include "Gui.hpp"
-#include "../App.hpp"
+#include "../app/App.hpp"
 
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
@@ -99,6 +99,11 @@ private:
     void OnAudioInputEnableStateChanged(bool enabled) override
     {
         btn_enable_input_->SetValue(enabled);
+    }
+    
+    void OnAudioOutputLevelChanged(double new_level) override
+    {
+        sl_volume_->SetValue(new_level * kVolumeSliderScale);
     }
 };
 
@@ -551,19 +556,19 @@ public:
         }, kID_Playback_EnableAudioInputs);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
-            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kSine);
+            App::GetInstance()->SetTestWaveformType(OscillatorType::kSine);
         }, kID_Playback_Waveform_Sine);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
-            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kSaw);
+            App::GetInstance()->SetTestWaveformType(OscillatorType::kSaw);
         }, kID_Playback_Waveform_Saw);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
-            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kSquare);
+            App::GetInstance()->SetTestWaveformType(OscillatorType::kSquare);
         }, kID_Playback_Waveform_Square);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
-            App::GetInstance()->SetTestWaveformType(App::TestWaveformType::kTriangle);
+            App::GetInstance()->SetTestWaveformType(OscillatorType::kTriangle);
         }, kID_Playback_Waveform_Triangle);
         
         Bind(wxEVT_COMMAND_MENU_SELECTED, [](auto &ev) {
@@ -574,6 +579,22 @@ public:
         Bind(wxEVT_COMMAND_MENU_SELECTED, [this](auto &ev) {
             OnOpenEditor();
         }, kID_View_PluginEditor);
+        
+        Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent &ev) {
+            auto const app = App::GetInstance();
+            auto const wt = app->GetTestWaveformType();
+            
+            if( (ev.GetId() == kID_Playback_Waveform_Sine && wt == OscillatorType::kSine) ||
+                (ev.GetId() == kID_Playback_Waveform_Saw && wt == OscillatorType::kSaw) ||
+                (ev.GetId() == kID_Playback_Waveform_Square && wt == OscillatorType::kSquare) ||
+                (ev.GetId() == kID_Playback_Waveform_Triangle && wt == OscillatorType::kTriangle)
+               )
+            {
+                ev.Check(true);
+            } else {
+                ev.Check(false);
+            }
+        }, kID_Playback_Waveform_Sine, kID_Playback_Waveform_Triangle);
         
         Bind(wxEVT_UPDATE_UI, [this](auto &ev) {
             ev.Enable(wnd_->CanOpenEditor());

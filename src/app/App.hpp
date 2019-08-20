@@ -3,9 +3,10 @@
 #include <memory>
 #include <bitset>
 
-#include "./misc/SingleInstance.hpp"
-#include "./plugin/vst3/Vst3Plugin.hpp"
-#include "./file/Config.hpp"
+#include "../misc/SingleInstance.hpp"
+#include "../plugin/vst3/Vst3Plugin.hpp"
+#include "../file/Config.hpp"
+#include "./OscillatorType.hpp"
 
 NS_HWM_BEGIN
 
@@ -58,13 +59,20 @@ public:
     using PluginLoadListenerService = IListenerService<PluginLoadListener>;
     PluginLoadListenerService & GetPluginLoadListenerService();
     
-    //! プラグインのロード／アンロード状態の変更通知を受け取るリスナークラス
+    //! Appクラス再生系パラメータの変更通知を受け取るリスナークラス
     class PlaybackOptionChangeListener : public IListenerBase {
     protected:
         PlaybackOptionChangeListener() {}
     public:
+        //! オーディオ出力レベルを変更したときに呼ばれるコールバック
+        virtual void OnAudioOutputLevelChanged(double new_level) {}
+
+        //! テスト波形のタイプを変更したときに呼ばれるコールバック
+        virtual void OnTestWaveformTypeChanged(OscillatorType new_osc_type) {}
+
         //! オーディオデバイスの状態が変更になって、オーディオ入力が可能かどうかが変化したときに呼ばれるコールバック
         virtual void OnAudioInputAvailabilityChanged(bool available) {}
+
         //! オーディオ入力が可能な状態で、その有効／無効を切り替えたときに呼ばれるコールバック
         virtual void OnAudioInputEnableStateChanged(bool enabled) {}
     };
@@ -96,15 +104,8 @@ public:
     //! オーディオ出力レベルを変更する。
     void SetAudioOutputLevel(double db);
     
-    enum class TestWaveformType : Int32 {
-        kSine,
-        kSaw,
-        kSquare,
-        kTriangle,
-    };
-    
-    void SetTestWaveformType(TestWaveformType wt);
-    TestWaveformType GetTestWaveformType() const;
+    void SetTestWaveformType(OscillatorType wt);
+    OscillatorType GetTestWaveformType() const;
     
     //! 再生中のノートを返す。
     std::bitset<128> GetPlayingNotes();

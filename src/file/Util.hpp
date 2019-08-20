@@ -6,6 +6,8 @@
 #include <sstream>
 #include "../device/DeviceType.hpp"
 #include "../plugin/vst3/Vst3PluginFactory.hpp"
+#include "../gui/PluginViewType.hpp"
+#include "../app/OscillatorType.hpp"
 
 NS_HWM_BEGIN
 
@@ -15,36 +17,77 @@ double stof_or(std::string const &str, double default_value);
 
 std::string get_trimmed_line(std::istream &is);
 
-std::vector<std::string> get_lines(std::istream &is);
+std::vector<std::string> read_lines(std::istream &is);
 
-std::optional<std::string> find_value(std::vector<std::string> const &lines, std::string key);
+std::optional<std::string> find_value(std::vector<std::string> const &lines, std::string const &key);
+
+struct write_line_object {
+    std::string const key;
+    std::string const value;
+    
+    friend
+    std::ostream & operator<<(std::ostream &os, write_line_object const &self);
+};
+
+write_line_object write_line(std::string const &key, std::string const &value);
 
 std::string base64_encode(std::vector<char> const &data);
 std::string base64_encode(char const *data, size_t length);
 
-std::vector<char> base64_decode(std::string const &data);
+std::optional<std::vector<char>> base64_decode(std::string const &data);
 
 template<class T>
-std::string to_s(T const &s) {
+std::string to_s(T const &v) {
     std::stringstream ss;
-    ss << s;
+    ss << v;
     return ss.str();
 }
 
-template<>
-inline
-std::string to_s<String>(String const &s) { return to_utf8(s); }
+template<class T>
+std::string to_s(std::optional<T> const &v) {
+    if(v) {
+        return to_s(*v);
+    } else {
+        return "";
+    }
+}
 
-template<>
-inline
-std::string to_s<AudioDriverType>(AudioDriverType const &s) { return to_string(s); }
+template<class T>
+bool from_s(std::string const &str, T &v)
+{
+    std::istringstream ss(str);
+    ss >> v;
+    return !!ss;
+}
 
-template<>
-inline
-std::string to_s<ClassInfo::CID>(ClassInfo::CID const &s) { return base64_encode(s.data(), s.size()); }
+template<class T>
+bool from_s(std::string const &str, std::optional<T> &v)
+{
+    T tmp;
+    if(from_s(str, tmp)) {
+        v = tmp;
+        return true;
+    } else {
+        return false;
+    }
+}
 
-template<>
-inline
-std::string to_s<std::vector<char>>(std::vector<char> const &s) { return base64_encode(s); }
+#if !defined(INSTANCIATE_STRING_CONVERSION_FUNCTIONS)
+
+extern template std::string to_s(String const &s);
+extern template std::string to_s(AudioDriverType const &v);
+extern template std::string to_s(ClassInfo::CID const &v);
+extern template std::string to_s(std::vector<char> const &v);
+extern template std::string to_s(PluginViewType const &v);
+extern template std::string to_s(OscillatorType const &v);
+
+extern template bool from_s(std::string const &str, String &s);
+extern template bool from_s(std::string const &str, AudioDriverType &v);
+extern template bool from_s(std::string const &str, std::vector<char> &v);
+extern template bool from_s(std::string const &str, ClassInfo::CID &v);
+extern template bool from_s(std::string const &str, PluginViewType &v);
+extern template bool from_s(std::string const &str, OscillatorType &v);
+
+#endif
 
 NS_HWM_END
