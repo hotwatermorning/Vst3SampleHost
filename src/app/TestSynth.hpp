@@ -67,6 +67,9 @@ struct TestSynth
         void advance_envelope();
     };
     
+    TestSynth();
+    ~TestSynth();
+    
     std::array<Voice, 128> voices_;
     using KeyboardStatus = std::array<std::atomic<NoteStatus>, 128>;
     KeyboardStatus keys_;

@@ -197,6 +197,19 @@ void TestSynth::Voice::advance_envelope()
     }
 }
 
+TestSynth::TestSynth()
+{
+    ot_ = OscillatorType::kSine;
+    
+    auto null = NoteStatus::CreateNull();
+    for(auto &key: keys_) {
+        key = null;
+    }
+}
+
+TestSynth::~TestSynth()
+{}
+
 void TestSynth::SetSampleRate(double sample_rate)
 {
     sample_rate_ = sample_rate;
