@@ -150,6 +150,7 @@ struct App::Impl
     ListenerService<PluginLoadListener> plls_;
     ListenerService<PlaybackOptionChangeListener> pocls_;
     TestSynth test_synth_;
+    IAboutDialog *about_dialog_ = nullptr;
     
     bool ReadConfigFile()
     {
@@ -460,6 +461,10 @@ bool App::OnInit()
 
 int App::OnExit()
 {
+    if(pimpl_->about_dialog_) {
+        pimpl_->about_dialog_->Destroy();
+    }
+    
     auto adm = AudioDeviceManager::GetInstance();
     auto mdm = MidiDeviceManager::GetInstance();
     
@@ -756,14 +761,19 @@ void App::SelectAudioDevice()
 
 void App::ShowAboutDialog()
 {
+    assert(pimpl_->about_dialog_ == nullptr);
     auto dlg = CreateAboutDialog();
  
     if(dlg->IsOk() == false) {
         wxMessageBox("Aboutダイアログの作成に失敗しました。", "Error", wxOK|wxCENTER|wxICON_ERROR);
         return;
     }
-    
-    dlg->ShowModal();
+
+    pimpl_->about_dialog_ = dlg.release();
+    pimpl_->about_dialog_->Bind(wxEVT_DESTROY, [this](auto &ev) {
+        pimpl_->about_dialog_ = nullptr;
+    });
+    pimpl_->about_dialog_->Show();
 }
 
 Config & App::GetConfig()

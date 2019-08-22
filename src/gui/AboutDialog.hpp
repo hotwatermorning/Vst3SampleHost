@@ -3,7 +3,7 @@
 NS_HWM_BEGIN
 
 class IAboutDialog
-:   public wxDialog
+:   public wxFrame
 {
 protected:
     template<class... Args>
@@ -12,15 +12,15 @@ protected:
 public:
     virtual
     bool IsOk() const = 0;
+    
+    struct Destroyer
+    {
+        void operator()(wxWindow* p) {
+            p->Destroy();
+        }
+    };
 };
 
-struct Destroyer
-{
-    void operator()(wxWindow* p) {
-        p->Destroy();
-    }
-};
-
-std::unique_ptr<IAboutDialog, Destroyer> CreateAboutDialog();
+std::unique_ptr<IAboutDialog, IAboutDialog::Destroyer> CreateAboutDialog();
 
 NS_HWM_END
