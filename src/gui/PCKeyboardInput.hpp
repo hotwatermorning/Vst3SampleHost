@@ -53,20 +53,18 @@ class PCKeyboardInput
 public:
     PCKeyboardInput();
     ~PCKeyboardInput();
-    
-    void ApplyTo(wxFrame *frame);
+    void ProcessKeyEvent(wxKeyEvent const &ev);
     
 private:
     void OnTimer();
-    
     wxTimer timer_;
     
     //! key -> pitch
     std::map<KeyID, int> playing_keys_;
     wxAcceleratorTable acc_table_;
-    int base_pitch_ = 48;
-    bool oct_up_pressing_ = false;
-    bool oct_down_pressing_ = false;
+    int base_pitch_ = 60;
+    bool octave_up_being_pressed_ = false;
+    bool octave_down_being_pressed_ = false;
     
     wxAcceleratorTable const & GetAcceleratorTable() const
     {

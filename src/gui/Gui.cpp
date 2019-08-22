@@ -204,6 +204,16 @@ public:
         
         SetSizerAndFit(vbox);
         
+        Bind(wxEVT_KEY_UP, [](auto &ev) {
+            auto key_input = PCKeyboardInput::GetInstance();
+            key_input->ProcessKeyEvent(ev);
+        });
+        
+        Bind(wxEVT_KEY_DOWN, [](auto &ev) {
+            auto key_input = PCKeyboardInput::GetInstance();
+            key_input->ProcessKeyEvent(ev);
+        });
+        
         Bind(wxEVT_PAINT, [this](auto &ev) { OnPaint(ev); });
         btn_load_module_->Bind(wxEVT_BUTTON, [this](auto &ev) { OnLoadModule(); });
         cho_select_component_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectComponent(); });
@@ -214,7 +224,7 @@ public:
         slr_pll_.reset(app->GetPluginLoadListenerService(), this);
     }
     
-    bool AcceptsFocus() const override { return false; }
+    bool AcceptsFocus() const override { return true; }
     
     bool Destroy() override
     {
@@ -599,10 +609,7 @@ public:
         Bind(wxEVT_UPDATE_UI, [this](auto &ev) {
             ev.Enable(wnd_->CanOpenEditor());
         }, kID_View_PluginEditor);
-        
-        auto key_input = PCKeyboardInput::GetInstance();
-        key_input->ApplyTo(this);
-        
+    
         SetClientSize(initial_size);
         wnd_ = new MainWindow(this);
         wnd_->Show();

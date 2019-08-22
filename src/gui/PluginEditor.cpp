@@ -6,6 +6,7 @@
 #include <pluginterfaces/base/keycodes.h>
 #include <pluginterfaces/gui/iplugview.h>
 #include <map>
+#include "./PluginKeyEventHandler.h"
 
 NS_HWM_BEGIN
 
@@ -164,7 +165,7 @@ class GenericParameterView
     
 public:
     GenericParameterView(wxWindow *parent, Vst3Plugin *plugin)
-    :   wxWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(40, 40), wxCLIP_CHILDREN)
+    :   wxWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(40, 40), wxCLIP_CHILDREN|wxWANTS_CHARS)
     ,   plugin_(plugin)
     {
         SetDoubleBuffered(true);
@@ -181,6 +182,18 @@ public:
         sb_->Bind(wxEVT_SCROLL_BOTTOM, [this](auto &ev) { Layout(); });
         sb_->Bind(wxEVT_SCROLL_THUMBTRACK, [this](auto &ev) { Layout(); });
         
+        Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent &ev) {
+            hwm::dout << "KeyDown Event @" << typeid(*this).name() << ": " << ev.m_keyCode << std::endl;
+            auto key_input = PCKeyboardInput::GetInstance();
+            key_input->ProcessKeyEvent(ev);
+        });
+        
+        Bind(wxEVT_KEY_UP, [this](wxKeyEvent &ev) {
+            hwm::dout << "KeyUp Event @" << typeid(*this).name() << ": " << ev.m_keyCode << std::endl;
+            auto key_input = PCKeyboardInput::GetInstance();
+            key_input->ProcessKeyEvent(ev);
+        });
+        
         Bind(wxEVT_MOUSEWHEEL, [this](wxMouseEvent &ev) {
             hwm::dout << ev.GetWheelDelta() << ", " << ev.GetWheelRotation() << std::endl;
             sb_->SetThumbPosition(sb_->GetThumbPosition() - ev.GetWheelRotation());
@@ -190,7 +203,7 @@ public:
         Layout();
     }
     
-    bool AcceptsFocus() const override { return false; }
+    bool AcceptsFocus() const override { return true; }
 
     bool Show(bool show = true) override
     {
@@ -548,18 +561,32 @@ private:
 };
 
 class PluginEditorContents
-:   public wxPanel
+:   public wxWindow
 ,   public Vst3Plugin::PlugFrameListener
 {
+    std::shared_ptr<PluginKeyEventHandler> key_handler_;
 public:
     PluginEditorContents(IPluginEditorFrame *parent,
                          Vst3Plugin *target_plugin)
-    :   wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS)
+    :   wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS)
     {
         plugin_ = target_plugin;
         Show(false);
+        
+        Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent &ev) {
+            hwm::dout << "KeyDown Event: " << ev.m_keyCode << std::endl;
+            auto key_input = PCKeyboardInput::GetInstance();
+            key_input->ProcessKeyEvent(ev);
+        });
+        
+        Bind(wxEVT_KEY_UP, [this](wxKeyEvent &ev) {
+            hwm::dout << "KeyUp Event: " << ev.m_keyCode << std::endl;
+            auto key_input = PCKeyboardInput::GetInstance();
+            key_input->ProcessKeyEvent(ev);
+        });
 
         plugin_->OpenEditor(GetHandle(), this);
+        key_handler_ = CreatePluginKeyEventHandler(this);
         
         auto rc = plugin_->GetPreferredRect();
         auto csize = wxSize(rc.getWidth(), rc.getHeight());
@@ -568,8 +595,9 @@ public:
 
     bool Destroy() override
     {
+        key_handler_.reset();
         plugin_->CloseEditor();
-        return wxPanel::Destroy();
+        return wxWindow::Destroy();
     }
 
     bool Show(bool show = true) override
@@ -578,7 +606,7 @@ public:
         auto csize = wxSize(rc.getWidth(), rc.getHeight());
         SetClientSize(csize);
 
-        return wxPanel::Show(show);
+        return wxWindow::Show(show);
     }
     
     Int16 ToVst3KeyModifier(wxKeyboardState &kb)
@@ -646,11 +674,10 @@ public:
                            target_plugin->GetEffectName(),
                            wxDefaultPosition,
                            wxDefaultSize,
-                           wxDEFAULT_FRAME_STYLE & ~(wxMAXIMIZE_BOX))
+                           wxWANTS_CHARS | (wxDEFAULT_FRAME_STYLE & ~(wxMAXIMIZE_BOX)))
     ,   listener_(listener)
     {
         auto key_input = PCKeyboardInput::GetInstance();
-        key_input->ApplyTo(this);
         
         auto sizer = new wxBoxSizer(wxVERTICAL);
 
@@ -674,6 +701,19 @@ public:
             genedit_->Show();
         }
 
+        Bind(wxEVT_CHAR_HOOK, [this](wxKeyEvent &ev) {
+            ev.ResumePropagation(2);
+            ev.DoAllowNextEvent();
+        });
+        
+        Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent &ev) {
+            hwm::dout << "KeyDown Event Parent: " << ev.m_keyCode << std::endl;
+        });
+        
+        Bind(wxEVT_KEY_UP, [this](wxKeyEvent &ev) {
+            hwm::dout << "KeyUp Event Parent: " << ev.m_keyCode << std::endl;
+        });
+        
         SetSizer(sizer);
         SetAutoLayout(true);
 
