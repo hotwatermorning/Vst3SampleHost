@@ -350,9 +350,9 @@ bool Vst3Plugin::Impl::OpenEditor(WindowHandle parent, IPlugFrame *plug_frame)
     res = plug_view_->attached((void *)parent, kPlatformTypeHWND);
 #else
     if(plug_view_->isPlatformTypeSupported(kPlatformTypeNSView) == kResultOk) {
-        res = plug_view_->attached((void *)parent, kPlatformTypeNSView);
+        res = plug_view_->attached(parent, kPlatformTypeNSView);
     } else if(plug_view_->isPlatformTypeSupported(kPlatformTypeHIView) == kResultOk) {
-        res = plug_view_->attached(GetWindowRef(parent), kPlatformTypeHIView);
+        res = plug_view_->attached(parent, kPlatformTypeHIView);
     } else {
         assert(false);
     }
