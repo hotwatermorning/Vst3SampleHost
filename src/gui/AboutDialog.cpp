@@ -2,8 +2,6 @@
 #include "./Util.hpp"
 #include "../resource/ResourceHelper.hpp"
 
-#include <wx/hyperlink.h>
-
 NS_HWM_BEGIN
 
 namespace {
