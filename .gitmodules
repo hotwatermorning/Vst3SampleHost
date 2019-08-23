@@ -3,7 +3,7 @@
 	url = https://github.com/steinbergmedia/vst3sdk.git
 [submodule "ext/portaudio"]
 	path = ext/portaudio
-	url = https://git.assembla.com/portaudio.git
+	url = https://github.com/hotwatermorning/portaudio.git
 [submodule "ext/rtmidi"]
 	path = ext/rtmidi
 	url = https://github.com/thestk/rtmidi.git
