@@ -138,6 +138,15 @@ public:
     /*! @note この関数は、必ずデバイスが Close() された状態で呼び出すこと。
      */
     void RemoveAllCallbacks();
+
+    static
+    void * SetWindowHandleForAsioPanel(void *handle); 
+    
+    static
+    void * GetWindowHandleForAsioPanel();
+
+    //! ASIOデバイスの設定画面を開く
+    bool ShowAsioPanel();
     
 private:
     class Impl;

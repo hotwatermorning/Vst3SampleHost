@@ -1,5 +1,6 @@
 #include <mutex>
 #include <portaudio.h>
+#include <pa_asio.h>
 
 #include "./AudioDeviceManager.hpp"
 #include "../misc/Buffer.hpp"
@@ -7,6 +8,20 @@
 #include "../misc/MathUtil.hpp"
 
 NS_HWM_BEGIN
+
+auto find_index = [](auto const &target) -> int {
+    int num = Pa_GetDeviceCount();
+    for(int i = 0; i < num; ++i) {
+        auto const *info = Pa_GetDeviceInfo(i);
+        auto const *host_api_info = Pa_GetHostApiInfo(info->hostApi);
+        if(target.name_ == to_wstr(info->name) &&
+            target.driver_ == ToAudioDriverType(host_api_info->type))
+        {
+            return i;
+        }
+    }
+    return -1;
+};
 
 AudioDriverType ToAudioDriverType(PaHostApiIndex index)
 {
@@ -356,20 +371,6 @@ AudioDeviceManager::Open(AudioDeviceInfo const *input_device,
     PaStreamParameters *pop = nullptr;
     PaStreamFlags flags = 0;
     
-    auto find_index = [](auto const &target) -> int {
-        int num = Pa_GetDeviceCount();
-        for(int i = 0; i < num; ++i) {
-            auto const *info = Pa_GetDeviceInfo(i);
-            auto const *host_api_info = Pa_GetHostApiInfo(info->hostApi);
-            if(target.name_ == to_wstr(info->name) &&
-               target.driver_ == ToAudioDriverType(host_api_info->type))
-            {
-                return i;
-            }
-        }
-        return -1;
-    };
-    
     if(input_device && input_device->num_channels_ > 0) {
         ip.channelCount = input_device->num_channels_;
         ip.device = find_index(*input_device);
@@ -475,6 +476,40 @@ void AudioDeviceManager::RemoveAllCallbacks()
     assert(!IsOpened() || GetDevice()->IsStopped());
     
     pimpl_->callbacks_.clear();
+}
+
+void * AudioDeviceManager::SetWindowHandleForAsioPanel(void *handle)
+{
+    return PaAsio_SetWindowHandle(handle);
+}
+
+void * AudioDeviceManager::GetWindowHandleForAsioPanel()
+{
+    return PaAsio_GetWindowHandle();
+}
+
+bool AudioDeviceManager::ShowAsioPanel()
+{
+    auto dev = GetDevice();
+    if(!dev) {
+        return false;
+    }
+
+    auto output_device_info = dev->GetDeviceInfo(DeviceIOType::kOutput);
+    if(!output_device_info) {
+        return false;
+    }
+
+    if(output_device_info->driver_ != AudioDriverType::kASIO) {
+        return false;
+    }
+
+    auto err = PaAsio_ShowControlPanelForCurrentDevice();
+    if(err != paNoError) {
+        return false;
+    }
+
+    return true;
 }
 
 NS_HWM_END

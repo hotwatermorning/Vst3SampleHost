@@ -79,6 +79,7 @@ public:
         cho_sample_rates_ = new wxChoice(this, wxID_ANY);
         st_buffer_sizes_ = new wxStaticText(this, wxID_ANY, "Buffer Size: ");
         cho_buffer_sizes_ = new wxChoice(this, wxID_ANY);
+        btn_asio_ = new wxButton(this, wxID_ANY, "ASIO Panel");
         
         st_audio_inputs_->SetForegroundColour(HSVToColour(0.0, 0.0, 0.9));
         st_audio_inputs_->SetBackgroundColour(kPanelBackgroundColour.brush_.GetColour());
@@ -92,6 +93,8 @@ public:
         st_buffer_sizes_->SetForegroundColour(HSVToColour(0.0, 0.0, 0.9));
         st_buffer_sizes_->SetBackgroundColour(kPanelBackgroundColour.brush_.GetColour());
 
+        btn_asio_->Hide();
+
         auto img = GetResourceAs<wxImage>(L"caution.png");
         assert(img.IsOk());
         img.Rescale(20, 20, wxIMAGE_QUALITY_HIGH);
@@ -99,7 +102,6 @@ public:
         auto tooltip = new wxToolTip(L"DirectSound使用時は、バッファサイズが小さいと正しく動作しないことがあります。");
         tooltip->SetDelay(500);
         warning_icon_->SetToolTip(tooltip);
-
         
         auto vbox = new wxBoxSizer(wxVERTICAL);
         
@@ -115,6 +117,13 @@ public:
         add_entry(vbox, st_audio_outputs_, cho_audio_outputs_);
         add_entry(vbox, st_sample_rates_, cho_sample_rates_);
         add_entry(vbox, st_buffer_sizes_, cho_buffer_sizes_);
+        {
+            auto hbox = new wxBoxSizer(wxHORIZONTAL);
+            btn_asio_->SetMaxSize(wxSize(150, 50));
+            hbox->AddStretchSpacer(10);
+            hbox->Add(btn_asio_, wxSizerFlags(1).Expand().Border());
+            vbox->Add(hbox, wxSizerFlags(0).Expand().Border(wxTOP|wxBOTTOM, 5));
+        }
         auto hbox = new wxBoxSizer(wxHORIZONTAL);
         hbox->AddStretchSpacer(1);
         warning_icon_->Hide();
@@ -131,6 +140,7 @@ public:
         cho_audio_outputs_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectAudioOutput(); });
         cho_sample_rates_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectSampleRate(); });
         cho_buffer_sizes_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectBufferSize(); });
+        btn_asio_->Bind(wxEVT_BUTTON, [this](auto &ev) { OnShowAsioPanel(); });
         
         SetAutoLayout(true);
         SetCanFocus(false);
@@ -419,6 +429,8 @@ public:
             }
         }
 
+        btn_asio_->Show(device_setting_.output_info_->driver_ == AudioDriverType::kASIO);
+
         warning_icon_->Show(should_show_warning_icon);
         Layout();
     }
@@ -483,6 +495,12 @@ public:
         kPanelBackgroundColour.ApplyTo(dc);
         dc.DrawRectangle(GetClientRect());
     }
+
+    void OnShowAsioPanel()
+    {
+        auto adm = AudioDeviceManager::GetInstance();
+        adm->ShowAsioPanel();
+    }
     
 private:
     wxStaticText *st_audio_inputs_ = nullptr;
@@ -494,6 +512,7 @@ private:
     wxStaticText *st_buffer_sizes_ = nullptr;
     wxChoice *cho_buffer_sizes_ = nullptr;
     wxStaticBitmap *warning_icon_ = nullptr;
+    wxButton *btn_asio_ = nullptr;
 };
 
 class DeviceSettingDialog

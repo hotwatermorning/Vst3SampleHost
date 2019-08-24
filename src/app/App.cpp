@@ -27,6 +27,23 @@
 
 NS_HWM_BEGIN
 
+class ASIOCallbackWindow : public wxFrame
+{
+public:
+    ASIOCallbackWindow()
+        :   wxFrame(nullptr, wxID_ANY, "asio callback", wxDefaultPosition, wxDefaultSize, wxFRAME_NO_TASKBAR|wxFRAME_NO_WINDOW_MENU|wxBORDER_NONE)
+    {
+        Bind(wxEVT_PAINT, [this](auto &ev) { OnPaint(ev); });
+    }
+
+    void OnPaint(wxPaintEvent &e) {
+        wxPaintDC dc(this); 
+
+        dc.SetBrush(wxBrush(wxColour(210, 210, 180)));
+        dc.DrawCircle(GetClientRect().GetTopLeft(), 40);
+    }
+};
+
 double const kAudioOutputLevelMinDB = -48.0;
 double const kAudioOutputLevelMaxDB = 0.0;
 Int32 kAudioOutputLevelTransientMillisec = 30;
@@ -133,6 +150,7 @@ struct App::Impl
         enable_audio_input_.store(false);
     }
     
+    ASIOCallbackWindow *asio_callback_;
     Config config_;
     TransitionalVolume output_level_;
     PCKeyboardInput keyinput_;
@@ -426,6 +444,11 @@ bool App::OnInit()
     }
     
     wxInitAllImageHandlers();
+
+    pimpl_->asio_callback_ = new ASIOCallbackWindow(); 
+    pimpl_->asio_callback_->Bind(wxEVT_DESTROY, [this](auto &) {
+        pimpl_->asio_callback_ = nullptr;
+    });
     
     pimpl_->factory_list_ = std::make_shared<Vst3PluginFactoryList>();
 
@@ -476,6 +499,8 @@ int App::OnExit()
         dev->Stop();
         adm->Close();
     }
+
+    pimpl_->asio_callback_->Destroy();
     
     adm->RemoveCallback(pimpl_.get());
     
