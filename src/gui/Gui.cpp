@@ -22,26 +22,33 @@ public:
     wxColour const kColLabel = HSVToColour(0.0, 0.0, 0.9);
     wxColour const kColOutputSlider = HSVToColour(0.7, 0.4, 0.4);
     wxColour const kColInputCheckBox = HSVToColour(0.5, 0.4, 0.4);
-    double const kVolumeSliderScale = 1000.0;
+    double const kVolumeSliderScale = 100.0;
     
     HeaderPanel(wxWindow *parent)
     :   wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
     ,   col_bg_(10, 10, 10)
     {
         auto app = App::GetInstance();
-        auto min_value = app->GetAudioOutputMinLevel();
-        auto max_value = app->GetAudioOutputMaxLevel();
+        auto const min_level = app->GetAudioOutputMinLevel();
+        auto const max_level = app->GetAudioOutputMaxLevel();
+        auto const cur_level = app->GetAudioOutputLevel();
         
         lbl_volume_ = new wxStaticText(this, wxID_ANY, L"出力レベル");
         lbl_volume_->SetForegroundColour(kColLabel);
         lbl_volume_->SetBackgroundColour(kColOutputSlider);
         
         sl_volume_ = new wxSlider(this, wxID_ANY,
-                                  app->GetAudioOutputLevel() * kVolumeSliderScale,
-                                  min_value * kVolumeSliderScale,
-                                  max_value * kVolumeSliderScale);
+                                  cur_level * kVolumeSliderScale,
+                                  min_level * kVolumeSliderScale,
+                                  max_level * kVolumeSliderScale);
         sl_volume_->SetBackgroundColour(kColOutputSlider);
         sl_volume_->SetLabel(L"出力レベル");
+        
+        lbl_current_level_ = new wxStaticText(this, wxID_ANY, L"", wxDefaultPosition, wxDefaultSize,
+                                              wxST_NO_AUTORESIZE|wxALIGN_RIGHT);
+        lbl_current_level_->SetForegroundColour(kColLabel);
+        lbl_current_level_->SetBackgroundColour(kColOutputSlider);
+        lbl_current_level_->SetMinSize(wxSize{70, 1});
         
         btn_enable_input_ = new wxCheckBox(this, wxID_ANY, L"マイク入力",
                                        wxDefaultPosition,
@@ -54,7 +61,12 @@ public:
 
         auto hbox = new wxBoxSizer(wxHORIZONTAL);
         hbox->Add(lbl_volume_, wxSizerFlags(0).Expand());
-        hbox->Add(sl_volume_, wxSizerFlags(3).Expand().Border(wxRIGHT, 5));
+        hbox->Add(sl_volume_, wxSizerFlags(3).Expand());
+        
+        auto vbox_current_level = new wxBoxSizer(wxVERTICAL);
+        vbox_current_level->Add(lbl_current_level_, wxSizerFlags(1).Expand());
+        hbox->Add(vbox_current_level, wxSizerFlags(0).Expand());
+        
         hbox->AddStretchSpacer(1);
         hbox->Add(btn_enable_input_, wxSizerFlags(0).Expand());
         
@@ -67,6 +79,8 @@ public:
 
         slr_pocl_.reset(app->GetPlaybackOptionChangeListenerService(), this);
         SetBackgroundColour(col_bg_);
+        
+        UpdateLevelText(cur_level);
     }
     
     bool AcceptsFocus() const override { return false; }
@@ -74,15 +88,32 @@ public:
 private:
     wxStaticText *lbl_volume_;
     wxSlider *sl_volume_;
+    wxStaticText *lbl_current_level_;
     wxCheckBox *btn_enable_input_;
     wxColor col_bg_;
     ScopedListenerRegister<App::PlaybackOptionChangeListener> slr_pocl_;
     
 private:
+    void UpdateLevelText(double level)
+    {
+        auto app = App::GetInstance();
+        auto const min_level = app->GetAudioOutputMinLevel();
+        
+        char buf[32] = {};
+        if(level <= min_level) {
+            sprintf(buf, "-Inf dB");
+        } else {
+            sprintf(buf, "%.2f dB", level);
+        }
+        lbl_current_level_->SetLabel(buf);
+    }
+    
     void OnSlider(wxCommandEvent &ev)
     {
         auto app = App::GetInstance();
+        auto level = sl_volume_->GetValue() / kVolumeSliderScale;
         app->SetAudioOutputLevel(sl_volume_->GetValue() / kVolumeSliderScale);
+        UpdateLevelText(level);
     }
     
     void OnCheckBox(wxCommandEvent &ev)
@@ -104,6 +135,7 @@ private:
     void OnAudioOutputLevelChanged(double new_level) override
     {
         sl_volume_->SetValue(new_level * kVolumeSliderScale);
+        UpdateLevelText(new_level);
     }
 };
 
