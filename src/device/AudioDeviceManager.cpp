@@ -127,7 +127,6 @@ public:
     
     void OnStopped()
     {
-        stream_ = nullptr;
         ForEachCallbacks([](auto *cb) { cb->StopProcessing(); });
         
         input_underflow_count_ = 0;
