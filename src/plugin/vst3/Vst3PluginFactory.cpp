@@ -21,8 +21,7 @@ extern
 std::unique_ptr<Vst3Plugin>
     CreatePlugin(IPluginFactory *factory,
                  FactoryInfo const &factory_info,
-                 ClassInfo const &info,
-                 std::function<void(Vst3Plugin const *p)> on_destruction
+                 ClassInfo const &info
                  );
 
 FactoryInfo::FactoryInfo(PFactoryInfo const &info)
@@ -137,6 +136,7 @@ bool ClassInfo::is_instrument() const
 }
 
 class Vst3PluginFactory::Impl
+:   public Vst3PluginDestructionListener
 {
 public:
     Impl(String module_path);
@@ -155,14 +155,16 @@ public:
         return factory_.get();
     }
     
-    void OnVst3PluginIsCreated(Vst3Plugin const *p) {
-        loaded_plugins_.push_back(p);
+    void OnAfterConstruction(Vst3Plugin *plugin) {
+        loaded_plugins_.push_back(plugin);
+        plugin->GetVst3PluginDestructionListenerService().AddListener(this);
     }
-        
-    void OnVst3PluginIsDestructed(Vst3Plugin const *p) {
-        auto found = std::find(loaded_plugins_.begin(), loaded_plugins_.end(), p);
+    
+    void OnBeforeDestruction(Vst3Plugin *plugin) override {
+        auto found = std::find(loaded_plugins_.begin(), loaded_plugins_.end(), plugin);
         assert(found != loaded_plugins_.end());
         loaded_plugins_.erase(found);
+        plugin->GetVst3PluginDestructionListenerService().RemoveListener(this);
     }
     
     UInt32 GetNumLoadedPlugins() const {
@@ -334,11 +336,10 @@ std::unique_ptr<Vst3Plugin>
 {
     auto p = CreatePlugin(pimpl_->GetFactory(),
                           pimpl_->GetFactoryInfo(),
-                          GetComponentInfo(index),
-                          [this](Vst3Plugin const *p) { pimpl_->OnVst3PluginIsDestructed(p); }
+                          GetComponentInfo(index)
                           );
-    pimpl_->OnVst3PluginIsCreated(p.get());
     
+    pimpl_->OnAfterConstruction(p.get());
     return p;
 }
 

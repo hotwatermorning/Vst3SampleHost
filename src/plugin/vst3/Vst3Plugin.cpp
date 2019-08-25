@@ -10,22 +10,24 @@ NS_HWM_BEGIN
 using namespace Steinberg;
 
 Vst3Plugin::Vst3Plugin(std::unique_ptr<Impl> pimpl,
-                       std::unique_ptr<HostContext> host_context,
-                       std::function<void(Vst3Plugin const *p)> on_destruction)
+                       std::unique_ptr<HostContext> host_context)
 :   pimpl_(std::move(pimpl))
 ,   host_context_(std::move(host_context))
 {
     host_context_->SetVst3Plugin(this);
-    on_destruction_ = on_destruction;
 }
 
 Vst3Plugin::~Vst3Plugin()
 {
+    vpdls_.Invoke([this](auto *li) {
+        li->OnBeforeDestruction(this);
+    });
+    
     assert(IsEditorOpened() == false);
     
     pimpl_.reset();
+
     host_context_.reset();
-    on_destruction_(this);
 }
 
 FactoryInfo const & Vst3Plugin::GetFactoryInfo() const
@@ -296,12 +298,11 @@ void Vst3Plugin::LoadData(DumpData const &dump)
 std::unique_ptr<Vst3Plugin>
     CreatePlugin(IPluginFactory *factory,
                  FactoryInfo const &factory_info,
-                 ClassInfo const &class_info,
-                 std::function<void(Vst3Plugin const *p)> on_destruction)
+                 ClassInfo const &class_info)
 {
     auto host_context = std::make_unique<Vst3Plugin::HostContext>(kAppName);
     auto impl = std::make_unique<Vst3Plugin::Impl>(factory, factory_info, class_info, host_context->unknownCast());
-    auto plugin = std::make_unique<Vst3Plugin>(std::move(impl), std::move(host_context), on_destruction);
+    auto plugin = std::make_unique<Vst3Plugin>(std::move(impl), std::move(host_context));
     
     return plugin;
 }
@@ -309,6 +310,11 @@ std::unique_ptr<Vst3Plugin>
 Vst3Plugin::Vst3PluginListenerService & Vst3Plugin::GetVst3PluginListenerService()
 {
     return host_context_->vpls_;
+}
+
+Vst3Plugin::Vst3PluginDestructionListenerService & Vst3Plugin::GetVst3PluginDestructionListenerService()
+{
+    return vpdls_;
 }
 
 NS_HWM_END

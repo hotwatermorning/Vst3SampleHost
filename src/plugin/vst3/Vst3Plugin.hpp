@@ -64,7 +64,19 @@ public:
     {}
     
     virtual void OnNotifyUnitByBusChange(Vst3Plugin *plugin)
-    {}    
+    {}
+};
+
+struct Vst3PluginDestructionListener
+:   IListenerBase
+{
+protected:
+    Vst3PluginDestructionListener()
+    {}
+    
+public:
+    virtual void OnBeforeDestruction(Vst3Plugin *plugin)
+    {}
 };
 
 //! VST3のプラグインを表すクラス
@@ -177,8 +189,7 @@ public:
 
 public:
 	Vst3Plugin(std::unique_ptr<Impl> pimpl,
-               std::unique_ptr<HostContext> host_context,
-               std::function<void(Vst3Plugin const *p)> on_destruction);
+               std::unique_ptr<HostContext> host_context);
     
 	virtual ~Vst3Plugin();
     
@@ -278,10 +289,13 @@ public:
     using Vst3PluginListenerService = IListenerService<Vst3PluginListener>;
     Vst3PluginListenerService & GetVst3PluginListenerService();
     
+    using Vst3PluginDestructionListenerService = IListenerService<Vst3PluginDestructionListener>;
+    Vst3PluginDestructionListenerService & GetVst3PluginDestructionListenerService();
+    
 private:
 	std::unique_ptr<Impl> pimpl_;
     std::unique_ptr<HostContext> host_context_;
-    std::function<void(Vst3Plugin const *p)> on_destruction_;
+    ListenerService<Vst3PluginDestructionListener> vpdls_;
 };
 
 NS_HWM_END
