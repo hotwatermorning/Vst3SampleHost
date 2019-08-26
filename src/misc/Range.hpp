@@ -13,7 +13,7 @@ NS_HWM_BEGIN
  */
 template<class Range1, class Range2, class OutputIterator>
 static constexpr
-auto add(Range &range1, Range &range2, OutputIterator dest)
+auto add(Range1 &range1, Range2 &range2, OutputIterator dest)
 {
     return add(std::begin(range1), std::end(range1), std::begin(range2), std::end(range2), dest);
 }
