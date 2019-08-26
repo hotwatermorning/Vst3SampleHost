@@ -10,12 +10,12 @@ public:
     ClassInfo2Data(Steinberg::PClassInfo2 const &info);
     ClassInfo2Data(Steinberg::PClassInfoW const &info);
     
-    String const &    sub_categories() const { return sub_categories_; }
-    String const &    vendor() const { return vendor_; }
-    String const &    version() const { return version_; }
-    String const &    sdk_version() const { return sdk_version_; }
+    String const &    GetSubCategories() const { return sub_categories_; }
+    String const &    GetVendor() const { return vendor_; }
+    String const &    GetVersion() const { return version_; }
+    String const &    GetSDKVersion() const { return sdk_version_; }
     
-    bool has_sub_category(String elem) const;
+    bool HasSubCategory(String elem) const;
     
 private:
     String    sub_categories_;
@@ -35,17 +35,16 @@ public:
     ClassInfo(Steinberg::PClassInfo2 const &info);
     ClassInfo(Steinberg::PClassInfoW const &info);
     
-    CID const &    cid() const { return cid_; }
-    String const &    name() const { return name_; }
-    String const &    category() const { return category_; }
-    Steinberg::int32        cardinality() const { return cardinality_; }
+    CID const &    GetCID() const { return cid_; }
+    String const &    GetName() const { return name_; }
+    String const &    GetCategory() const { return category_; }
+    Steinberg::int32  GetCardinality() const { return cardinality_; }
     
-    bool has_classinfo2() const { return static_cast<bool>(classinfo2_data_); }
-    ClassInfo2Data const &
-    classinfo2() const { return *classinfo2_data_; }
+    bool HasClassInfo2() const { return static_cast<bool>(classinfo2_data_); }
+    ClassInfo2Data const & GetClassInfo2() const { return *classinfo2_data_; }
     
-    bool is_fx() const;
-    bool is_instrument() const;
+    bool IsEffect() const;
+    bool IsInstrument() const;
     
 private:
     CID cid_ = {{}};

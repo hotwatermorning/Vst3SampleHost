@@ -297,7 +297,7 @@ struct App::Impl
         
         plugin_->Process(pi);
         
-        int const num_po = plugin_->GetNumOutputs();
+        int const num_po = plugin_->GetNumAudioOutputs();
         if(num_po >= 2 && num_output_channels_ == 1) {
             // mixdown stereo channels to mono
             auto const srcL = output_buffer_.data()[0];
@@ -339,7 +339,7 @@ struct App::Impl
         input_buffer_.fill(0.0);
         output_buffer_.fill(0.0);
         
-        bool const use_dummy_synth = (!plugin_ || plugin_->GetComponentInfo().is_fx());
+        bool const use_dummy_synth = (!plugin_ || plugin_->GetComponentInfo().IsEffect());
 
         if(use_dummy_synth) {
             test_synth_.Process(input_buffer_.data()[0], block_size);

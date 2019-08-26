@@ -48,17 +48,17 @@ ClassInfo const & Vst3Plugin::GetComponentInfo() const
     return pimpl_->GetComponentInfo();
 }
 
-String Vst3Plugin::GetEffectName() const
+String Vst3Plugin::GetPluginName() const
 {
-    return pimpl_->GetEffectName();
+    return pimpl_->GetPluginName();
 }
 
-size_t Vst3Plugin::GetNumInputs() const
+size_t Vst3Plugin::GetNumAudioInputs() const
 {
     return pimpl_->GetAudioBusesInfo(Vst::BusDirections::kInput).GetNumActiveChannels();
 }
 
-size_t Vst3Plugin::GetNumOutputs() const
+size_t Vst3Plugin::GetNumAudioOutputs() const
 {
     return pimpl_->GetAudioBusesInfo(Vst::BusDirections::kOutput).GetNumActiveChannels();
 }

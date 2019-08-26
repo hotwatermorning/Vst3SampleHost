@@ -79,16 +79,16 @@ std::wstring
         ClassInfoToString(ClassInfo const &info)
 {
     std::wstringstream ss;
-    ss    << info.name()
-        << L", " << FormatCid(info.cid())
-        << L", " << info.category()
-        << L", " << info.cardinality();
+    ss    << info.GetName()
+        << L", " << FormatCid(info.GetCID())
+        << L", " << info.GetCategory()
+        << L", " << info.GetCardinality();
 
-    if(info.has_classinfo2()) {
-        ss    << L", " << info.classinfo2().sub_categories()
-            << L", " << info.classinfo2().vendor()
-            << L", " << info.classinfo2().version()
-            << L", " << info.classinfo2().sdk_version()
+    if(info.HasClassInfo2()) {
+        ss    << L", " << info.GetClassInfo2().GetSubCategories()
+            << L", " << info.GetClassInfo2().GetVendor()
+            << L", " << info.GetClassInfo2().GetVersion()
+            << L", " << info.GetClassInfo2().GetSDKVersion()
             ;
     }
     return ss.str();
@@ -109,14 +109,14 @@ std::wstring
         FactoryInfoToString(FactoryInfo const &info)
 {
     std::wstringstream ss;
-    ss    << info.vendor()
-        << L", " << info.url()
-        << L", " << info.email()
+    ss    << info.GetVendor()
+        << L", " << info.GetURL()
+        << L", " << info.GetEmail()
         << std::boolalpha
-        << L", " << L"Discardable: " << info.discardable()
-        << L", " << L"License Check: "<< info.license_check()
-        << L", " << L"Component Non Discardable: " << info.component_non_discardable()
-        << L", " << L"Unicode: " << info.unicode();
+        << L", " << L"Discardable: " << info.IsDiscardable()
+        << L", " << L"License Check: "<< info.IsLicenseCheck()
+        << L", " << L"Component Non Discardable: " << info.IsComponentNonDiscardable()
+        << L", " << L"Unicode: " << info.IsUnicode();
     return ss.str();
 }
 
@@ -225,7 +225,7 @@ std::unique_ptr<Vst3Plugin>
     Vst3PluginFactory::CreateByID(ClassInfo::CID const &component_id)
 {
     for(size_t i = 0; i < GetComponentCount(); ++i) {
-        if(component_id == GetComponentInfo(i).cid()) {
+        if(component_id == GetComponentInfo(i).GetCID()) {
             return CreateByIndex(i);
         }
     }

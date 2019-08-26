@@ -199,9 +199,9 @@ public:
     FactoryInfo const & GetFactoryInfo() const;
     ClassInfo const & GetComponentInfo() const;
 
-	String GetEffectName() const;
-	size_t	GetNumInputs() const;
-    size_t  GetNumOutputs() const;
+	String GetPluginName() const;
+	size_t	GetNumAudioInputs() const;
+    size_t  GetNumAudioOutputs() const;
     
     UInt32  GetNumParams() const;
     ParameterInfo const & GetParameterInfoByIndex(UInt32 index) const;

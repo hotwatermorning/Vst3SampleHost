@@ -80,7 +80,7 @@ public:
 	Vst::IEditController *	GetEditController	() const;
 	Vst::IEditController2 *	GetEditController2	() const;
 
-	String GetEffectName() const;
+	String GetPluginName() const;
     
     ParameterInfoList & GetParameterInfoList();
     ParameterInfoList const & GetParameterInfoList() const;

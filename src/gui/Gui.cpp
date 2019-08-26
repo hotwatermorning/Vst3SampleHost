@@ -267,13 +267,13 @@ private:
         String fi_str =
         wxString::Format(L"vendor: %ls\nurl: %ls\ne-mail: %ls\n"
                          L"discardable: %ls\nlicense_check: %ls\ncomponent non discardable: %ls\nunicode: %ls",
-                         fi.vendor().c_str(),
-                         fi.url().c_str(),
-                         fi.email().c_str(),
-                         fi.discardable() ? L"yes" : L"no",
-                         fi.license_check() ? L"yes" : L"no",
-                         fi.component_non_discardable() ? L"yes" : L"no",
-                         fi.unicode() ? L"yes" : L"no"
+                         fi.GetVendor().c_str(),
+                         fi.GetURL().c_str(),
+                         fi.GetEmail().c_str(),
+                         fi.IsDiscardable() ? L"yes" : L"no",
+                         fi.IsLicenseCheck() ? L"yes" : L"no",
+                         fi.IsComponentNonDiscardable() ? L"yes" : L"no",
+                         fi.IsUnicode() ? L"yes" : L"no"
                          ).ToStdWstring();
         tc_factory_info_->Clear();
         tc_factory_info_->AppendText(fi_str.c_str());
@@ -286,11 +286,11 @@ private:
         for(int i = 0; i < num; ++i) {
             auto const &info = factory->GetComponentInfo(i);
             
-            hwm::wdout << info.name() << L", " << info.category() << std::endl;
+            hwm::wdout << info.GetName() << L", " << info.GetCategory() << std::endl;
             
             //! カテゴリがkVstAudioEffectClassなComponentを探索する。
-            if(info.category() == hwm::to_wstr(kVstAudioEffectClass)) {
-                cho_select_component_->Append(info.name(), new ComponentData{info.cid()});
+            if(info.GetCategory() == hwm::to_wstr(kVstAudioEffectClass)) {
+                cho_select_component_->Append(info.GetName(), new ComponentData{info.GetCID()});
             }
         }
         
@@ -322,7 +322,7 @@ private:
     void OnAfterPluginLoaded(Vst3Plugin *plugin) override
     {
         UInt32 component_index = -1;
-        auto cid = plugin->GetComponentInfo().cid();
+        auto cid = plugin->GetComponentInfo().GetCID();
         for(int i = 0; i < cho_select_component_->GetCount(); ++i) {
             auto component_data = static_cast<ComponentData *>(cho_select_component_->GetClientObject(i));
             if(component_data->cid_ == cid) {
@@ -335,22 +335,22 @@ private:
         
         auto const &info = App::GetInstance()->GetPluginFactory()->GetComponentInfo(component_index);
         char cid_str[64] = {};
-        auto fuid = Steinberg::FUID::fromTUID(info.cid().data());
+        auto fuid = Steinberg::FUID::fromTUID(info.GetCID().data());
         fuid.toRegistryString(cid_str);
     
         auto str = wxString::Format(L"Class ID: %s\ncategory: %ls\ncardinality: %d",
                                     cid_str,
-                                    info.category().c_str(),
-                                    info.cardinality());
+                                    info.GetCategory().c_str(),
+                                    info.GetCardinality());
         
-        if(info.has_classinfo2()) {
-            auto info2 = info.classinfo2();
+        if(info.HasClassInfo2()) {
+            auto info2 = info.GetClassInfo2();
             str += L"\n";
             str += wxString::Format(L"sub categories: %ls\nvendor: %ls\nversion: %ls\nsdk_version: %ls",
-                                    info2.sub_categories().c_str(),
-                                    info2.vendor().c_str(),
-                                    info2.version().c_str(),
-                                    info2.sdk_version().c_str());
+                                    info2.GetSubCategories().c_str(),
+                                    info2.GetVendor().c_str(),
+                                    info2.GetVersion().c_str(),
+                                    info2.GetSDKVersion().c_str());
         }
         
         tc_component_info_->Clear();
@@ -457,7 +457,7 @@ private:
         bool found = false;
         auto factory = App::GetInstance()->GetPluginFactory();
         for(UInt32 i = 0, end = factory->GetComponentCount(); i < end; ++i) {
-            if(factory->GetComponentInfo(i).cid() == p->cid_) {
+            if(factory->GetComponentInfo(i).GetCID() == p->cid_) {
                 break;
             }
         }

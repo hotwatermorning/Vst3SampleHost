@@ -12,37 +12,37 @@ FactoryInfo::FactoryInfo(PFactoryInfo const &info)
 ,    flags_(info.flags)
 {}
 
-bool FactoryInfo::discardable                () const
+bool FactoryInfo::IsDiscardable() const
 {
     return (flags_ & Steinberg::PFactoryInfo::FactoryFlags::kClassesDiscardable) != 0;
 }
 
-bool FactoryInfo::license_check                () const
+bool FactoryInfo::IsLicenseCheck() const
 {
     return (flags_ & Steinberg::PFactoryInfo::FactoryFlags::kLicenseCheck) != 0;
 }
 
-bool FactoryInfo::component_non_discardable    () const
+bool FactoryInfo::IsComponentNonDiscardable() const
 {
     return (flags_ & Steinberg::PFactoryInfo::FactoryFlags::kComponentNonDiscardable) != 0;
 }
 
-bool FactoryInfo::unicode                    () const
+bool FactoryInfo::IsUnicode() const
 {
     return (flags_ & Steinberg::PFactoryInfo::FactoryFlags::kUnicode) != 0;
 }
 
-String    FactoryInfo::vendor    () const
+String    FactoryInfo::GetVendor() const
 {
     return vendor_;
 }
 
-String    FactoryInfo::url        () const
+String    FactoryInfo::GetURL() const
 {
     return url_;
 }
 
-String    FactoryInfo::email    () const
+String    FactoryInfo::GetEmail() const
 {
     return email_;
 }

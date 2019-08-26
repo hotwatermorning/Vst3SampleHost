@@ -643,7 +643,7 @@ public:
                       Vst3Plugin *target_plugin,
                       PluginEditorFrameListener *listener)
     :   IPluginEditorFrame(parent, wxID_ANY,
-                           target_plugin->GetEffectName(),
+                           target_plugin->GetPluginName(),
                            wxDefaultPosition,
                            wxDefaultSize,
                            wxDEFAULT_FRAME_STYLE & ~(wxMAXIMIZE_BOX))

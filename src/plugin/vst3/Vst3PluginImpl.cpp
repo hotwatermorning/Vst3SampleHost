@@ -144,9 +144,9 @@ Vst::IEditController2 *    Vst3Plugin::Impl::GetEditController2    () { return e
 Vst::IEditController *    Vst3Plugin::Impl::GetEditController    () const { return edit_controller_.get(); }
 Vst::IEditController2 *    Vst3Plugin::Impl::GetEditController2    () const { return edit_controller2_.get(); }
 
-String Vst3Plugin::Impl::GetEffectName() const
+String Vst3Plugin::Impl::GetPluginName() const
 {
-    return class_info_.name();
+    return class_info_.GetName();
 }
 
 Vst3Plugin::Impl::ParameterInfoList & Vst3Plugin::Impl::GetParameterInfoList()
@@ -810,7 +810,7 @@ void Vst3Plugin::Impl::LoadInterfaces(IPluginFactory *factory, ClassInfo const &
 {
     assert(status_ == Status::kInvalid);
     
-    auto cid = FUID::fromTUID(info.cid().data());
+    auto cid = FUID::fromTUID(info.GetCID().data());
     auto component = createInstance<Vst::IComponent>(factory, cid);
     ThrowIfNotRight(component);
     

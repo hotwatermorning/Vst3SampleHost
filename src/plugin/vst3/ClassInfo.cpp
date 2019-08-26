@@ -21,7 +21,7 @@ ClassInfo2Data::ClassInfo2Data(Steinberg::PClassInfoW const &info)
 {
 }
 
-bool ClassInfo2Data::has_sub_category(String elem) const
+bool ClassInfo2Data::HasSubCategory(String elem) const
 {
     wxArrayString list = wxSplit(sub_categories_, L'|');
     return std::any_of(list.begin(), list.end(),
@@ -64,14 +64,14 @@ ClassInfo::ClassInfo(Steinberg::PClassInfoW const &info)
     std::copy(info.cid, info.cid + kCIDLength, cid_.begin());
 }
 
-bool ClassInfo::is_fx() const
+bool ClassInfo::IsEffect() const
 {
-    return has_classinfo2() && classinfo2().has_sub_category(L"fx");
+    return HasClassInfo2() && GetClassInfo2().HasSubCategory(L"fx");
 }
 
-bool ClassInfo::is_instrument() const
+bool ClassInfo::IsInstrument() const
 {
-    return has_classinfo2() && classinfo2().has_sub_category(L"instrument");
+    return HasClassInfo2() && GetClassInfo2().HasSubCategory(L"instrument");
 }
 
 NS_HWM_END

@@ -7,14 +7,14 @@ NS_HWM_BEGIN
 class FactoryInfo
 {
 public:
-    bool discardable                () const;
-    bool license_check                () const;
-    bool component_non_discardable    () const;
-    bool unicode                    () const;
+    bool IsDiscardable() const;
+    bool IsLicenseCheck() const;
+    bool IsComponentNonDiscardable() const;
+    bool IsUnicode() const;
     
-    String    vendor    () const;
-    String    url        () const;
-    String    email    () const;
+    String    GetVendor() const;
+    String    GetURL() const;
+    String    GetEmail() const;
     
 public:
     FactoryInfo() {}
