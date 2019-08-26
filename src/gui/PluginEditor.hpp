@@ -6,13 +6,13 @@
 
 NS_HWM_BEGIN
 
-struct PluginEditorFrameListener
+struct IPluginEditorFrameListener
 {
 protected:
-    PluginEditorFrameListener();
+    IPluginEditorFrameListener();
     
 public:
-    virtual ~PluginEditorFrameListener();
+    virtual ~IPluginEditorFrameListener();
     
     virtual
     void OnDestroyFromPluginEditorFrame() = 0;
@@ -42,6 +42,6 @@ struct IPluginEditorFrame
 
 IPluginEditorFrame * CreatePluginEditorFrame(wxWindow *parent,
                                              Vst3Plugin *target_plugin,
-                                             PluginEditorFrameListener *listener);
+                                             IPluginEditorFrameListener *listener);
 
 NS_HWM_END

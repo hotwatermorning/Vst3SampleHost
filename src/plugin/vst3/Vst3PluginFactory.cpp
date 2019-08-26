@@ -8,7 +8,7 @@
 
 #include <pluginterfaces/base/ftypes.h>
 #include <public.sdk/source/vst/hosting/module.h>
-#include "Vst3Utils.hpp"
+#include "VstMAUtils.hpp"
 #include "Vst3Plugin.hpp"
 #include "../../misc/StrCnv.hpp"
 #include "../../misc/LockFactory.hpp"
@@ -17,126 +17,8 @@ using namespace Steinberg;
 
 NS_HWM_BEGIN
 
-extern
-std::unique_ptr<Vst3Plugin>
-    CreatePlugin(IPluginFactory *factory,
-                 FactoryInfo const &factory_info,
-                 ClassInfo const &info
-                 );
-
-FactoryInfo::FactoryInfo(PFactoryInfo const &info)
-    :    vendor_(hwm::to_wstr(info.vendor))
-    ,    url_(hwm::to_wstr(info.url))
-    ,    email_(hwm::to_wstr(info.email))
-    ,    flags_(info.flags)
-{}
-
-bool FactoryInfo::discardable                () const
-{
-    return (flags_ & Steinberg::PFactoryInfo::FactoryFlags::kClassesDiscardable) != 0; 
-}
-
-bool FactoryInfo::license_check                () const
-{
-    return (flags_ & Steinberg::PFactoryInfo::FactoryFlags::kLicenseCheck) != 0; 
-}
-
-bool FactoryInfo::component_non_discardable    () const
-{
-    return (flags_ & Steinberg::PFactoryInfo::FactoryFlags::kComponentNonDiscardable) != 0; 
-}
-
-bool FactoryInfo::unicode                    () const
-{
-    return (flags_ & Steinberg::PFactoryInfo::FactoryFlags::kUnicode) != 0; 
-}
-
-String    FactoryInfo::vendor    () const
-{
-    return vendor_;
-}
-
-String    FactoryInfo::url        () const
-{
-    return url_;
-}
-
-String    FactoryInfo::email    () const
-{
-    return email_;
-}
-
-ClassInfo2Data::ClassInfo2Data(Steinberg::PClassInfo2 const &info)
-    :    sub_categories_(hwm::to_wstr(info.subCategories))
-    ,    vendor_(hwm::to_wstr(info.vendor))
-    ,    version_(hwm::to_wstr(info.version))
-    ,    sdk_version_(hwm::to_wstr(info.sdkVersion))
-{
-}
-
-ClassInfo2Data::ClassInfo2Data(Steinberg::PClassInfoW const &info)
-    :    sub_categories_(hwm::to_wstr(info.subCategories))
-    ,    vendor_(hwm::to_wstr(info.vendor))
-    ,    version_(hwm::to_wstr(info.version))
-    ,    sdk_version_(hwm::to_wstr(info.sdkVersion))
-{
-}
-
-bool ClassInfo2Data::has_sub_category(String elem) const
-{
-    wxArrayString list = wxSplit(sub_categories_, L'|');
-    return std::any_of(list.begin(), list.end(),
-                       [elem](wxString const &x) {
-                           bool const is_case_sensitive = false;
-                           return x.IsSameAs(elem, is_case_sensitive);
-                       }
-                       );
-}
-
-ClassInfo::ClassInfo()
-{}
-
-ClassInfo::ClassInfo(Steinberg::PClassInfo const &info)
-    :    cid_()
-    ,    name_(hwm::to_wstr(info.name))
-    ,    category_(hwm::to_wstr(info.category))
-    ,    cardinality_(info.cardinality)
-{
-    std::copy(info.cid, info.cid + kCIDLength, cid_.begin());
-}
-
-ClassInfo::ClassInfo(Steinberg::PClassInfo2 const &info)
-    :    cid_()
-    ,    name_(hwm::to_wstr(info.name))
-    ,    category_(hwm::to_wstr(info.category))
-    ,    cardinality_(info.cardinality)
-    ,    classinfo2_data_(info)
-{
-    std::copy(info.cid, info.cid + kCIDLength, cid_.begin());
-}
-
-ClassInfo::ClassInfo(Steinberg::PClassInfoW const &info)
-    :    cid_()
-    ,    name_(hwm::to_wstr(info.name))
-    ,    category_(hwm::to_wstr(info.category))
-    ,    cardinality_(info.cardinality)
-    ,    classinfo2_data_(info)
-{
-    std::copy(info.cid, info.cid + kCIDLength, cid_.begin());
-}
-
-bool ClassInfo::is_fx() const
-{
-    return has_classinfo2() && classinfo2().has_sub_category(L"fx");
-}
-
-bool ClassInfo::is_instrument() const
-{
-    return has_classinfo2() && classinfo2().has_sub_category(L"instrument");
-}
-
 class Vst3PluginFactory::Impl
-:   public Vst3PluginDestructionListener
+:   public IVst3PluginDestructionListener
 {
 public:
     Impl(String module_path);
@@ -197,16 +79,16 @@ std::wstring
         ClassInfoToString(ClassInfo const &info)
 {
     std::wstringstream ss;
-    ss    << info.name()
-        << L", " << FormatCid(info.cid())
-        << L", " << info.category()
-        << L", " << info.cardinality();
+    ss    << info.GetName()
+        << L", " << FormatCid(info.GetCID())
+        << L", " << info.GetCategory()
+        << L", " << info.GetCardinality();
 
-    if(info.has_classinfo2()) {
-        ss    << L", " << info.classinfo2().sub_categories()
-            << L", " << info.classinfo2().vendor()
-            << L", " << info.classinfo2().version()
-            << L", " << info.classinfo2().sdk_version()
+    if(info.HasClassInfo2()) {
+        ss    << L", " << info.GetClassInfo2().GetSubCategories()
+            << L", " << info.GetClassInfo2().GetVendor()
+            << L", " << info.GetClassInfo2().GetVersion()
+            << L", " << info.GetClassInfo2().GetSDKVersion()
             ;
     }
     return ss.str();
@@ -227,14 +109,14 @@ std::wstring
         FactoryInfoToString(FactoryInfo const &info)
 {
     std::wstringstream ss;
-    ss    << info.vendor()
-        << L", " << info.url()
-        << L", " << info.email()
+    ss    << info.GetVendor()
+        << L", " << info.GetURL()
+        << L", " << info.GetEmail()
         << std::boolalpha
-        << L", " << L"Discardable: " << info.discardable()
-        << L", " << L"License Check: "<< info.license_check()
-        << L", " << L"Component Non Discardable: " << info.component_non_discardable()
-        << L", " << L"Unicode: " << info.unicode();
+        << L", " << L"Discardable: " << info.IsDiscardable()
+        << L", " << L"License Check: "<< info.IsLicenseCheck()
+        << L", " << L"Component Non Discardable: " << info.IsComponentNonDiscardable()
+        << L", " << L"Unicode: " << info.IsUnicode();
     return ss.str();
 }
 
@@ -334,11 +216,7 @@ ClassInfo const &
 std::unique_ptr<Vst3Plugin>
         Vst3PluginFactory::CreateByIndex(size_t index)
 {
-    auto p = CreatePlugin(pimpl_->GetFactory(),
-                          pimpl_->GetFactoryInfo(),
-                          GetComponentInfo(index)
-                          );
-    
+    auto p = std::make_unique<Vst3Plugin>(pimpl_->GetFactory(), GetComponentInfo(index));
     pimpl_->OnAfterConstruction(p.get());
     return p;
 }
@@ -347,7 +225,7 @@ std::unique_ptr<Vst3Plugin>
     Vst3PluginFactory::CreateByID(ClassInfo::CID const &component_id)
 {
     for(size_t i = 0; i < GetComponentCount(); ++i) {
-        if(component_id == GetComponentInfo(i).cid()) {
+        if(component_id == GetComponentInfo(i).GetCID()) {
             return CreateByIndex(i);
         }
     }

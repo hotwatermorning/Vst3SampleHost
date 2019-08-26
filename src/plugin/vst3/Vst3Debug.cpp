@@ -5,7 +5,8 @@
 #include <pluginterfaces/vst/vstpresetkeys.h>
 #include <pluginterfaces/vst/ivstaudioprocessor.h>
 #include "../../misc/StrCnv.hpp"
-#include "./Vst3Utils.hpp"
+#include "Vst3Utils.hpp"
+#include "VstMAUtils.hpp"
 
 using namespace Steinberg;
 

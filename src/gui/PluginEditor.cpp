@@ -18,12 +18,12 @@ class ParameterSlider
 :   public wxPanel
 {
 public:
-    class Callback
+    class ICallback
     {
     protected:
-        Callback() {}
+        ICallback() {}
     public:
-        virtual ~Callback() {}
+        virtual ~ICallback() {}
         
         virtual
         void OnChangeParameter(ParameterSlider *slider) = 0;
@@ -138,7 +138,7 @@ public:
         disp_->SetValue(str);
     }
     
-    void SetCallback(Callback *callback)
+    void SetCallback(ICallback *callback)
     {
         callback_ = callback;
     }
@@ -151,12 +151,12 @@ private:
     Vst3Plugin::ParameterInfo info_;
     Int32 param_index_ = -1;
     UInt32 value_max_ = kDefaultValueMax;
-    Callback *callback_ = nullptr;
+    ICallback *callback_ = nullptr;
 };
 
 class GenericParameterView
 :   public wxWindow
-,   ParameterSlider::Callback
+,   ParameterSlider::ICallback
 {
     constexpr static UInt32 kParameterHeight = 20;
     constexpr static UInt32 kPageSize = 3 * kParameterHeight;
@@ -297,9 +297,25 @@ private:
     Vst3Plugin *plugin_ = nullptr;
 };
 
+
+class IPluginEditorControlListener
+:   public IListenerBase
+{
+protected:
+    IPluginEditorControlListener()
+    {}
+    
+public:
+    virtual
+    void OnChangeEditorType(bool use_generic_editor) {}
+
+    virtual
+    void OnChangeProgram() {}
+};
+
 class PluginEditorControl
 :   public wxPanel
-,   public Vst3PluginListener
+,   public IVst3PluginListener
 {
 public:
     static constexpr Int32 kUnitChoiceWidth = 100;
@@ -309,15 +325,6 @@ public:
     static constexpr Int32 kGenericEditorCheckWidth = 120;
     static constexpr Int32 kTotalWidth
         = kUnitChoiceWidth + kProgramChoiceWidth + kPrevProgramWidth + kNextProgramWidth + kGenericEditorCheckWidth;
-
-    class Listener : public IListenerBase
-    {
-    protected:
-        Listener() {}
-    public:
-        virtual void OnChangeEditorType(bool use_generic_editor) {}
-        virtual void OnChangeProgram() {}
-    };
     
     PluginEditorControl(wxWindow *parent,
                         Vst3Plugin *plugin,
@@ -413,9 +420,8 @@ public:
     
     bool AcceptsFocus() const override { return false; }
     
-    using IListenerService = IListenerService<Listener>;
-    
-    IListenerService & GetListeners() { return listeners_; }
+    using PluginEditorControlListenerService = IListenerService<IPluginEditorControlListener>;
+    PluginEditorControlListenerService & GetPluginEditorControlListeners() { return listeners_; }
     
     using VT = PluginViewType;
     //! 現在のViewTypeを返す
@@ -449,8 +455,8 @@ private:
     wxButton *btn_next_program_;
     wxButton *btn_prev_program_;
     wxCheckBox *chk_gen_editor_;
-    ListenerService<Listener> listeners_;
-    ScopedListenerRegister<Vst3PluginListener> slr_vpl_;
+    ListenerService<IPluginEditorControlListener> listeners_;
+    ScopedListenerRegister<IVst3PluginListener> slr_vpl_;
     
     struct UnitInfo {
         int unit_index_;
@@ -549,7 +555,7 @@ private:
 
 class PluginEditorContents
 :   public wxPanel
-,   public Vst3Plugin::PlugFrameListener
+,   public Vst3Plugin::IPlugFrameListener
 {
 public:
     PluginEditorContents(IPluginEditorFrame *parent,
@@ -619,10 +625,10 @@ private:
     }
 };
 
-PluginEditorFrameListener::PluginEditorFrameListener()
+IPluginEditorFrameListener::IPluginEditorFrameListener()
 {}
 
-PluginEditorFrameListener::~PluginEditorFrameListener()
+IPluginEditorFrameListener::~IPluginEditorFrameListener()
 {}
 
 template <class... Args>
@@ -632,7 +638,7 @@ IPluginEditorFrame::IPluginEditorFrame(Args&&... args)
 
 class PluginEditorFrame
 :   public IPluginEditorFrame
-,   public PluginEditorControl::Listener
+,   public IPluginEditorControlListener
 {
     static constexpr UInt32 kControlHeight = 20;
     wxSize const kMinFrameSize = wxSize(PluginEditorControl::kTotalWidth, kControlHeight);
@@ -641,9 +647,9 @@ class PluginEditorFrame
 public:
     PluginEditorFrame(wxWindow *parent,
                       Vst3Plugin *target_plugin,
-                      PluginEditorFrameListener *listener)
+                      IPluginEditorFrameListener *listener)
     :   IPluginEditorFrame(parent, wxID_ANY,
-                           target_plugin->GetEffectName(),
+                           target_plugin->GetPluginName(),
                            wxDefaultPosition,
                            wxDefaultSize,
                            wxDEFAULT_FRAME_STYLE & ~(wxMAXIMIZE_BOX))
@@ -655,7 +661,7 @@ public:
         auto sizer = new wxBoxSizer(wxVERTICAL);
 
         control_ = new PluginEditorControl(this, target_plugin);
-        control_->GetListeners().AddListener(this);
+        control_->GetPluginEditorControlListeners().AddListener(this);
         control_->SetSize(kMinFrameSize);
 
         sizer->Add(control_, wxSizerFlags(0).FixedMinSize().Expand());
@@ -694,7 +700,7 @@ public:
         }
         
         if(control_) {
-            control_->GetListeners().RemoveListener(this);
+            control_->GetPluginEditorControlListeners().RemoveListener(this);
             control_->Destroy();
             control_ = nullptr;
         }
@@ -745,7 +751,7 @@ private:
     }
 
 private:
-    PluginEditorFrameListener *listener_;
+    IPluginEditorFrameListener *listener_;
     PluginEditorContents *contents_ = nullptr;
     PluginEditorControl *control_ = nullptr;
     GenericParameterView *genedit_ = nullptr;
@@ -772,7 +778,7 @@ private:
 
 IPluginEditorFrame * CreatePluginEditorFrame(wxWindow *parent,
                                              Vst3Plugin *target_plugin,
-                                             PluginEditorFrameListener *listener)
+                                             IPluginEditorFrameListener *listener)
 {
     return new PluginEditorFrame(parent, target_plugin, listener);
 }

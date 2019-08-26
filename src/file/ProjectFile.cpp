@@ -55,7 +55,7 @@ void ProjectFile::ScanPluginStatus()
         return;
     }
     
-    vst3_plugin_cid_ = plugin->GetComponentInfo().cid();
+    vst3_plugin_cid_ = plugin->GetComponentInfo().GetCID();
     
     auto dump_data = plugin->SaveData();
     if(!dump_data) { return; }

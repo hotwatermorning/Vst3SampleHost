@@ -19,7 +19,7 @@ namespace {
     }
 }
 
-DeviceMidiMessage DeviceMidiMessage::Create(MidiDevice *device,
+DeviceMidiMessage DeviceMidiMessage::Create(IMidiDevice *device,
                                             second_t time_stamp,
                                             UInt8 status,
                                             UInt8 data1,
@@ -120,7 +120,7 @@ bool DeviceMidiMessage::ToBytes(std::vector<UInt8> &buf, UInt8 &running_status) 
 }
 
 struct MidiIn
-:   public MidiDevice
+:   public IMidiDevice
 {
     //! @throw RtMidiError
     MidiIn(MidiDeviceInfo const &info, std::function<void(DeviceMidiMessage const &)> on_input)
@@ -239,7 +239,7 @@ private:
 };
 
 struct MidiOut
-:   public MidiDevice
+:   public IMidiDevice
 {
     //! @throw RtMidiError
     MidiOut(MidiDeviceInfo const &info)
@@ -360,7 +360,7 @@ std::vector<MidiDeviceInfo> MidiDeviceManager::Enumerate()
     return list;
 }
 
-MidiDevice * MidiDeviceManager::Open(MidiDeviceInfo const &info, String *error)
+IMidiDevice * MidiDeviceManager::Open(MidiDeviceInfo const &info, String *error)
 {
     try {
         if(info.io_type_ == DeviceIOType::kInput) {
@@ -402,7 +402,7 @@ bool MidiDeviceManager::IsOpened(MidiDeviceInfo const &info) const
     }
 }
 
-void MidiDeviceManager::Close(MidiDevice const *device)
+void MidiDeviceManager::Close(IMidiDevice const *device)
 {
     if(auto midi_in = dynamic_cast<MidiIn const *>(device)) {
         auto lock = pimpl_->lf_in_.make_lock();
@@ -431,7 +431,7 @@ void MidiDeviceManager::Close(MidiDevice const *device)
     }
 }
 
-MidiDevice * MidiDeviceManager::GetDevice(MidiDeviceInfo const &info)
+IMidiDevice * MidiDeviceManager::GetDevice(MidiDeviceInfo const &info)
 {
     if(info.io_type_ == DeviceIOType::kInput) {
         auto lock = pimpl_->lf_in_.make_lock();

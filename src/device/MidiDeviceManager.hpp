@@ -12,7 +12,7 @@ struct DeviceMidiMessage
 {
     using second_t = double;
     
-    MidiDevice *device_ = nullptr;
+    IMidiDevice *device_ = nullptr;
     //! ある時刻から見たタイムスタンプ
     //! MIDI入力の場合は、std::chrono::steady_clockのtime_since_epoch()からの時刻。
     //! MIDI出力の場合は、MidiDeviceManager::SendMessagesに渡したepochからの時刻。
@@ -26,7 +26,7 @@ struct DeviceMidiMessage
     To const * As() const { return std::get_if<To>(&data_); }
     
     static
-    DeviceMidiMessage Create(MidiDevice *device,
+    DeviceMidiMessage Create(IMidiDevice *device,
                              second_t time_delta,
                              UInt8 status,
                              UInt8 data1,
@@ -59,12 +59,12 @@ public:
     std::vector<MidiDeviceInfo> Enumerate();
     
     //! デバイスをオープンする。失敗時はエラーメッセージがStringとして返る。
-    MidiDevice * Open(MidiDeviceInfo const &info, String *error = nullptr);
+    IMidiDevice * Open(MidiDeviceInfo const &info, String *error = nullptr);
     bool IsOpened(MidiDeviceInfo const &info) const;
-    void Close(MidiDevice const *device);
+    void Close(IMidiDevice const *device);
     
     //! return the device if opened.
-    MidiDevice * GetDevice(MidiDeviceInfo const &info);
+    IMidiDevice * GetDevice(MidiDeviceInfo const &info);
     
     //! この瞬間までに取得できたMIDIメッセージを返す。
     //! システムメッセージには未対応。

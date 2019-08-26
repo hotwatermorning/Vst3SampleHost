@@ -38,31 +38,31 @@ public:
     Vst3Plugin * GetPlugin();
     
     //! モジュールのロード／アンロード状態の変更通知を受け取るリスナークラス
-    class ModuleLoadListener : public IListenerBase {
+    class IModuleLoadListener : public IListenerBase {
     protected:
-        ModuleLoadListener() {}
+        IModuleLoadListener() {}
     public:
         virtual void OnAfterModuleLoaded(String path, Vst3PluginFactory *factory) {}
         virtual void OnBeforeModuleUnloaded(Vst3PluginFactory *factory) {}
     };
-    using ModuleLoadListenerService = IListenerService<ModuleLoadListener>;
+    using ModuleLoadListenerService = IListenerService<IModuleLoadListener>;
     ModuleLoadListenerService & GetModuleLoadListenerService();
     
     //! プラグインのロード／アンロード状態の変更通知を受け取るリスナークラス
-    class PluginLoadListener : public IListenerBase {
+    class IPluginLoadListener : public IListenerBase {
     protected:
-        PluginLoadListener() {}
+        IPluginLoadListener() {}
     public:
         virtual void OnAfterPluginLoaded(Vst3Plugin *plugin) {}
         virtual void OnBeforePluginUnloaded(Vst3Plugin *plugin) {}
     };
-    using PluginLoadListenerService = IListenerService<PluginLoadListener>;
+    using PluginLoadListenerService = IListenerService<IPluginLoadListener>;
     PluginLoadListenerService & GetPluginLoadListenerService();
     
     //! Appクラス再生系パラメータの変更通知を受け取るリスナークラス
-    class PlaybackOptionChangeListener : public IListenerBase {
+    class IPlaybackOptionChangeListener : public IListenerBase {
     protected:
-        PlaybackOptionChangeListener() {}
+        IPlaybackOptionChangeListener() {}
     public:
         //! オーディオ出力レベルを変更したときに呼ばれるコールバック
         virtual void OnAudioOutputLevelChanged(double new_level) {}
@@ -76,7 +76,7 @@ public:
         //! オーディオ入力が可能な状態で、その有効／無効を切り替えたときに呼ばれるコールバック
         virtual void OnAudioInputEnableStateChanged(bool enabled) {}
     };
-    using PlaybackOptionChangeListenerService = IListenerService<PlaybackOptionChangeListener>;
+    using PlaybackOptionChangeListenerService = IListenerService<IPlaybackOptionChangeListener>;
     PlaybackOptionChangeListenerService & GetPlaybackOptionChangeListenerService();
     
     //! 読み込んだプラグインにノートオンを送る

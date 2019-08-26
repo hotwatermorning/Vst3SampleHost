@@ -20,7 +20,7 @@
 #include <pluginterfaces/base/ustring.h>
 #include <pluginterfaces/vst/vstpresetkeys.h>
 
-#include "Vst3Utils.hpp"
+#include "VstMAUtils.hpp"
 #include "Vst3Plugin.hpp"
 #include "Vst3PluginFactory.hpp"
 #include "MidiBusesInfo.hpp"
@@ -62,7 +62,6 @@ public:
 
 public:
 	Impl(IPluginFactory *factory,
-         FactoryInfo const &factory_info,
          ClassInfo const &class_info,
          FUnknown *host_context);
 
@@ -81,7 +80,7 @@ public:
 	Vst::IEditController *	GetEditController	() const;
 	Vst::IEditController2 *	GetEditController2	() const;
 
-	String GetEffectName() const;
+	String GetPluginName() const;
     
     ParameterInfoList & GetParameterInfoList();
     ParameterInfoList const & GetParameterInfoList() const;
