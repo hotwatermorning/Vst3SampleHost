@@ -1,14 +1,14 @@
 #include "FactoryInfo.hpp"
-#include "../../misc/StrCnv.hpp"
+#include "Vst3Utils.hpp"
 
 NS_HWM_BEGIN
 
 using namespace Steinberg;
 
 FactoryInfo::FactoryInfo(PFactoryInfo const &info)
-:    vendor_(hwm::to_wstr(info.vendor))
-,    url_(hwm::to_wstr(info.url))
-,    email_(hwm::to_wstr(info.email))
+:    vendor_(RawArrayToWideString(info.vendor))
+,    url_(RawArrayToWideString(info.url))
+,    email_(RawArrayToWideString(info.email))
 ,    flags_(info.flags)
 {}
 

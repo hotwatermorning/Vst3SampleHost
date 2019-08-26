@@ -1,23 +1,23 @@
 #include "ClassInfo.hpp"
 
 #include <algorithm>
-#include "../../misc/StrCnv.hpp"
+#include "./Vst3Utils.hpp"
 
 NS_HWM_BEGIN
 
 ClassInfo2Data::ClassInfo2Data(Steinberg::PClassInfo2 const &info)
-:    sub_categories_(hwm::to_wstr(info.subCategories))
-,    vendor_(hwm::to_wstr(info.vendor))
-,    version_(hwm::to_wstr(info.version))
-,    sdk_version_(hwm::to_wstr(info.sdkVersion))
+:    sub_categories_(RawArrayToWideString(info.subCategories))
+,    vendor_(RawArrayToWideString(info.vendor))
+,    version_(RawArrayToWideString(info.version))
+,    sdk_version_(RawArrayToWideString(info.sdkVersion))
 {
 }
 
 ClassInfo2Data::ClassInfo2Data(Steinberg::PClassInfoW const &info)
-:    sub_categories_(hwm::to_wstr(info.subCategories))
-,    vendor_(hwm::to_wstr(info.vendor))
-,    version_(hwm::to_wstr(info.version))
-,    sdk_version_(hwm::to_wstr(info.sdkVersion))
+:    sub_categories_(RawArrayToWideString(info.subCategories))
+,    vendor_(RawArrayToWideString(info.vendor))
+,    version_(RawArrayToWideString(info.version))
+,    sdk_version_(RawArrayToWideString(info.sdkVersion))
 {
 }
 
@@ -37,8 +37,8 @@ ClassInfo::ClassInfo()
 
 ClassInfo::ClassInfo(Steinberg::PClassInfo const &info)
 :    cid_()
-,    name_(hwm::to_wstr(info.name))
-,    category_(hwm::to_wstr(info.category))
+,    name_(RawArrayToWideString(info.name))
+,    category_(RawArrayToWideString(info.category))
 ,    cardinality_(info.cardinality)
 {
     std::copy(info.cid, info.cid + kCIDLength, cid_.begin());
@@ -46,8 +46,8 @@ ClassInfo::ClassInfo(Steinberg::PClassInfo const &info)
 
 ClassInfo::ClassInfo(Steinberg::PClassInfo2 const &info)
 :    cid_()
-,    name_(hwm::to_wstr(info.name))
-,    category_(hwm::to_wstr(info.category))
+,    name_(RawArrayToWideString(info.name))
+,    category_(RawArrayToWideString(info.category))
 ,    cardinality_(info.cardinality)
 ,    classinfo2_data_(info)
 {
@@ -56,8 +56,8 @@ ClassInfo::ClassInfo(Steinberg::PClassInfo2 const &info)
 
 ClassInfo::ClassInfo(Steinberg::PClassInfoW const &info)
 :    cid_()
-,    name_(hwm::to_wstr(info.name))
-,    category_(hwm::to_wstr(info.category))
+,    name_(RawArrayToWideString(info.name))
+,    category_(RawArrayToWideString(info.category))
 ,    cardinality_(info.cardinality)
 ,    classinfo2_data_(info)
 {
