@@ -15,7 +15,8 @@
 
 #include "../../misc/StrCnv.hpp"
 #include "../../misc/ScopeExit.hpp"
-#include "Vst3Utils.hpp"
+
+#include "VstMAUtils.hpp"
 #include "Vst3Plugin.hpp"
 #include "Vst3PluginFactory.hpp"
 #include "Vst3Debug.hpp"

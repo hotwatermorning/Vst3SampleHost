@@ -6,7 +6,7 @@
 #include <public.sdk/source/vst/hosting/hostclasses.h>
 #include <public.sdk/source/vst/hosting/parameterchanges.h>
 
-#include "Vst3Utils.hpp"
+#include "VstMAUtils.hpp"
 #include "Vst3Plugin.hpp"
 #include "../../misc/StrCnv.hpp"
 

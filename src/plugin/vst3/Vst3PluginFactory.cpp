@@ -8,7 +8,7 @@
 
 #include <pluginterfaces/base/ftypes.h>
 #include <public.sdk/source/vst/hosting/module.h>
-#include "Vst3Utils.hpp"
+#include "VstMAUtils.hpp"
 #include "Vst3Plugin.hpp"
 #include "../../misc/StrCnv.hpp"
 #include "../../misc/LockFactory.hpp"

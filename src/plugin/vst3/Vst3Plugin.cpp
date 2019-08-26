@@ -1,7 +1,7 @@
 #include "Vst3Plugin.hpp"
 #include "Vst3PluginImpl.hpp"
 #include "Vst3HostContext.hpp"
-#include "Vst3Utils.hpp"
+#include "VstMAUtils.hpp"
 #include "FactoryInfo.hpp"
 
 #include <cassert>

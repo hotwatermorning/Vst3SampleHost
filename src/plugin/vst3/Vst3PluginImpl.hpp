@@ -20,7 +20,7 @@
 #include <pluginterfaces/base/ustring.h>
 #include <pluginterfaces/vst/vstpresetkeys.h>
 
-#include "Vst3Utils.hpp"
+#include "VstMAUtils.hpp"
 #include "Vst3Plugin.hpp"
 #include "Vst3PluginFactory.hpp"
 #include "MidiBusesInfo.hpp"
