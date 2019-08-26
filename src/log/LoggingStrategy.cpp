@@ -144,7 +144,9 @@ Error FileLoggingStrategy::Rotate(String path, UInt64 size)
     
     wxFile tmp;
     
-    auto tmp_file_path = wxFileName::CreateTempFileName("terra-log.tmp", &tmp);
+    wxFileName filename(path);
+    wxString tmp_filename = filename.GetName() + ".tmp";
+    auto tmp_file_path = wxFileName::CreateTempFileName(tmp_filename, &tmp);
     if(tmp.IsOpened() == false) { return Error(wxSysErrorMsg()); }
     
     src.seekg((UInt64)pos - size, std::ios::beg);
