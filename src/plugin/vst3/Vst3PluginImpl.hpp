@@ -62,7 +62,6 @@ public:
 
 public:
 	Impl(IPluginFactory *factory,
-         FactoryInfo const &factory_info,
          ClassInfo const &class_info,
          FUnknown *host_context);
 

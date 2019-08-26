@@ -16,6 +16,10 @@
 #include "./IdentifiedValueList.hpp"
 #include "./Vst3PluginFactory.hpp"
 
+namespace Steinberg {
+    class IPluginFactory;
+}
+
 NS_HWM_BEGIN
 
 struct Vst3PluginListener
@@ -188,8 +192,7 @@ public:
     };
 
 public:
-	Vst3Plugin(std::unique_ptr<Impl> pimpl,
-               std::unique_ptr<HostContext> host_context);
+    Vst3Plugin(Steinberg::IPluginFactory *factory, ClassInfo const &class_info);
     
 	virtual ~Vst3Plugin();
     

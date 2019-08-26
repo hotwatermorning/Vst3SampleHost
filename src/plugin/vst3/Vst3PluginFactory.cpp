@@ -17,13 +17,6 @@ using namespace Steinberg;
 
 NS_HWM_BEGIN
 
-extern
-std::unique_ptr<Vst3Plugin>
-    CreatePlugin(IPluginFactory *factory,
-                 FactoryInfo const &factory_info,
-                 ClassInfo const &info
-                 );
-
 class Vst3PluginFactory::Impl
 :   public Vst3PluginDestructionListener
 {
@@ -223,11 +216,7 @@ ClassInfo const &
 std::unique_ptr<Vst3Plugin>
         Vst3PluginFactory::CreateByIndex(size_t index)
 {
-    auto p = CreatePlugin(pimpl_->GetFactory(),
-                          pimpl_->GetFactoryInfo(),
-                          GetComponentInfo(index)
-                          );
-    
+    auto p = std::make_unique<Vst3Plugin>(pimpl_->GetFactory(), GetComponentInfo(index));
     pimpl_->OnAfterConstruction(p.get());
     return p;
 }

@@ -94,10 +94,9 @@ Vst3Plugin::Impl::MidiBusesInfoOwner::GetComponent()
 }
 
 Vst3Plugin::Impl::Impl(IPluginFactory *factory,
-                       FactoryInfo const &factory_info,
                        ClassInfo const &class_info,
                        FUnknown *host_context)
-:   factory_info_(factory_info)
+:   factory_info_()
 ,   is_single_component_(false)
 ,   is_editor_opened_(false)
 ,   block_size_(2048)
@@ -107,6 +106,10 @@ Vst3Plugin::Impl::Impl(IPluginFactory *factory,
 ,   audio_buses_info_owner_(std::make_unique<AudioBusesInfoOwner>(this))
 ,   midi_buses_info_owner_(std::make_unique<MidiBusesInfoOwner>(this))
 {
+    PFactoryInfo fi;
+    factory->getFactoryInfo(&fi);
+    factory_info_ = FactoryInfo(fi);
+    
     assert(host_context);
     
     LoadInterfaces(factory, class_info, host_context);
