@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <pluginterfaces/base/ipluginbase.h>
 
 NS_HWM_BEGIN
