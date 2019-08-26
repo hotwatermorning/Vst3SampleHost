@@ -6,12 +6,14 @@ NS_HWM_BEGIN
 
 //! 指定したパス階層のリソースファイルの場所をフルパスで返す。
 String GetResourcePath(String path);
+
 //! 指定したパス階層のリソースファイルの場所をフルパスで返す。
 String GetResourcePath(std::vector<String> path_hierarchy);
+
 //! コンフィグファイルの場所をフルパスで返す。
-/*! このファイルは、以下のようなユーザーの設定ファイル用ディレクトリに置かれる。
- *    * Win: "C:\Users\<UserName>\AppData\Roaming\Vst3SampleHost\Vst3SampleHost.conf"
- *    * Mac: "~/Library/Preferences/Vst3SampleHost/Vst3SampleHost.conf"
+/*! このファイルは、以下のパスに作成される。
+ *    * Win: "C:\Users\<UserName>\Documents\diatonic.jp\Vst3SampleHost\Vst3SampleHost.conf"
+ *    * Mac: "/Users/<UserName>/Documents/diatonic.jp/Vst3SampleHost/Vst3SampleHost.conf"
  */
 String GetConfigFilePath();
 

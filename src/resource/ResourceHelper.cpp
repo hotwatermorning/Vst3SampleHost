@@ -5,7 +5,8 @@
 
 NS_HWM_BEGIN
 
-constexpr wchar_t const * kConfigDirName = L"Vst3SampleHost";
+constexpr wchar_t const * kVendorName = L"diatonic.jp";
+constexpr wchar_t const * kAppPrivateDirName = L"Vst3SampleHost";
 constexpr wchar_t const * kConfigFileName = L"Vst3SampleHost.conf";
 
 //! Get resource file path specified by the path hierarchy.
@@ -53,8 +54,9 @@ String GetResourcePath(std::vector<String> path_hierarchy)
 
 String GetConfigFilePath()
 {
-    auto dir = wxFileName::DirName(wxStandardPaths::Get().GetUserConfigDir());
-    dir.AppendDir(kConfigDirName);
+    auto dir = wxFileName::DirName(wxStandardPaths::Get().GetDocumentsDir());
+    dir.AppendDir(kVendorName);
+    dir.AppendDir(kAppPrivateDirName);
     dir.SetFullName(kConfigFileName);
     
     return dir.GetFullPath().ToStdWstring();
