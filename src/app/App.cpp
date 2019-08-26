@@ -198,7 +198,7 @@ struct App::Impl
             ofs << config_;
         } catch(std::exception &e) {
             hwm::dout << "Failed to write config data: " << e.what() << std::endl;
-            auto msg = std::string("コンフィグファイルの書き込みに失敗しました。\nアプリケーションを終了します。\n[") + e.what() + "]";
+            auto msg = std::wstring(L"コンフィグファイルの書き込みに失敗しました。\nアプリケーションを終了します。\n[") + to_wstr(e.what()) + L"]";
             wxMessageBox(msg);
             std::exit(-1);
         }
