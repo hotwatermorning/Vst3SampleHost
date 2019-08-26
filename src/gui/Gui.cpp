@@ -16,7 +16,7 @@ NS_HWM_BEGIN
 
 class HeaderPanel
 :   public wxPanel
-,   public App::PlaybackOptionChangeListener
+,   public App::IPlaybackOptionChangeListener
 {
 public:
     wxColour const kColLabel = HSVToColour(0.0, 0.0, 0.9);
@@ -91,7 +91,7 @@ private:
     wxStaticText *lbl_current_level_;
     wxCheckBox *btn_enable_input_;
     wxColor col_bg_;
-    ScopedListenerRegister<App::PlaybackOptionChangeListener> slr_pocl_;
+    ScopedListenerRegister<App::IPlaybackOptionChangeListener> slr_pocl_;
     
 private:
     void UpdateLevelText(double level)
@@ -141,9 +141,9 @@ private:
 
 class MainWindow
 :   public wxWindow
-,   public App::ModuleLoadListener
-,   public App::PluginLoadListener
-,   public PluginEditorFrameListener
+,   public App::IModuleLoadListener
+,   public App::IPluginLoadListener
+,   public IPluginEditorFrameListener
 {
 public:
     static constexpr int kMinWidth = 600;
@@ -390,8 +390,8 @@ private:
     wxPanel         *header_panel_ = nullptr;
     String          module_dir_;
     
-    ScopedListenerRegister<App::ModuleLoadListener> slr_mll_;
-    ScopedListenerRegister<App::PluginLoadListener> slr_pll_;
+    ScopedListenerRegister<App::IModuleLoadListener> slr_mll_;
+    ScopedListenerRegister<App::IPluginLoadListener> slr_pll_;
     
     void OnPaint(wxPaintEvent &)
     {
@@ -506,7 +506,7 @@ IMainFrame::IMainFrame(Args&&... args)
 
 class MainFrame
 :   public IMainFrame
-,   public App::PlaybackOptionChangeListener
+,   public App::IPlaybackOptionChangeListener
 {
     wxSize const initial_size = { 480, 600 };
     
@@ -666,7 +666,7 @@ public:
     
 private:
     MainWindow *wnd_;
-    ScopedListenerRegister<App::PlaybackOptionChangeListener> slr_pocl_;
+    ScopedListenerRegister<App::IPlaybackOptionChangeListener> slr_pocl_;
     wxMenuItem *menu_enable_input_;
     String project_file_dir_;
     

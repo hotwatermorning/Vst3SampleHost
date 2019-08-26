@@ -22,11 +22,11 @@ namespace Steinberg {
 
 NS_HWM_BEGIN
 
-struct Vst3PluginListener
+struct IVst3PluginListener
 :   IListenerBase
 {
 protected:
-    Vst3PluginListener()
+    IVst3PluginListener()
     {}
     
 public:
@@ -71,11 +71,11 @@ public:
     {}
 };
 
-struct Vst3PluginDestructionListener
+struct IVst3PluginDestructionListener
 :   IListenerBase
 {
 protected:
-    Vst3PluginDestructionListener()
+    IVst3PluginDestructionListener()
     {}
     
 public:
@@ -251,18 +251,18 @@ public:
     using WindowHandle = void *;
 #endif
     
-    class PlugFrameListener
+    class IPlugFrameListener
     {
     protected:
-        PlugFrameListener() {}
+        IPlugFrameListener() {}
     public:
-        virtual ~PlugFrameListener() {}
+        virtual ~IPlugFrameListener() {}
         virtual void OnResizePlugView(Steinberg::ViewRect const &newSize) = 0;
     };
     
     //! listener is not owned in Vst3Plugin. so caller has responsible to delete this object.
     //! listener should never be deleted before CloseEditor() is called.
-    bool	OpenEditor		(WindowHandle wnd, PlugFrameListener *listener);
+    bool	OpenEditor		(WindowHandle wnd, IPlugFrameListener *listener);
     
 	void	CloseEditor		();
 	bool	IsEditorOpened	() const;
@@ -289,16 +289,16 @@ public:
     std::optional<DumpData> SaveData() const;
     void LoadData(DumpData const &dump);
     
-    using Vst3PluginListenerService = IListenerService<Vst3PluginListener>;
+    using Vst3PluginListenerService = IListenerService<IVst3PluginListener>;
     Vst3PluginListenerService & GetVst3PluginListenerService();
     
-    using Vst3PluginDestructionListenerService = IListenerService<Vst3PluginDestructionListener>;
+    using Vst3PluginDestructionListenerService = IListenerService<IVst3PluginDestructionListener>;
     Vst3PluginDestructionListenerService & GetVst3PluginDestructionListenerService();
     
 private:
 	std::unique_ptr<Impl> pimpl_;
     std::unique_ptr<HostContext> host_context_;
-    ListenerService<Vst3PluginDestructionListener> vpdls_;
+    ListenerService<IVst3PluginDestructionListener> vpdls_;
 };
 
 NS_HWM_END

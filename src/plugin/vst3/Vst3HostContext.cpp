@@ -59,7 +59,7 @@ tresult PLUGIN_API Vst3Plugin::HostContext::createInstance(TUID cid, TUID iid, v
 
 tresult PLUGIN_API Vst3Plugin::HostContext::beginEdit (Vst::ParamID id)
 {
-    vpls_.Invoke([this, id](Vst3PluginListener *li) {
+    vpls_.Invoke([this, id](IVst3PluginListener *li) {
         li->OnBeginEdit(plugin_, id);
     });
     
@@ -68,7 +68,7 @@ tresult PLUGIN_API Vst3Plugin::HostContext::beginEdit (Vst::ParamID id)
 
 tresult PLUGIN_API Vst3Plugin::HostContext::performEdit (Vst::ParamID id, Vst::ParamValue valueNormalized)
 {
-    vpls_.Invoke([this, id, valueNormalized](Vst3PluginListener *li) {
+    vpls_.Invoke([this, id, valueNormalized](IVst3PluginListener *li) {
         li->OnPerformEdit(plugin_, id, valueNormalized);
     });
     plugin_->EnqueueParameterChange(id, valueNormalized);
@@ -77,7 +77,7 @@ tresult PLUGIN_API Vst3Plugin::HostContext::performEdit (Vst::ParamID id, Vst::P
 
 tresult PLUGIN_API Vst3Plugin::HostContext::endEdit (Vst::ParamID id)
 {
-    vpls_.Invoke([this, id](Vst3PluginListener *li) {
+    vpls_.Invoke([this, id](IVst3PluginListener *li) {
         li->OnEndEdit(plugin_, id);
     });
     
@@ -117,7 +117,7 @@ tresult PLUGIN_API Vst3Plugin::HostContext::restartComponent (int32 flags)
         plugin_->RestartComponent(flags);
     }
     
-    vpls_.Invoke([this, flags](Vst3PluginListener *li) {
+    vpls_.Invoke([this, flags](IVst3PluginListener *li) {
         li->OnRestartComponent(plugin_, flags);
     });
     
@@ -126,7 +126,7 @@ tresult PLUGIN_API Vst3Plugin::HostContext::restartComponent (int32 flags)
 
 tresult PLUGIN_API Vst3Plugin::HostContext::setDirty (TBool state)
 {
-    vpls_.Invoke([this, state](Vst3PluginListener *li) {
+    vpls_.Invoke([this, state](IVst3PluginListener *li) {
         li->OnSetDirty(plugin_, state);
     });
     return kResultOk;
@@ -134,7 +134,7 @@ tresult PLUGIN_API Vst3Plugin::HostContext::setDirty (TBool state)
 
 tresult PLUGIN_API Vst3Plugin::HostContext::requestOpenEditor (FIDString name)
 {
-    vpls_.Invoke([this, name = to_wstr(name)](Vst3PluginListener *li) {
+    vpls_.Invoke([this, name = to_wstr(name)](IVst3PluginListener *li) {
         li->OnRequestOpenEditor(plugin_, name);
     });
     return kResultOk;
@@ -142,7 +142,7 @@ tresult PLUGIN_API Vst3Plugin::HostContext::requestOpenEditor (FIDString name)
 
 tresult PLUGIN_API Vst3Plugin::HostContext::startGroupEdit ()
 {
-    vpls_.Invoke([this](Vst3PluginListener *li) {
+    vpls_.Invoke([this](IVst3PluginListener *li) {
         li->OnStartGroupEdit(plugin_);
     });
     
@@ -151,7 +151,7 @@ tresult PLUGIN_API Vst3Plugin::HostContext::startGroupEdit ()
 
 tresult PLUGIN_API Vst3Plugin::HostContext::finishGroupEdit ()
 {
-    vpls_.Invoke([this](Vst3PluginListener *li) {
+    vpls_.Invoke([this](IVst3PluginListener *li) {
         li->OnFinishGroupEdit(plugin_);
     });
     return kResultOk;
@@ -159,7 +159,7 @@ tresult PLUGIN_API Vst3Plugin::HostContext::finishGroupEdit ()
 
 tresult Vst3Plugin::HostContext::notifyUnitSelection (UnitID unitId)
 {
-    vpls_.Invoke([this, unitId](Vst3PluginListener *li) {
+    vpls_.Invoke([this, unitId](IVst3PluginListener *li) {
         li->OnNotifyUnitSelection(plugin_, unitId);
     });
     
@@ -168,7 +168,7 @@ tresult Vst3Plugin::HostContext::notifyUnitSelection (UnitID unitId)
 
 tresult Vst3Plugin::HostContext::notifyProgramListChange (ProgramListID listId, int32 programIndex)
 {
-    vpls_.Invoke([this, listId, programIndex](Vst3PluginListener *li) {
+    vpls_.Invoke([this, listId, programIndex](IVst3PluginListener *li) {
         li->OnNotifyProgramListChange(plugin_, listId, programIndex);
     });
     
@@ -177,7 +177,7 @@ tresult Vst3Plugin::HostContext::notifyProgramListChange (ProgramListID listId, 
 
 tresult Vst3Plugin::HostContext::notifyUnitByBusChange ()
 {
-    vpls_.Invoke([this](Vst3PluginListener *li) {
+    vpls_.Invoke([this](IVst3PluginListener *li) {
         li->OnNotifyUnitByBusChange(plugin_);
     });
     
@@ -190,10 +190,9 @@ tresult PLUGIN_API Vst3Plugin::HostContext::resizeView (IPlugView* view, ViewRec
     assert(newSize);
     ViewRect current;
     view->getSize(&current);
-    
-    auto const to_tuple = [](auto x) { return std::tie(x.left, x.top, x.right, x.bottom); };
 
     //! 同じ位置とサイズのままresizeViewが呼ばれることはない？
+    //auto const to_tuple = [](auto x) { return std::tie(x.left, x.top, x.right, x.bottom); };
     //assert(to_tuple(current) != to_tuple(*newSize));
     
     plug_frame_listener_->OnResizePlugView(*newSize);

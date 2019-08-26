@@ -23,13 +23,14 @@ struct AudioDeviceInfo
     }
 };
 
-class AudioDevice
+class IAudioDevice
 {
 protected:
-    AudioDevice() {}
+    IAudioDevice() {}
     
 public:
-    virtual ~AudioDevice() {}
+    virtual
+    ~IAudioDevice() {}
     
     virtual
     AudioDeviceInfo const * GetDeviceInfo(DeviceIOType io) const = 0;
@@ -62,7 +63,8 @@ protected:
     {}
     
 public:
-    virtual ~IAudioDeviceCallback()
+    virtual
+    ~IAudioDeviceCallback()
     {}
     
     virtual
@@ -103,7 +105,7 @@ public:
         ErrorCode code_;
         String error_msg_;
     };
-    using OpenResult = Either<Error, AudioDevice *>;
+    using OpenResult = Either<Error, IAudioDevice *>;
     
     OpenResult Open(AudioDeviceInfo const *input_device,
                     AudioDeviceInfo const *output_device,
@@ -113,7 +115,7 @@ public:
     //! オープンしているデバイスを返す。
     /*! IsOpened() == falseのときはnullptrが返る。
      */
-    AudioDevice * GetDevice() const;
+    IAudioDevice * GetDevice() const;
 
     //! デバイスを閉じる
     /*! @note デバイスのStop()メンバ関数を事前に呼び出しておく必要はない

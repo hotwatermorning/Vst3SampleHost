@@ -18,7 +18,7 @@ using namespace Steinberg;
 NS_HWM_BEGIN
 
 class Vst3PluginFactory::Impl
-:   public Vst3PluginDestructionListener
+:   public IVst3PluginDestructionListener
 {
 public:
     Impl(String module_path);

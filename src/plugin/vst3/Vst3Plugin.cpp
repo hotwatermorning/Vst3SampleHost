@@ -240,7 +240,7 @@ void Vst3Plugin::CheckHavingEditor()
     return pimpl_->CheckHavingEditor();
 }
 
-bool Vst3Plugin::OpenEditor(WindowHandle parent, PlugFrameListener *listener)
+bool Vst3Plugin::OpenEditor(WindowHandle parent, IPlugFrameListener *listener)
 {
     //! not support multiple plug view yet.
     CloseEditor();

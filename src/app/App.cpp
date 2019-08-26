@@ -87,11 +87,11 @@ bool OpenAudioDevice(Config const &conf)
     return true;
 }
 
-std::vector<MidiDevice *> OpenMidiDevices()
+std::vector<IMidiDevice *> OpenMidiDevices()
 {
     auto mdm = MidiDeviceManager::GetInstance();
     
-    std::vector<MidiDevice *> list;
+    std::vector<IMidiDevice *> list;
     
     auto midi_device_infos = mdm->Enumerate();
     for(auto info: midi_device_infos) {
@@ -139,16 +139,16 @@ struct App::Impl
     std::atomic<bool> enable_audio_input_ = { false };
     AudioDeviceManager adm_;
     MidiDeviceManager mdm_;
-    std::vector<MidiDevice *> midi_ins_; //!< オープンしたMIDI入力デバイス
+    std::vector<IMidiDevice *> midi_ins_; //!< オープンしたMIDI入力デバイス
     std::vector<DeviceMidiMessage> device_midi_messages_;
     wxFrame *frame_;
     std::shared_ptr<Vst3PluginFactoryList> factory_list_;
     std::shared_ptr<Vst3PluginFactory> factory_;
     std::shared_ptr<Vst3Plugin> plugin_;
     
-    ListenerService<ModuleLoadListener> mlls_;
-    ListenerService<PluginLoadListener> plls_;
-    ListenerService<PlaybackOptionChangeListener> pocls_;
+    ListenerService<IModuleLoadListener> mlls_;
+    ListenerService<IPluginLoadListener> plls_;
+    ListenerService<IPlaybackOptionChangeListener> pocls_;
     TestSynth test_synth_;
     IAboutDialog *about_dialog_ = nullptr;
     

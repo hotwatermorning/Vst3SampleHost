@@ -26,7 +26,7 @@ class DeviceSettingPanel
     struct DeviceSetting
     {
         DeviceSetting() {}
-        DeviceSetting(AudioDevice *dev)
+        DeviceSetting(IAudioDevice *dev)
         {
             auto get_info = [](auto dev, auto io_type) -> std::optional<AudioDeviceInfo> {
                 auto p = dev->GetDeviceInfo(io_type);

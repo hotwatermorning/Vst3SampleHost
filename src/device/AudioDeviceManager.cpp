@@ -41,7 +41,7 @@ PaHostApiIndex FromAudioDriverType(AudioDriverType type)
 }
 
 class AudioDeviceImpl
-:   public AudioDevice
+:   public IAudioDevice
 {
 public:
     AudioDeviceImpl(AudioDeviceInfo const *input,
@@ -422,7 +422,7 @@ AudioDeviceManager::Open(AudioDeviceInfo const *input_device,
     return pimpl_->device_.get();
 }
 
-AudioDevice * AudioDeviceManager::GetDevice() const
+IAudioDevice * AudioDeviceManager::GetDevice() const
 {
     return pimpl_->device_.get();
 }

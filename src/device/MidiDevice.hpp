@@ -21,13 +21,14 @@ struct MidiDeviceInfo
     }
 };
 
-class MidiDevice
+class IMidiDevice
 {
 protected:
-    MidiDevice() {}
+    IMidiDevice() {}
     
 public:
-    virtual ~MidiDevice() {}
+    virtual
+    ~IMidiDevice() {}
     
     virtual
     MidiDeviceInfo const & GetDeviceInfo() const = 0;
