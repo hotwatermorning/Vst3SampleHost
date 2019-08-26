@@ -8,6 +8,7 @@ NS_HWM_BEGIN
 constexpr wchar_t const * kVendorName = L"diatonic.jp";
 constexpr wchar_t const * kAppPrivateDirName = L"Vst3SampleHost";
 constexpr wchar_t const * kConfigFileName = L"Vst3SampleHost.conf";
+constexpr wchar_t const * kLogFileName = L"Vst3SampleHost.log";
 
 //! Get resource file path specified by the path hierarchy.
 String GetResourcePath(String path)
@@ -58,6 +59,16 @@ String GetConfigFilePath()
     dir.AppendDir(kVendorName);
     dir.AppendDir(kAppPrivateDirName);
     dir.SetFullName(kConfigFileName);
+    
+    return dir.GetFullPath().ToStdWstring();
+}
+
+String GetLogFilePath()
+{
+    auto dir = wxFileName::DirName(wxStandardPaths::Get().GetDocumentsDir());
+    dir.AppendDir(kVendorName);
+    dir.AppendDir(kAppPrivateDirName);
+    dir.SetFullName(kLogFileName);
     
     return dir.GetFullPath().ToStdWstring();
 }

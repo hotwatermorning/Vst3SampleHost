@@ -17,6 +17,13 @@ String GetResourcePath(std::vector<String> path_hierarchy);
  */
 String GetConfigFilePath();
 
+//! ログファイルの場所をフルパスで返す。
+/*! このファイルは、以下のパスに作成される。
+ *    * Win: "C:\Users\<UserName>\Documents\diatonic.jp\Vst3SampleHost\Vst3SampleHost.log"
+ *    * Mac: "/Users/<UserName>/Documents/diatonic.jp/Vst3SampleHost/Vst3SampleHost.log"
+ */
+String GetLogFilePath();
+
 template<class T>
 T GetResourceAs(String path)
 {

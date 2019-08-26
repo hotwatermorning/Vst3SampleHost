@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include <wx/filename.h>
+#include <wx/cmdline.h>
 
 #include "App.hpp"
 #include "../device/AudioDeviceManager.hpp"
@@ -22,6 +23,8 @@
 #include "../processor/EventBuffer.hpp"
 #include "../file/Config.hpp"
 #include "../file/ProjectFile.hpp"
+#include "../log/LoggingSupport.hpp"
+#include "../log/LoggingStrategy.hpp"
 #include "./NoteStatus.hpp"
 #include "./TestSynth.hpp"
 
@@ -413,7 +416,9 @@ struct App::Impl
 
 App::App()
 :   pimpl_(std::make_unique<Impl>())
-{}
+{
+    InitializeDefaultGlobalLogger();
+}
 
 App::~App()
 {
@@ -426,6 +431,22 @@ bool App::OnInit()
     }
     
     wxInitAllImageHandlers();
+    
+    auto logger = GetGlobalLogger();
+    auto st = std::make_shared<FileLoggingStrategy>(GetLogFilePath());
+    auto err = st->OpenPermanently();
+    if(err) {
+        wxMessageBox(L"Can't open log file: " + err.message());
+        return false;
+    }
+    
+    logger->SetStrategy(st);
+    logger->StartLogging(true);
+    
+    EnableErrorCheckAssertionForLoggingMacros(true);
+    
+    HWM_INFO_LOG(L"Start " << kAppName << L" version " << kAppVersion << L" (" << kAppCommitID << L").");
+    HWM_INFO_LOG(L"Start logging");
     
     pimpl_->factory_list_ = std::make_shared<Vst3PluginFactoryList>();
 
@@ -482,6 +503,8 @@ int App::OnExit()
     UnloadVst3Module();
     
     pimpl_->factory_list_.reset();
+    
+    HWM_INFO_LOG(L"End logging");
     
     return 0;
 }
@@ -857,6 +880,32 @@ void App::SaveProjectFile(String path_to_save)
 #endif
     
     ofs << file;
+}
+
+namespace {
+    wxCmdLineEntryDesc const cmdline_descs [] =
+    {
+        { wxCMD_LINE_SWITCH, "h", "help", "show help", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
+        { wxCMD_LINE_OPTION, "l", "logging-level", "set logging level to (Error|Warn|Info|Debug). the default value is \"Info\"", wxCMD_LINE_VAL_STRING, 0 },
+        { wxCMD_LINE_NONE },
+    };
+}
+
+void App::OnInitCmdLine(wxCmdLineParser& parser)
+{
+    parser.SetDesc(cmdline_descs);
+    parser.SetSwitchChars("-");
+}
+
+bool App::OnCmdLineParsed(wxCmdLineParser& parser)
+{
+    auto logger = GetGlobalLogger();
+    wxString level = "Info";
+    parser.Found("l", &level);
+    level = level.Capitalize();
+    logger->SetMostDetailedActiveLoggingLevel(level.ToStdWstring());
+    
+    return true;
 }
 
 NS_HWM_END

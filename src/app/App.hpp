@@ -126,6 +126,9 @@ private:
     
     bool OnInit() override;
     int OnExit() override;
+    
+    void OnInitCmdLine(wxCmdLineParser& parser) override;
+    bool OnCmdLineParsed(wxCmdLineParser& parser) override;
 };
 
 NS_HWM_END
