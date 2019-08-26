@@ -4,31 +4,62 @@
 
 NS_HWM_BEGIN
 
-std::wstring to_wstr(std::wstring const &str) { return str; }
+std::wstring to_wstr(std::wstring const &str)
+{
+    return str;
+}
+
+std::wstring to_wstr(wchar_t const *first, wchar_t const *last)
+{
+    return {first, last};
+}
 
 std::wstring to_wstr(std::string const &str)
 {
-    return wxString(str.c_str(), wxMBConvUTF8{}).ToStdWstring();
+    return to_wstr(str.c_str(), str.c_str() + str.size());
+}
+
+std::wstring to_wstr(char const *first, char const *last)
+{
+    return wxString(first, wxMBConvUTF8{}, last - first).ToStdWstring();
 }
 
 std::wstring to_wstr(std::u16string const &str)
 {
-    return wxString(reinterpret_cast<char const *>(str.c_str()), wxMBConvUTF16LE{}).ToStdWstring();
+    return to_wstr(str.c_str(), str.c_str() + str.size());
+}
+
+std::wstring to_wstr(char16_t const *first, char16_t const *last)
+{
+    std::vector<char> buf((last - first) * sizeof(char16_t));
+    memcpy(buf.data(), first, buf.size());
+    
+    return wxString(buf.data(), wxMBConvUTF16LE{}).ToStdWstring();
 }
 
 std::string to_utf8(std::wstring const &str)
 {
-    return wxString(str.c_str()).ToStdString(wxMBConvUTF8{});
+    return to_utf8(str.c_str(), str.c_str() + str.size());
+}
+
+std::string to_utf8(wchar_t const *first, wchar_t const *last)
+{
+    return wxString(first, last - first).ToStdString(wxMBConvUTF8{});
 }
 
 std::u16string to_utf16(std::wstring const &str)
 {
-    auto ws = wxString(str.c_str());
-    auto buf = ws.mb_str(wxMBConvUTF16{});
-    auto const it = reinterpret_cast<char16_t const *>(buf.data());
-    auto const end = it + buf.length() / 2;
+    return to_utf16(str.c_str(), str.c_str() + str.size());
+}
 
-    std::u16string u16(it, end);
+std::u16string to_utf16(wchar_t const *first, wchar_t const *last)
+{
+    auto ws = wxString(first, last - first);
+    auto buf = ws.mb_str(wxMBConvUTF16{});
+    
+    std::u16string u16;
+    u16.resize(buf.length() / 2);
+    memcpy(u16.data(), buf.data(), buf.length());
     return u16;
 }
 
