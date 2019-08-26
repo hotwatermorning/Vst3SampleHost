@@ -34,7 +34,7 @@ std::wstring to_wstr(char16_t const *first, char16_t const *last)
     std::vector<char> buf((last - first) * sizeof(char16_t));
     memcpy(buf.data(), first, buf.size());
     
-    return wxString(buf.data(), wxMBConvUTF16LE{}).ToStdWstring();
+    return wxString(buf.data(), wxMBConvUTF16LE{}, buf.size()).ToStdWstring();
 }
 
 std::string to_utf8(std::wstring const &str)
