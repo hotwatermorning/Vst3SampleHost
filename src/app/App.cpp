@@ -155,56 +155,79 @@ struct App::Impl
     TestSynth test_synth_;
     IAboutDialog *about_dialog_ = nullptr;
     
-    bool ReadConfigFile()
+    class Result {
+    public:
+        Result() {}
+        
+        static
+        Result NoError() { return Result{}; }
+        
+        static
+        Result Fail(String error_msg) {
+            Result tmp;
+            tmp.error_msg_ = std::move(error_msg);
+            return tmp;
+        }
+        
+        bool has_error() const { return error_msg_.empty() == false; }
+        String const & what() const { return error_msg_; }
+        
+    private:
+        String error_msg_;
+    };
+    
+    Result ReadConfigFile()
     {
         wxFileName conf_path(GetConfigFilePath());
         if(conf_path.Mkdir(wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL) == false) {
-            hwm::dout << "Failed to open the config file." << std::endl;
-            return false;
+            return Result::Fail(L"コンフィグファイルを配置するディレクトリを作成できませんでした");
         }
-        
+    
+        errno = 0;
 #if defined(_MSC_VER)
         std::ifstream ifs(conf_path.GetFullPath().ToStdWstring());
 #else
         std::ifstream ifs(to_utf8(conf_path.GetFullPath().ToStdWstring()));
 #endif
         if(!ifs) {
-            hwm::dout << "Failed to open the config file." << std::endl;
-            return false;
+            return Result::Fail(L"コンフィグファイルを開けませんでした: " + to_wstr(strerror(errno)));
         }
         
         try {
             ifs >> config_;
-            return true;
         } catch(std::exception &e) {
-            hwm::dout << "Failed to read the config file: " << e.what() << std::endl;
-            return false;
+            // エラー扱いにしない。
+            // アプリケーション終了時に新しい内容が書き込まれるはず。
+            hwm::wdout << L"Failed to read the config file: " << to_wstr(e.what()) << std::endl;
         }
+        
+        return Result::NoError();
     }
     
-    void WriteConfigFile()
-    {
-        try {
-            wxFileName conf_path(GetConfigFilePath());
-            if(conf_path.Mkdir(wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL) == false) {
-                throw std::runtime_error("Failed to create the config directory.");
-            }
-            
-            std::ofstream ofs;
-            ofs.exceptions(std::ios::failbit|std::ios::badbit);
-        
-#if defined(_MSC_VER)
-            ofs.open(conf_path.GetFullPath().ToStdWstring());
-#else
-            ofs.open(to_utf8(conf_path.GetFullPath().ToStdWstring()));
-#endif
-            ofs << config_;
-        } catch(std::exception &e) {
-            hwm::dout << "Failed to write config data: " << e.what() << std::endl;
-            auto msg = std::wstring(L"コンフィグファイルの書き込みに失敗しました。\nアプリケーションを終了します。\n[") + to_wstr(e.what()) + L"]";
-            wxMessageBox(msg);
-            std::exit(-1);
+    Result WriteConfigFile()
+    {        
+        wxFileName conf_path(GetConfigFilePath());
+        if(conf_path.Mkdir(wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL) == false) {
+            return Result::Fail(L"コンフィグファイルを配置するディレクトリを作成できませんでした");
         }
+        
+        errno = 0;
+#if defined(_MSC_VER)
+        std::ofstream ofs(conf_path.GetFullPath().ToStdWstring(), std::ios::trunc);
+#else
+        std::ofstream ofs(to_utf8(conf_path.GetFullPath().ToStdWstring()), std::ios::trunc);
+#endif
+        if(!ofs) {
+            return Result::Fail(L"コンフィグファイルのオープンに失敗しました: " + to_wstr(strerror(errno)));
+        }
+        
+        errno = 0;
+        ofs << config_;
+        if(!ofs) {
+            return Result::Fail(L"コンフィグファイルの書き込みに失敗しました: " + to_wstr(strerror(errno)));
+        }
+        
+        return Result::NoError();
     }
     
     KeyboardStatus requested_; //!< 再生待ちのノート
@@ -453,7 +476,12 @@ bool App::OnInit()
     auto adm = AudioDeviceManager::GetInstance();
     adm->AddCallback(pimpl_.get());
 
-    pimpl_->ReadConfigFile();
+    auto res = pimpl_->ReadConfigFile();
+    if(res.has_error()) {
+        wxMessageBox(L"コンフィグファイルを開けませんでした。アプリケーションを終了します。\nError Message: [" + res.what() + L"]");
+        logger->StartLogging(false);
+        return false;
+    }
 
     if(OpenAudioDevice(pimpl_->config_) == false) {
         // Select Audio Device
@@ -768,7 +796,10 @@ void App::SelectAudioDevice()
     }
     
     pimpl_->config_.ScanAudioDeviceStatus();
-    pimpl_->WriteConfigFile();
+    auto res = pimpl_->WriteConfigFile();
+    if(res.has_error()) {
+        wxMessageBox(L"コンフィグデータの保存に失敗しました。アプリケーションを終了してください。\nError Message: [" + res.what() + L"]");
+    }
     
     bool const new_inputtability = CanEnableAudioInput();
     if(old_inputtability != new_inputtability) {
