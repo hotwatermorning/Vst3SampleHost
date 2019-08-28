@@ -16,37 +16,38 @@ public:
     explicit operator bool() const { return is_right(); }
     
     Left & left() {
-        if(auto p = std::get_if<Left>(&data_)) {
-            return *p;
-        } else {
+        auto p = std::get_if<Left>(&data_);
+        if(!p) {
             throw std::runtime_error("Left is unavailable");
-            return *(Left *)nullptr;
         }
+
+        return *p;
     }
     
     Left const & left() const {
-        if(auto p = std::get_if<Left>(&data_)) {
-            return *p;
-        } else {
+        auto p = std::get_if<Left>(&data_);
+        if(!p) {
             throw std::runtime_error("Left is unavailable");
-            return *(Left *)nullptr;
         }
+        
+        return *p;
     }
+    
     Right & right() {
-        if(auto p = std::get_if<Right>(&data_)) {
-            return *p;
-        } else {
-            throw std::runtime_error("Left is unavailable");
-            return *(Right *)nullptr;
+        auto p = std::get_if<Right>(&data_);
+        if(!p) {
+            throw std::runtime_error("Right is unavailable");
         }
+        
+        return *p;
     }
     Right & right() const {
-        if(auto p = std::get_if<Right>(&data_)) {
-            return *p;
-        } else {
-            throw std::runtime_error("Left is unavailable");
-            return *(Right *)nullptr;
+        auto p = std::get_if<Right>(&data_);
+        if(!p) {
+            throw std::runtime_error("Right is unavailable");
         }
+        
+        return *p;
     }
     
     template<class F>
