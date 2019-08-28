@@ -35,7 +35,7 @@ std::wstring tresult_to_wstring(tresult result)
 Steinberg::tresult ShowError(Steinberg::tresult result, String context)
 {
     if(result != kResultOk) {
-        hwm::dout << wxString::Format(L"Failed(%ls): %ls",
+        hwm::wdout << wxString::Format(L"Failed(%ls): %ls",
                                       tresult_to_wstring(result), context
                                       ).ToStdWstring()
         << std::endl;
