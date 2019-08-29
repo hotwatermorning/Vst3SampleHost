@@ -1,6 +1,9 @@
 #pragma once
 
 #include "./GlobalLogger.hpp"
+#include <iostream>
+#include <iomanip>
+#include <sstream>
 
 NS_HWM_BEGIN
 
@@ -77,9 +80,13 @@ do { \
 
 // dedicated logging macros for the default logging levels.
 
+//! 処理の中断を伴うようなエラーが発生したことを表すログ
 #define HWM_ERROR_LOG(...) HWM_LOG(L"Error", __VA_ARGS__)
+//! 処理の中断を伴わないようなエラーが発生したことを表すログ
 #define HWM_WARN_LOG(...) HWM_LOG(L"Warn", __VA_ARGS__)
+//! 通常のログ。処理が問題なく進行していることを表す
 #define HWM_INFO_LOG(...) HWM_LOG(L"Info", __VA_ARGS__)
+//! デバッグ用の詳細なログ
 #define HWM_DEBUG_LOG(...) HWM_LOG(L"Debug", __VA_ARGS__)
 
 NS_HWM_END

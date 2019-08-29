@@ -62,3 +62,4 @@ NS_HWM_END
 #include "app/AppConfig.hpp"
 #include "misc/DebuggerOutputStream.hpp"
 #include "misc/StrCnv.hpp"
+#include "log/LoggingSupport.hpp"

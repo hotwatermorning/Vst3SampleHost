@@ -286,7 +286,7 @@ private:
         for(int i = 0; i < num; ++i) {
             auto const &info = factory->GetComponentInfo(i);
             
-            hwm::wdout << info.GetName() << L", " << info.GetCategory() << std::endl;
+            HWM_DEBUG_LOG(info.GetName() << L", " << info.GetCategory());
             
             //! カテゴリがkVstAudioEffectClassなComponentを探索する。
             if(info.GetCategory() == hwm::to_wstr(kVstAudioEffectClass)) {
@@ -435,7 +435,9 @@ private:
         auto path = String(openFileDialog.GetPath().ToStdWstring());
         module_dir_ = wxFileName(path).GetPath();
         
-        App::GetInstance()->LoadVst3Module(path);
+        if(App::GetInstance()->LoadVst3Module(path) == false) {
+            wxMessageBox(L"モジュールのオープンに失敗しました");
+        }
     }
     
     class ComponentData : public wxClientData

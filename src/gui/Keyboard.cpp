@@ -172,7 +172,7 @@ public:
     {
 #if _DEBUG
         if(last_dragging_note_ != std::nullopt) {
-            hwm::dout << "left down is sent twice unexpectedly." << std::endl;
+            HWM_DEBUG_LOG(L"left down is sent twice unexpectedly.");
         }
 #endif
         OnMotion(ev);

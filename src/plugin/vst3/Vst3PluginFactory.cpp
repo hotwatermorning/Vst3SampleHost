@@ -97,11 +97,10 @@ std::wstring
 template<class Container>
 void OutputClassInfoList(Container const &cont)
 {
-    hwm::wdout << "--- Output Class Info ---" << std::endl;
+    HWM_DEBUG_LOG(L"--- Output Class Info ---");
     int count = 0;
     for(ClassInfo const &info: cont) {
-        hwm::wdout
-            << L"[" << count++ << L"] " << ClassInfoToString(info) << std::endl;
+        HWM_DEBUG_LOG(L"[" << count++ << L"] " << ClassInfoToString(info));
     }
 }
 
@@ -122,8 +121,8 @@ std::wstring
 
 void OutputFactoryInfo(FactoryInfo const &info)
 {
-    hwm::wdout << "--- Output Factory Info ---" << std::endl;
-    hwm::wdout << FactoryInfoToString(info) << std::endl;
+    HWM_DEBUG_LOG(L"--- Output Factory Info ---");
+    HWM_DEBUG_LOG(FactoryInfoToString(info));
 }
 
 Vst3PluginFactory::Impl::Impl(String module_path)
@@ -261,7 +260,7 @@ std::shared_ptr<Vst3PluginFactory> Vst3PluginFactoryList::FindOrCreateFactory(St
         try {
             factory = std::make_shared<Vst3PluginFactory>(module_path);
         } catch(std::exception &e) {
-            hwm::dout << "Failed to create Vst3PluginFactory: " << e.what() << std::endl;
+            HWM_ERROR_LOG(L"Failed to create a Vst3PluginFactory [" << module_path << L"]: " << to_wstr(e.what()));
             return {};
         }
         

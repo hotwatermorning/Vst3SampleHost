@@ -11,8 +11,19 @@ NS_HWM_BEGIN
 
 using namespace Steinberg;
 
+bool Vst3Plugin::IOSpeakerSet::operator==(IOSpeakerSet const &rhs) const
+{
+    return input_ == rhs.input_ && output_ == rhs.output_;
+}
+
+bool Vst3Plugin::IOSpeakerSet::operator!=(IOSpeakerSet const &rhs) const
+{
+    return !(*this == rhs);
+}
+
 Vst3Plugin::Vst3Plugin(IPluginFactory *factory, ClassInfo const &class_info)
 {
+    HWM_INFO_LOG(L"Construct a Vst3Plugin [" << class_info.GetName() + L"]");
     assert(factory);
     
     auto host_context = std::make_unique<Vst3Plugin::HostContext>(kAppName);
@@ -27,6 +38,7 @@ Vst3Plugin::Vst3Plugin(IPluginFactory *factory, ClassInfo const &class_info)
 
 Vst3Plugin::~Vst3Plugin()
 {
+    HWM_INFO_LOG(L"Destruct a Vst3Plugin: [" << GetComponentInfo().GetName() << L"]");
     vpdls_.Invoke([this](auto *li) {
         li->OnBeforeDestruction(this);
     });

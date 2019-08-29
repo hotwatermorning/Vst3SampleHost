@@ -21,7 +21,7 @@ Vst3Plugin::HostContext::HostContext(hwm::String host_name)
 
 Vst3Plugin::HostContext::~HostContext()
 {
-    hwm::dout << L"Vst3Plugin::HostContext is now deleted." << std::endl;
+    HWM_DEBUG_LOG(L"Vst3Plugin::HostContext is now deleted.");
 }
 
 void Vst3Plugin::HostContext::SetVst3Plugin(Vst3Plugin *plugin)
@@ -31,7 +31,7 @@ void Vst3Plugin::HostContext::SetVst3Plugin(Vst3Plugin *plugin)
 
 tresult PLUGIN_API Vst3Plugin::HostContext::getName(Vst::String128 name)
 {
-    hwm::dout << "HostContext::getName" << std::endl;
+    HWM_DEBUG_LOG(L"HostContext::getName");
 
     auto const length = std::min<int>(host_name_.length(), 128);
     std::copy_n(std::begin(host_name_), length, name);
@@ -43,6 +43,17 @@ tresult PLUGIN_API Vst3Plugin::HostContext::createInstance(TUID cid, TUID iid, v
 {
     auto const classID = FUID::fromTUID(cid);
     auto const interfaceID = FUID::fromTUID(iid);
+    
+    auto to_wstr = [](FUID const &id) {
+        std::string str(64, '\0');
+        id.toString(str.data());
+        return hwm::to_wstr(str);
+    };
+
+    HWM_DEBUG_LOG(L"HostContext::createInstance: "
+                  << L"cid=" << to_wstr(classID) << L", "
+                  << L"iid=" << to_wstr(interfaceID)
+                  );
     
     FUnknown *p = nullptr;
     
@@ -86,7 +97,7 @@ tresult PLUGIN_API Vst3Plugin::HostContext::endEdit (Vst::ParamID id)
 
 tresult PLUGIN_API Vst3Plugin::HostContext::restartComponent (int32 flags)
 {
-    //hwm::dout << "restartComponent [{}]"_format(flags) << std::endl;
+    HWM_DEBUG_LOG(L"restartComponent " << std::hex << flags);
 
 //    auto app = wxApp::GetInstance();
 //    if(wxThread::IsMain() == false) {
@@ -112,7 +123,6 @@ tresult PLUGIN_API Vst3Plugin::HostContext::restartComponent (int32 flags)
     add_str(Vst::kPrefetchableSupportChanged, "Prefetchable Support Changed");
     add_str(Vst::kRoutingInfoChanged, "Routing Info Changed");
     
-    //hwm::dout << "Restart request has come [{}]"_format(str) << std::endl;
     if(plugin_) {
         plugin_->RestartComponent(flags);
     }
@@ -186,7 +196,7 @@ tresult Vst3Plugin::HostContext::notifyUnitByBusChange ()
 
 tresult PLUGIN_API Vst3Plugin::HostContext::resizeView (IPlugView* view, ViewRect* newSize)
 {
-    hwm::dout << "resizeView" << std::endl;
+    HWM_DEBUG_LOG(L"HostContext::resizeView");
     assert(newSize);
     ViewRect current;
     view->getSize(&current);

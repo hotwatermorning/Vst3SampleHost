@@ -99,7 +99,7 @@ std::optional<std::vector<char>> base64_decode(std::string const &data)
                               &error_pos);
     
     if(error_pos != -1) {
-        hwm::dout << "Failed to decode base64 data at: " << error_pos << std::endl;
+        HWM_DEBUG_LOG(L"Failed to decode base64 data at: " << error_pos);
         return std::nullopt;
     }
     

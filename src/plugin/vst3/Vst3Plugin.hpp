@@ -108,6 +108,9 @@ public:
     struct IOSpeakerSet {
         SpeakerList input_;
         SpeakerList output_;
+        
+        bool operator==(IOSpeakerSet const &rhs) const;
+        bool operator!=(IOSpeakerSet const &rhs) const;
     };
     
     struct ParameterInfo

@@ -35,10 +35,10 @@ std::wstring tresult_to_wstring(tresult result)
 Steinberg::tresult ShowError(Steinberg::tresult result, String context)
 {
     if(result != kResultOk) {
-        hwm::wdout << wxString::Format(L"Failed(%ls): %ls",
+        HWM_WARN_LOG(L"VST3 Error: " <<
+                     wxString::Format(L"Failed(%ls): %ls",
                                       tresult_to_wstring(result), context
-                                      ).ToStdWstring()
-        << std::endl;
+                                      ).ToStdWstring());
     }
     
     return result;
@@ -46,7 +46,7 @@ Steinberg::tresult ShowError(Steinberg::tresult result, String context)
 
 void OutputParameterInfo(Vst::IEditController *edit_controller)
 {
-    hwm::wdout << "--- Output Parameter Info ---" << std::endl;
+    HWM_DEBUG_LOG(L"--- Output Parameter Info ---");
     
     UInt32 const num = edit_controller->getParameterCount();
     
@@ -55,8 +55,8 @@ void OutputParameterInfo(Vst::IEditController *edit_controller)
         edit_controller->getParameterInfo(i, info);
         
         auto has_flag = [info](auto flag) { return (info.flags & flag) != 0 ? L"true" : L"false"; };
-        hwm::wdout
-        << wxString::Format(L"[%4d]: {"
+        HWM_DEBUG_LOG(
+           wxString::Format(L"[%4d]: {"
                             L"ID:%d, Title:%ls, ShortTitle:%ls, Units:%ls, "
                             L"StepCount:%d, DefaultValue:%0.6lf, UnitID:%d, "
                             L"CanAutomate:%ls, IsReadOnly:%ls, IsWrapAround:%ls, "
@@ -68,7 +68,7 @@ void OutputParameterInfo(Vst::IEditController *edit_controller)
                             has_flag(info.kCanAutomate), has_flag(info.kIsReadOnly), has_flag(info.kIsWrapAround),
                             has_flag(info.kIsList), has_flag(info.kIsProgramChange), has_flag(info.kIsBypass)
                             ).ToStdWstring()
-        << std::endl;
+                      );
     }
 }
 
@@ -92,38 +92,37 @@ void OutputUnitInfo(Vst::IUnitInfo *unit_handler)
 {
     assert(unit_handler);
     
-    hwm::wdout << "--- Output Unit Info ---" << std::endl;
+    HWM_DEBUG_LOG(L"--- Output Unit Info ---");
     
     for(size_t i = 0; i < unit_handler->getUnitCount(); ++i) {
         Vst::UnitInfo unit_info {};
         unit_handler->getUnitInfo(i, unit_info);
-        hwm::wdout << L"[" << i << L"] " << UnitInfoToString(unit_info) << std::endl;
+        HWM_DEBUG_LOG(L"[" << i << L"] " << UnitInfoToString(unit_info));
     }
     
-    hwm::wdout << L"Selected Unit: " << unit_handler->getSelectedUnit() << std::endl;
+    HWM_DEBUG_LOG(L"Selected Unit: " << unit_handler->getSelectedUnit());
     
-    hwm::wdout << "--- Output Program List Info ---" << std::endl;
+    HWM_DEBUG_LOG(L"--- Output Program List Info ---");
     
+    std::wstringstream ss;
     for(size_t i = 0; i < unit_handler->getProgramListCount(); ++i) {
         Vst::ProgramListInfo program_list_info {};
         tresult res = unit_handler->getProgramListInfo(i, program_list_info);
         if(res != kResultOk) {
-            hwm::wdout << "Getting program list info failed." << std::endl;
+            HWM_WARN_LOG(L"Getting program list info failed.");
             break;
         }
         
-        hwm::wdout
-        << wxString::Format(L"[%d] %ls", (Int32)i, ProgramListInfoToString(program_list_info)).ToStdWstring()
-        << std::endl;
+        ss << wxString::Format(L"[%d] %ls", (Int32)i, ProgramListInfoToString(program_list_info)).ToStdWstring();
         
         for(size_t program_index = 0; program_index < program_list_info.programCount; ++program_index) {
             
-            hwm::wdout << wxString::Format(L"\t[%d] ", (Int32)program_index).ToStdWstring();
+            ss << wxString::Format(L"\t[%d] ", (Int32)program_index).ToStdWstring();
             
             Vst::String128 name;
             unit_handler->getProgramName(program_list_info.id, program_index, name);
             
-            hwm::wdout << to_wstr(name);
+            ss << to_wstr(name);
             
             Vst::CString attrs[] {
                 Vst::PresetAttributes::kPlugInName,
@@ -140,7 +139,7 @@ void OutputUnitInfo(Vst::IUnitInfo *unit_handler)
                 Vst::String128 attr_value = {};
                 unit_handler->getProgramInfo(program_list_info.id, program_index, attr, attr_value);
                 
-                hwm::wdout << L", " << to_wstr(attr) << ":[" << to_wstr(attr_value) << L"]";
+                ss << L", " << to_wstr(attr) << ":[" << to_wstr(attr_value) << L"]";
             }
             
             if(unit_handler->hasProgramPitchNames(program_list_info.id, program_index) == kResultTrue) {
@@ -148,13 +147,15 @@ void OutputUnitInfo(Vst::IUnitInfo *unit_handler)
                 int16 const pitch_center = 0x2000;
                 unit_handler->getProgramPitchName(program_list_info.id, program_index, pitch_center, pitch_name);
                 
-                hwm::wdout << L", " << to_wstr(pitch_name);
+                ss << L", " << to_wstr(pitch_name);
             } else {
-                hwm::wdout << L", No Pitch Name";
+                ss << L", No Pitch Name";
             }
             
-            hwm::wdout << std::endl;
+            ss << std::endl;
         }
+        
+        HWM_DEBUG_LOG(ss.str());
     }
 }
 
@@ -227,7 +228,7 @@ void OutputBusInfoImpl(Vst::IComponent *component,
     
     int const num_components = component->getBusCount(media_type, bus_direction);
     if(num_components == 0) {
-        hwm::wdout << "No such buses for this component." << std::endl;
+        HWM_DEBUG_LOG(L"No such buses for this component.");
         return;
     }
     
@@ -246,9 +247,7 @@ void OutputBusInfoImpl(Vst::IComponent *component,
         :   String(kNumSpaces, L' ') + L"No unit info for this bus."
         ;
         
-        hwm::wdout
-        << wxString::Format(L"[%d] %ls\n%ls", (Int32)i, bus_info_str, bus_unit_info_str).ToStdWstring()
-        << std::endl;
+        HWM_DEBUG_LOG(wxString::Format(L"[%d] %ls\n%ls", (Int32)i, bus_info_str, bus_unit_info_str).ToStdWstring());
     }
 }
 
@@ -256,14 +255,14 @@ void OutputBusInfo(Vst::IComponent *component,
                    Vst::IEditController *edit_controller,
                    Vst::IUnitInfo *unit_handler)
 {
-    hwm::dout << "-- output bus info --" << std::endl;
-    hwm::dout << "[Audio Input]" << std::endl;
+    HWM_DEBUG_LOG(L"-- output bus info --");
+    HWM_DEBUG_LOG(L"[Audio Input]");
     OutputBusInfoImpl(component, unit_handler, Vst::MediaTypes::kAudio, Vst::BusDirections::kInput);
-    hwm::dout << "[Audio Output]" << std::endl;
+    HWM_DEBUG_LOG(L"[Audio Output]");
     OutputBusInfoImpl(component, unit_handler, Vst::MediaTypes::kAudio, Vst::BusDirections::kOutput);
-    hwm::dout << "[Event Input]" << std::endl;
+    HWM_DEBUG_LOG(L"[Event Input]");
     OutputBusInfoImpl(component, unit_handler, Vst::MediaTypes::kEvent, Vst::BusDirections::kInput);
-    hwm::dout << "[Event Output]" << std::endl;
+    HWM_DEBUG_LOG(L"[Event Output]");
     OutputBusInfoImpl(component, unit_handler, Vst::MediaTypes::kEvent, Vst::BusDirections::kOutput);
 }
 

@@ -458,7 +458,7 @@ public:
         }
         
         if(cho_audio_outputs_->GetCount() == 0) {
-            hwm::dout << "[Error] there's no audio output devices." << std::endl;
+            HWM_ERROR_LOG(L"there's no audio output devices.");
             return;
         }
         

@@ -227,7 +227,7 @@ template<class ErrCode>
 auto ShowErrorMsg(ErrCode err)
 {
     if(err != paNoError) {
-        hwm::dout << Pa_GetErrorText(err) << std::endl;
+        HWM_WARN_LOG(L"PortAudio Error: " << to_wstr(Pa_GetErrorText(err)));
     }
 }
 
@@ -325,7 +325,7 @@ std::vector<AudioDeviceInfo> AudioDeviceManager::Enumerate()
 
 void SteamFinishedCallback(void* user_data)
 {
-    hwm::dout << "-------------- stream stopped --------------" << std::endl;
+    HWM_DEBUG_LOG(L"-------------- stream stopped --------------");
 }
 
 AudioDeviceManager::OpenResult
@@ -389,14 +389,13 @@ AudioDeviceManager::Open(AudioDeviceInfo const *input_device,
         return info->name_ + L" (" + to_wstring(info->driver_) + L")";
     };
     
-    hwm::wdout
-    << wxString::Format(L"Open Device [ %ls, %ls, %6lg, %d ]",
-                        pip ? name_with_driver(input_device).c_str() : L"N/A",
-                        pop ? name_with_driver(output_device).c_str() : L"N/A",
-                        sample_rate,
-                        (Int32)block_size
-                        ).ToStdWstring()
-    << std::endl;
+    HWM_INFO_LOG(wxString::Format(L"Open Device [ %ls, %ls, %6lg, %d ]",
+                                  pip ? name_with_driver(input_device).c_str() : L"N/A",
+                                  pop ? name_with_driver(output_device).c_str() : L"N/A",
+                                  sample_rate,
+                                  (Int32)block_size
+                                  ).ToStdWstring()
+                 );
     
     if(!pip && !pop) {
         return Error(ErrorCode::kDeviceNotFound, L"Device not found");

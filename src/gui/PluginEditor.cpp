@@ -7,12 +7,19 @@
 #include <pluginterfaces/gui/iplugview.h>
 #include <map>
 
-NS_HWM_BEGIN
-
-std::ostream & operator<<(std::ostream &os, Steinberg::ViewRect const &rc)
-{
-    return os << "(" << rc.left << ", " << rc.top << ", " << rc.right << ", " << rc.bottom << ")";
+namespace Steinberg {
+    std::ostream & operator<<(std::ostream &os, ViewRect const &rc)
+    {
+        return os << "(" << rc.left << ", " << rc.top << ", " << rc.right << ", " << rc.bottom << ")";
+    }
+    
+    std::wostream & operator<<(std::wostream &os, ViewRect const &rc)
+    {
+        return os << L"(" << rc.left << L", " << rc.top << L", " << rc.right << L", " << rc.bottom << L")";
+    }
 }
+
+NS_HWM_BEGIN
 
 class ParameterSlider
 :   public wxPanel
@@ -87,7 +94,6 @@ public:
             if(GetParameterIndex() == -1) { return; }
             auto const id = info_.id_;
 
-            hwm::dout << "EVT TEXT" << std::endl;
             auto normalized = plugin_->StringToValueByID(id, disp_->GetValue().ToStdWstring());
             if(normalized >= 0) {
                 plugin_->EnqueueParameterChange(id, normalized);
@@ -182,7 +188,6 @@ public:
         sb_->Bind(wxEVT_SCROLL_THUMBTRACK, [this](auto &ev) { Layout(); });
         
         Bind(wxEVT_MOUSEWHEEL, [this](wxMouseEvent &ev) {
-            hwm::dout << ev.GetWheelDelta() << ", " << ev.GetWheelRotation() << std::endl;
             sb_->SetThumbPosition(sb_->GetThumbPosition() - ev.GetWheelRotation());
             Layout();
         });
@@ -506,7 +511,9 @@ private:
         cho_select_program_->SetSelection(plugin_->GetProgramIndex(unit_id));
     }
     
-    virtual void OnPerformEdit(Vst3Plugin *plugin, Steinberg::Vst::ParamID id, Steinberg::Vst::ParamValue valueNormalized)
+    void OnPerformEdit(Vst3Plugin *plugin,
+                       Steinberg::Vst::ParamID id,
+                       Steinberg::Vst::ParamValue valueNormalized) override
     {
         auto param_info = plugin->FindParameterInfoByID(id);
         assert(param_info);
@@ -516,33 +523,16 @@ private:
         }
     }
     
-    virtual void OnRestartComponent(Vst3Plugin *plugin, Steinberg::int32 flags)
-    {
-    }
-    
-    virtual void OnStartGroupEdit(Vst3Plugin *plugin)
-    {
-    }
-    
-    virtual void OnFinishGroupEdit(Vst3Plugin *plugin)
-    {
-    }
-    
-    virtual void OnNotifyUnitSelection(Vst3Plugin *plugin, Steinberg::Vst::UnitID unitId)
+    void OnNotifyUnitSelection(Vst3Plugin *plugin, Steinberg::Vst::UnitID unitId) override
     {
         SelectUnit(unitId);
     }
     
-    virtual void OnNotifyProgramListChange(Vst3Plugin *plugin,
-                                           Steinberg::Vst::ProgramListID listId,
-                                           Steinberg::int32 programIndex)
+    void OnNotifyProgramListChange(Vst3Plugin *plugin,
+                                   Steinberg::Vst::ProgramListID listId,
+                                   Steinberg::int32 programIndex) override
     {
-        hwm::wdout << "Notify Program List Change." << std::endl;
-    }
-    
-    virtual void OnNotifyUnitByBusChange(Vst3Plugin *plugin)
-    {
-        hwm::wdout << "Notify Unit By Bus Change." << std::endl;
+        HWM_DEBUG_LOG(L"Notify Program List Change.");
     }
     
     void OnChangeView()
@@ -617,7 +607,7 @@ private:
 
     void OnResizePlugView(Steinberg::ViewRect const& rc) override
     {
-        hwm::dout << "New view size: " << rc << std::endl;
+        HWM_DEBUG_LOG(L"New view size: " << rc);
 
         wxSize csize(rc.getWidth(), rc.getHeight());
         SetClientSize(csize);

@@ -44,9 +44,10 @@ bool OpenAudioDevice(Config const &conf)
     
     adm->Close();
     
+    HWM_INFO_LOG(L"Enumerate Audio Devices");
     auto audio_device_infos = adm->Enumerate();
     for(auto const &info: audio_device_infos) {
-        hwm::wdout << info.name_ << L" - " << to_wstring(info.driver_) << L"(" << info.num_channels_ << L"ch)" << std::endl;
+        HWM_INFO_LOG(info.name_ << L" - " << to_wstring(info.driver_) << L"(" << info.num_channels_ << L"ch)");
     }
     
     auto find_entry = [&list = audio_device_infos](auto io_type,
@@ -77,13 +78,13 @@ bool OpenAudioDevice(Config const &conf)
                                    conf.audio_input_device_name_);
     
     if(!output_device) {
-        hwm::wdout << L"audio output device not found: " << conf.audio_output_device_name_ << std::endl;
+        HWM_INFO_LOG(L"audio output device not found: " << conf.audio_output_device_name_);
         return false;
     }
     
     auto result = adm->Open(input_device, output_device, conf.sample_rate_, conf.block_size_);
     if(result.is_right() == false) {
-        hwm::wdout << L"failed to open the audio output device: " + result.left().error_msg_ << std::endl;
+        HWM_ERROR_LOG(L"failed to open the audio output device: " + result.left().error_msg_ << std::endl);
         return false;
     }
     
@@ -96,25 +97,26 @@ std::vector<IMidiDevice *> OpenMidiDevices()
     
     std::vector<IMidiDevice *> list;
     
+    HWM_INFO_LOG(L"Enumerate Midi Devices");
     auto midi_device_infos = mdm->Enumerate();
-    for(auto info: midi_device_infos) {
-        hwm::wdout
-        << wxString::Format(L"[%6ls] %ls - ", to_wstring(info.io_type_), info.name_id_
-                            ).ToStdWstring();
-        
+    for(auto const &info: midi_device_infos) {
+        HWM_INFO_LOG(wxString::Format(L"[%6ls] %ls - ", to_wstring(info.io_type_), info.name_id_).ToStdWstring());
+    }
+    
+    // midi 入力デバイスは全て開く
+    for(auto const &info: midi_device_infos) {
         if(info.io_type_ == DeviceIOType::kInput) {
             String error;
             auto dev = mdm->Open(info, &error);
             if(!dev) {
-                hwm::wdout << L"Failed to open: " << error;
+                HWM_ERROR_LOG(wxString::Format(L"Failed to open [%ls]: %ls", info.name_id_, error).ToStdWstring());
             } else {
                 list.push_back(dev);
-                hwm::wdout << L"Opened.";
+                HWM_INFO_LOG(wxString::Format(L"Opened [%ls]", info.name_id_).ToStdWstring());
             }
         } else {
-            hwm::wdout << "Skip.";
+            HWM_INFO_LOG(wxString::Format(L"Skipped [%ls]", info.name_id_).ToStdWstring());
         }
-        hwm::wdout << std::endl;
     }
     
     return list;
@@ -180,6 +182,7 @@ struct App::Impl
     {
         wxFileName conf_path(GetConfigFilePath());
         if(conf_path.Mkdir(wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL) == false) {
+            HWM_ERROR_LOG(L"failed to create the config file directory");
             return Result::Fail(L"コンフィグファイルを配置するディレクトリを作成できませんでした");
         }
     
@@ -190,7 +193,9 @@ struct App::Impl
         std::ifstream ifs(to_utf8(conf_path.GetFullPath().ToStdWstring()));
 #endif
         if(!ifs) {
-            return Result::Fail(L"コンフィグファイルを開けませんでした: " + to_wstr(strerror(errno)));
+            auto msg = to_wstr(strerror(errno));
+            HWM_ERROR_LOG(L"failed to open the config file: " + msg);
+            return Result::Fail(L"コンフィグファイルを開けませんでした: " + msg);
         }
         
         try {
@@ -198,16 +203,17 @@ struct App::Impl
         } catch(std::exception &e) {
             // エラー扱いにしない。
             // アプリケーション終了時に新しい内容が書き込まれるはず。
-            hwm::wdout << L"Failed to read the config file: " << to_wstr(e.what()) << std::endl;
+            HWM_WARN_LOG(L"Failed to read the config file: " << to_wstr(e.what()));
         }
         
         return Result::NoError();
     }
     
     Result WriteConfigFile()
-    {        
+    {
         wxFileName conf_path(GetConfigFilePath());
         if(conf_path.Mkdir(wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL) == false) {
+            HWM_ERROR_LOG(L"failed to create the config file directory");
             return Result::Fail(L"コンフィグファイルを配置するディレクトリを作成できませんでした");
         }
         
@@ -218,13 +224,17 @@ struct App::Impl
         std::ofstream ofs(to_utf8(conf_path.GetFullPath().ToStdWstring()), std::ios::trunc);
 #endif
         if(!ofs) {
-            return Result::Fail(L"コンフィグファイルのオープンに失敗しました: " + to_wstr(strerror(errno)));
+            auto msg = to_wstr(strerror(errno));
+            HWM_ERROR_LOG(L"failed to open the config file: " + msg);
+            return Result::Fail(L"コンフィグファイルのオープンに失敗しました: " + msg);
         }
         
         errno = 0;
         ofs << config_;
         if(!ofs) {
-            return Result::Fail(L"コンフィグファイルの書き込みに失敗しました: " + to_wstr(strerror(errno)));
+            auto msg = to_wstr(strerror(errno));
+            HWM_ERROR_LOG(L"failed to write the config file: " + msg);
+            return Result::Fail(L"コンフィグファイルの書き込みに失敗しました: " + msg);
         }
         
         return Result::NoError();
@@ -541,7 +551,6 @@ bool App::LoadVst3Module(String path)
 {
     auto factory = pimpl_->factory_list_->FindOrCreateFactory(path);
     if(!factory) {
-        hwm::dout << "Failed to open module.";
         return false;
     }
     
@@ -575,8 +584,12 @@ bool App::LoadVst3Plugin(ClassInfo::CID cid)
     auto factory = GetPluginFactory();
     if(!factory) { return false; }
 
-    auto tmp = factory->CreateByID(cid);
-    if(!tmp) {
+    std::unique_ptr<Vst3Plugin> tmp;
+    try {
+        tmp = factory->CreateByID(cid);
+        assert(tmp);
+    } catch(std::exception &e) {
+        HWM_ERROR_LOG(L"Failed to create Vst3Plugin: " << to_wstr(e.what()));
         return false;
     }
     
@@ -603,7 +616,7 @@ bool App::LoadVst3Plugin(ClassInfo::CID cid)
         activate_all_buses(tmp.get(), MT::kEvent, BD::kOutput);
         
     } catch(std::exception &e) {
-        hwm::dout << "Failed to create a Vst3Plugin: " << e.what() << std::endl;
+        HWM_ERROR_LOG(L"Failed to setup Vst3Plugin buses: " << to_wstr(e.what()));
         return nullptr;
     }
     
@@ -854,8 +867,11 @@ void App::LoadProjectFile(String path_to_load)
     try {
         ifs >> file;
     } catch(std::exception &e) {
-        hwm::dout << "failed to load project file: " << e.what() << std::endl;
+        HWM_ERROR_LOG(L"failed to load project file [" << path_to_load << L"]: " << to_wstr(e.what()));
+        return;
     }
+    
+    UnloadVst3Module();
     
     if(file.oscillator_type_) {
         SetTestWaveformType(*file.oscillator_type_);

@@ -454,7 +454,7 @@ void Vst3Plugin::Impl::Resume()
     
     status_ = Status::kActivated;
         
-    hwm::dout << "Latency samples : " << GetAudioProcessor()->getLatencySamples() << std::endl;
+    HWM_DEBUG_LOG(L"Latency samples : " << GetAudioProcessor()->getLatencySamples());
 
     auto lock = lf_processing_.make_lock(std::try_to_lock);
     
@@ -506,7 +506,7 @@ void Vst3Plugin::Impl::RestartComponent(Steinberg::int32 flags)
 {
     //! `Controller`側のパラメータが変更された
     if((flags & Vst::RestartFlags::kParamValuesChanged)) {
-        hwm::dout << "Param values changed" << std::endl;
+        HWM_DEBUG_LOG(L"Param values changed");
         auto const num = GetNumParameters();
         for(int i = 0; i < num; ++i) {
             auto const value = GetParameterValueByIndex(i);
@@ -514,9 +514,9 @@ void Vst3Plugin::Impl::RestartComponent(Steinberg::int32 flags)
             PushBackParameterChange(info.id_, value);
         }
     } else if((flags & Vst::RestartFlags::kIoChanged)) {
-        hwm::dout << "IO changed" << std::endl;
+        HWM_DEBUG_LOG(L"IO changed");
     } else if((flags & Vst::RestartFlags::kReloadComponent)) {
-        hwm::dout << "Should reload component" << std::endl;
+        HWM_DEBUG_LOG(L"Should reload component");
         bool const is_resumed = IsResumed();
         Suspend();
         
@@ -555,13 +555,13 @@ std::optional<ProcessInfo::MidiMessage> ToProcessEvent(Vst::Event const &ev)
         msg.channel_ = ev.polyPressure.channel;
         msg.data_ = pre;
     } else if(ev.type == Vst::Event::kDataEvent) {
-        hwm::dout << "Plugin sends data events." << std::endl;
+        HWM_DEBUG_LOG(L"Plugin sends data events.");
         return std::nullopt;
     } else if(ev.type == Vst::Event::kChordEvent) {
-        hwm::dout << "Plugin sends chord events." << std::endl;
+        HWM_DEBUG_LOG(L"Plugin sends chord events.");
         return std::nullopt;
     } else if(ev.type == Vst::Event::kScaleEvent) {
-        hwm::dout << "Plugin sends scake events." << std::endl;
+        HWM_DEBUG_LOG(L"Plugin sends scake events.");
         return std::nullopt;
     }
     
@@ -579,9 +579,11 @@ std::optional<Vst::Event> const ToVstEvent(ProcessInfo::MidiMessage const &msg)
     using namespace MidiDataType;
     
     if(auto note_on = msg.As<NoteOn>()) {
-//        hwm::dout << "Input Note On Event ch:{}, pi:{}, vel{}"_format(msg.channel_,
-//                                                                      note_on->pitch_,
-//                                                                      note_on->velocity_) << std::endl;
+        HWM_DEBUG_LOG(L"Input Note On Event"
+                      << L" channel: " << msg.channel_
+                      << L" pitch:   " << note_on->pitch_
+                      << L" velocity:" << note_on->velocity_
+                      );
         e.type = Vst::Event::kNoteOnEvent;
         e.noteOn.channel = msg.channel_;
         e.noteOn.pitch = note_on->pitch_;
@@ -591,9 +593,12 @@ std::optional<Vst::Event> const ToVstEvent(ProcessInfo::MidiMessage const &msg)
         e.noteOn.noteId = -1;
         return e;
     } else if(auto note_off = msg.As<NoteOff>()){
-//        hwm::dout << "Input Note Off Event ch:{}, pi:{}, vel{}"_format(msg.channel_,
-//                                                                      note_off->pitch_,
-//                                                                      note_off->off_velocity_) << std::endl;
+        HWM_DEBUG_LOG(L"Input Note Off Event"
+                      << L" channel: " << msg.channel_
+                      << L" pitch:   " << note_off->pitch_
+                      << L" velocity:" << note_off->off_velocity_
+                      );
+
         e.type = Vst::Event::kNoteOffEvent;
         e.noteOff.channel = msg.channel_;
         e.noteOff.pitch = note_off->pitch_;
@@ -602,6 +607,12 @@ std::optional<Vst::Event> const ToVstEvent(ProcessInfo::MidiMessage const &msg)
         e.noteOff.noteId = -1;
         return e;
     } else if(auto poly_press = msg.As<PolyphonicKeyPressure>()) {
+        HWM_DEBUG_LOG(L"Input Polyphonic Key Pressure Event"
+                      << L" channel: " << msg.channel_
+                      << L" pitch:   " << poly_press->pitch_
+                      << L" pressure:" << poly_press->value_
+                      );
+        
         e.type = Vst::Event::kPolyPressureEvent;
         e.polyPressure.channel = msg.channel_;
         e.polyPressure.pitch = poly_press->pitch_;
@@ -746,14 +757,14 @@ void Vst3Plugin::Impl::Process(ProcessInfo pi)
     process_data.outputParameterChanges = &output_params_;
 
     auto const res = GetAudioProcessor()->process(process_data);
+    if(res != kResultOk) {
+        HWM_WARN_LOG(L"process failed: " << to_wstr(tresult_to_string(res)));
+    }
     
     OutputEvents(pi.output_event_buffers_, ctx);
     
     static bool kOutputParameter = false;
-    
-    if(res != kResultOk) {
-        //hwm::dout << "process failed: {}"_format(tresult_to_string(res)) << std::endl;
-    }
+
     
     copy_buffer(output_buffer_, pi.output_audio_buffer_,
                 sample_length
@@ -762,7 +773,7 @@ void Vst3Plugin::Impl::Process(ProcessInfo pi)
     for(int i = 0; i < output_params_.getParameterCount(); ++i) {
         auto *queue = output_params_.getParameterData(i);
         if(queue && queue->getPointCount() > 0 && kOutputParameter) {
-            //hwm::dout << "Output parameter count [{}] : {}"_format(i, queue->getPointCount()) << std::endl;
+            HWM_WARN_LOG(L"Output parameter count [" << i << L"] : " << queue->getPointCount());
         }
     }
 }
@@ -872,7 +883,7 @@ void Vst3Plugin::Impl::LoadInterfaces(IPluginFactory *factory, ClassInfo const &
 
     auto edit_controller2 = queryInterface<Vst::IEditController2>(edit_controller.right());
     if(edit_controller2) {
-        hwm::dout << "This pluging implements IEditController2 interface." << std::endl;
+        HWM_INFO_LOG(L"This pluging implements IEditController2 interface.");
     }
     
     auto midi_mapping = queryInterface<Vst::IMidiMapping>(edit_controller.right());
@@ -922,12 +933,12 @@ void Vst3Plugin::Impl::Initialize()
         OutputUnitInfo(unit_handler_.get());
         
         if(unit_handler_->getUnitCount() == 0) {
-            hwm::dout << "Warning: This plugin has no unit info." << std::endl;
-            // Treat as this plugin has no IUnitInfo
+            HWM_WARN_LOG(L"Warning: This plugin has no unit info.");
+            // Treat as this plugin provides no IUnitInfo interface.
             unit_handler_.reset();
         }
     } else {
-        hwm::dout << "This Plugin has no IUnitInfo interfaces." << std::endl;
+        HWM_INFO_LOG(L"This Plugin has no IUnitInfo interfaces.");
     }
 
     OutputBusInfo(component_.get(), edit_controller_.get(), unit_handler_.get());
@@ -943,9 +954,10 @@ void Vst3Plugin::Impl::Initialize()
         output_audio_buses_info_.SetActive(i);
     }
    
+    input_audio_buses_info_.SetSpeakerArrangement(0, Steinberg::Vst::SpeakerArr::k40Music);
     auto result = audio_buses_info_owner_->ApplySpeakerArrangements();
     if(result.first != kResultOk) {
-        hwm::dout << "Failed to set bus arrangement: " << tresult_to_string(result.first) << std::endl;
+        HWM_WARN_LOG(L"Failed to apply speaker arrangement: " + to_wstr(tresult_to_string(result.first)));
     }
     
     input_midi_buses_info_.Initialize(midi_buses_info_owner_.get(), Vst::BusDirections::kInput);
@@ -990,15 +1002,15 @@ tresult Vst3Plugin::Impl::CreatePlugView()
     
 #if defined(_MSC_VER)
     if(plug_view_->isPlatformTypeSupported(kPlatformTypeHWND) == kResultOk) {
-        hwm::dout << "This plugin editor supports HWND" << std::endl;
+        HWM_DEBUG_LOG(L"This IPlugView supports HWND");
     } else {
         return kNotImplemented;
     }
 #else
     if(plug_view_->isPlatformTypeSupported(kPlatformTypeNSView) == kResultOk) {
-        hwm::dout << "This plugin editor supports NS View" << std::endl;
+        HWM_DEBUG_LOG(L"This IPlugView supports NS View");
     } else if(plug_view_->isPlatformTypeSupported(kPlatformTypeHIView) == kResultOk) {
-        hwm::dout << "This plugin editor supports HI View" << std::endl;
+        HWM_DEBUG_LOG(L"This IPlugView supports HI View");
     } else {
         return kNotImplemented;
     }
