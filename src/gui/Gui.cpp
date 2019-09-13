@@ -8,12 +8,109 @@
 #include "../resource/ResourceHelper.hpp"
 #include "../plugin/vst3/Vst3Plugin.hpp"
 #include "../plugin/vst3/Vst3PluginFactory.hpp"
+#include "../device/AudioDeviceManager.hpp"
+#include "../misc/MathUtil.hpp"
 #include "./Util.hpp"
 #include "./Keyboard.hpp"
 #include "./PluginEditor.hpp"
 #include "./PCKeyboardInput.hpp"
 
 NS_HWM_BEGIN
+
+class LevelMeterPanel
+:   public wxPanel
+{
+public:
+    LevelMeterPanel(wxWindow *parent)
+    :   wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
+    {
+        font_ = wxFontInfo(wxSize{10, 10}).Family(wxFONTFAMILY_MODERN);
+        Bind(wxEVT_PAINT, [this](auto &) { OnPaint(); });
+        timer_.Bind(wxEVT_TIMER, [this](auto &) { Refresh(); });
+        
+        timer_.Start(10);
+    }
+    
+    void OnPaint()
+    {
+        wxPaintDC paint_dc(this);
+        wxGCDC dc(paint_dc);
+        
+        auto app = App::GetInstance();
+        auto adm = AudioDeviceManager::GetInstance();
+        assert(adm);
+        auto dev = adm->GetDevice();
+        if(!dev) {
+            BrushPen bp { HSVToColour(0.0, 0.0, 0.4) };
+            bp.ApplyTo(dc);
+            dc.DrawRectangle(GetClientRect());
+            
+            dc.SetFont(font_);
+            dc.SetTextForeground(HSVToColour(0.0, 0.0, 0.85));
+            dc.DrawLabel("No Device", GetClientRect(), wxALIGN_CENTER);
+            return;
+        }
+        
+        auto const num_ch = dev->GetDeviceInfo(DeviceIOType::kOutput)->num_channels_;
+        if(level_meter_.size() != num_ch) {
+            level_meter_.resize(num_ch);
+        }
+        
+        double const kViewMinDB = app->GetAudioOutputMinLevel();
+        double const kViewMaxDB = 10.0;
+        
+        app->GetAudioOutputLevelMeter(level_meter_);
+        auto const size = GetClientSize();
+        
+        int const bars_ysum = size.y - (num_ch - 1);
+        int const bar_height = bars_ysum / num_ch;
+        if(bar_height == 0) {
+            BrushPen bp { HSVToColour(0.0, 0.0, 0.4) };
+            bp.ApplyTo(dc);
+            dc.DrawRectangle(GetClientRect());
+            
+            dc.SetFont(font_);
+            dc.SetTextForeground(HSVToColour(0.0, 0.0, 0.85));
+            dc.DrawLabel("Too Many Channels", GetClientRect(), wxALIGN_CENTER);
+            return;
+        }
+        
+        {
+            auto rc = GetClientRect();
+            rc.SetHeight(bar_height * num_ch + (num_ch - 1));
+            dc.GradientFillLinear(rc, HSVToColour(0.2, 1.0, 1.0), HSVToColour(0.0, 1.0, 1.0));
+        }
+        
+        for(int ch = 0; ch < num_ch; ++ch) {
+            auto top = (bar_height + 1) * ch;
+            
+            if(ch != num_ch - 1) {
+                dc.SetPen(wxPen(HSVToColour(0, 0, 0)));
+                auto gap_y = top + bar_height;
+                dc.DrawLine(0, gap_y, size.x, gap_y);
+            }
+            
+            auto const cur = Clamp<double>(level_meter_[ch], kViewMinDB, kViewMaxDB);
+            int const left_pos = std::round(size.x * (cur - kViewMinDB) / (kViewMaxDB - kViewMinDB));
+            wxRect rc {
+                wxPoint { left_pos, top },
+                wxSize { size.x - left_pos, bar_height }
+            };
+            dc.SetPen(wxPen(HSVToColour(0, 0, 0.2)));
+            dc.SetBrush(wxBrush(HSVToColour(0, 0, 0.2)));
+            dc.DrawRectangle(rc);
+        }
+        
+        auto const kZeroDB = 0;
+        dc.SetPen(HSVToColour(0.4, 0.2, 1.0, 0.2));
+        int const left_pos = std::round(size.x * (kZeroDB - kViewMinDB) / (kViewMaxDB - kViewMinDB));
+        dc.DrawLine(left_pos, 0, left_pos, size.y);
+    }
+    
+    wxFont font_;
+    wxTimer timer_;
+    std::vector<double> level_meter_;
+};
 
 class HeaderPanel
 :   public wxPanel
@@ -44,6 +141,7 @@ public:
                                   max_level * kVolumeSliderScale);
         sl_volume_->SetBackgroundColour(kColOutputSlider);
         sl_volume_->SetLabel(L"出力レベル");
+        sl_volume_->SetMinSize(wxSize{50, 1});
         
         lbl_current_level_ = new wxStaticText(this, wxID_ANY, L"", wxDefaultPosition, wxDefaultSize,
                                               wxST_NO_AUTORESIZE|wxALIGN_RIGHT);
@@ -59,15 +157,22 @@ public:
         
         btn_enable_input_->Enable(app->CanEnableAudioInput());
         btn_enable_input_->SetValue(app->IsAudioInputEnabled());
+        
+        level_meter_ = new LevelMeterPanel(this);
+        level_meter_->SetMinSize(wxSize{70, 1});
+        level_meter_->SetMaxSize(wxSize{300, 100});
 
         auto hbox = new wxBoxSizer(wxHORIZONTAL);
         hbox->Add(lbl_volume_, wxSizerFlags(0).Expand());
-        hbox->Add(sl_volume_, wxSizerFlags(3).Expand());
+        hbox->Add(sl_volume_, wxSizerFlags(30).Expand());
         
         auto vbox_current_level = new wxBoxSizer(wxVERTICAL);
         vbox_current_level->Add(lbl_current_level_, wxSizerFlags(1).Expand());
         hbox->Add(vbox_current_level, wxSizerFlags(0).Expand());
         
+        hbox->AddSpacer(5);
+        hbox->Add(level_meter_, wxSizerFlags(30).Expand());
+        hbox->AddSpacer(5);
         hbox->AddStretchSpacer(1);
         hbox->Add(btn_enable_input_, wxSizerFlags(0).Expand());
         
@@ -90,6 +195,7 @@ private:
     wxStaticText *lbl_volume_;
     wxSlider *sl_volume_;
     wxStaticText *lbl_current_level_;
+    LevelMeterPanel *level_meter_;
     wxCheckBox *btn_enable_input_;
     wxColor col_bg_;
     ScopedListenerRegister<App::IPlaybackOptionChangeListener> slr_pocl_;

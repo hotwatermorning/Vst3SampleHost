@@ -33,6 +33,7 @@ NS_HWM_BEGIN
 double const kAudioOutputLevelMinDB = -48.0;
 double const kAudioOutputLevelMaxDB = 0.0;
 Int32 kAudioOutputLevelTransientMillisec = 30;
+double const kLevelMeterReleaseSpeed = 24.0;
 
 bool OpenAudioDevice(Config const &conf)
 {
@@ -257,6 +258,8 @@ struct App::Impl
         // App内部では、モノラル入力も必ずステレオにして扱う
         input_buffer_.resize(std::max(num_input_channels, 2), max_block_size);
         output_buffer_.resize(std::max(num_output_channels, 2), max_block_size);
+        level_meters_.resize(output_buffer_.channels(), kAudioOutputLevelMinDB);
+        level_meters_tmp_.resize(output_buffer_.channels(), kAudioOutputLevelMinDB);
         
         output_level_ = TransitionalVolume(sample_rate_,
                                            kAudioOutputLevelTransientMillisec,
@@ -370,6 +373,8 @@ struct App::Impl
                  float const * const * input,
                  float **output) override
     {
+        assert(block_size > 0);
+        
         auto lock = lf_playback_.make_lock();
         
         input_buffer_.fill(0.0);
@@ -425,6 +430,17 @@ struct App::Impl
             std::for_each_n(ch_data, block_size,
                             [gain](auto &elem) { elem *= gain; }
                             );
+            
+            auto const it = std::max_element(ch_data, ch_data + block_size);
+            auto const new_db = LinearToDB(*it);
+            auto const last = level_meters_tmp_[ch] - (kLevelMeterReleaseSpeed * block_size / sample_rate_);
+            level_meters_tmp_[ch] = std::max(new_db, last);
+        }
+        
+        {
+            auto lock = lf_level_meter_.make_lock();
+            assert(level_meters_tmp_.size() == level_meters_.size());
+            std::copy(level_meters_tmp_.begin(), level_meters_tmp_.end(), level_meters_.begin());
         }
     }
     
@@ -434,9 +450,23 @@ struct App::Impl
             plugin_->Suspend();
         }
     }
+    
+    void GetLevelMeter(std::vector<double> &dest)
+    {
+        auto lock = lf_level_meter_.make_lock();
+        if(dest.size() != level_meters_.size()) {
+            std::fill(dest.begin(), dest.end(), kAudioOutputLevelMinDB);
+        } else {
+            std::copy(level_meters_.begin(), level_meters_.end(), dest.begin());
+        }
+    }
 
     Buffer<AudioSample> input_buffer_;
     Buffer<AudioSample> output_buffer_;
+    
+    LockFactory lf_level_meter_;
+    std::vector<double> level_meters_tmp_;
+    std::vector<double> level_meters_;
     int num_input_channels_ = 0;
     int num_output_channels_ = 0;
     int block_size_ = 0;
@@ -779,6 +809,11 @@ std::bitset<128> App::GetPlayingNotes()
     }
     
     return ret;
+}
+
+void App::GetAudioOutputLevelMeter(std::vector<double> &dest)
+{
+    pimpl_->GetLevelMeter(dest);
 }
 
 void App::SelectAudioDevice()

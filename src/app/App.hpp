@@ -109,6 +109,12 @@ public:
     
     //! 再生中のノートを返す。
     std::bitset<128> GetPlayingNotes();
+
+    //! オーディオ出力レベルメータの値(dB値)を取得する。
+    /*! @param dest レベルメータの値を受け取るバッファ
+     *  @pre dest.size() == オーディオデバイス出力のチャンネル数
+     */
+    void GetAudioOutputLevelMeter(std::vector<double> &dest);
     
     //! オーディオデバイスを選択し、オープンに成功したらコンフィグファイルを更新する
     void SelectAudioDevice();
