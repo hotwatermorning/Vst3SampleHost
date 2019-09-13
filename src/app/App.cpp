@@ -323,7 +323,7 @@ struct App::Impl
         ProcessInfo pi;
         
         pi.input_audio_buffer_ = BufferRef<AudioSample const>(input_buffer_, 0, input_buffer_.channels(), 0, block_size);
-        pi.output_audio_buffer_ = BufferRef<AudioSample>(output_buffer_, 0, input_buffer_.channels(), 0, block_size);
+        pi.output_audio_buffer_ = BufferRef<AudioSample>(output_buffer_, 0, output_buffer_.channels(), 0, block_size);
         pi.time_info_.is_playing_ = true;
         pi.time_info_.sample_length_ = block_size;
         pi.time_info_.sample_rate_ = sample_rate_;
