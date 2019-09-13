@@ -954,7 +954,6 @@ void Vst3Plugin::Impl::Initialize()
         output_audio_buses_info_.SetActive(i);
     }
    
-    input_audio_buses_info_.SetSpeakerArrangement(0, Steinberg::Vst::SpeakerArr::k40Music);
     auto result = audio_buses_info_owner_->ApplySpeakerArrangements();
     if(result.first != kResultOk) {
         HWM_WARN_LOG(L"Failed to apply speaker arrangement: " + to_wstr(tresult_to_string(result.first)));
