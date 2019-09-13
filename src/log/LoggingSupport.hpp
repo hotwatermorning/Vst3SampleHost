@@ -64,15 +64,15 @@ LoggingStreamWrapper<Stream> & operator<<(LoggingStreamWrapper<Stream> &os, char
 // logging macro.
 #define HWM_LOG(level, ...) \
 do { \
-    if(auto global_logger_ref ## __LINE__ = GetGlobalLogger()) { \
-        auto global_logger_ref_output_error = global_logger_ref ## __LINE__ ->OutputLog(level, [&] { \
-            std::wstringstream ss; \
-            LoggingStreamWrapper<std::wstringstream> wss(ss); \
-            wss << __VA_ARGS__; \
-            return ss.str(); \
+    if(auto hwm_log_macro_ ## __LINE__ ## _global_logger_ref = GetGlobalLogger()) { \
+    auto hwm_log_macro_ ## __LINE__ ## _error = hwm_log_macro_ ## __LINE__ ## _global_logger_ref ->OutputLog(level, [&] { \
+            std::wstringstream hwm_log_macro_ ## __LINE__ ## _ss; \
+            LoggingStreamWrapper<std::wstringstream> hwm_log_macro_ ## __LINE__ ## _wss(hwm_log_macro_ ## __LINE__ ## _ss); \
+            hwm_log_macro_ ## __LINE__ ## _wss << __VA_ARGS__; \
+            return hwm_log_macro_ ## __LINE__ ## _ss.str(); \
         }); \
         if(IsEnabledErrorCheckAssertionForLoggingMacros()) { \
-            assert(global_logger_ref_output_error.has_error() == false); \
+            assert(hwm_log_macro_ ## __LINE__ ## _error.has_error() == false); \
         } \
     } \
 } while(0) \
