@@ -73,8 +73,12 @@ public:
     {
         st_audio_inputs_ = new wxStaticText(this, wxID_ANY, "Audio Input: ");
         cho_audio_inputs_ = new wxChoice(this, wxID_ANY);
+        st_audio_input_channels_ = new wxStaticText(this, wxID_ANY, "Audio Input Channels: ");
+        cho_audio_input_channels_ = new wxChoice(this, wxID_ANY);
         st_audio_outputs_ = new wxStaticText(this, wxID_ANY, "Audio Output: ");
         cho_audio_outputs_ = new wxChoice(this, wxID_ANY);
+        st_audio_output_channels_ = new wxStaticText(this, wxID_ANY, "Audio Output Channels: ");
+        cho_audio_output_channels_ = new wxChoice(this, wxID_ANY);
         st_sample_rates_ = new wxStaticText(this, wxID_ANY, "Sample Rate: ");
         cho_sample_rates_ = new wxChoice(this, wxID_ANY);
         st_buffer_sizes_ = new wxStaticText(this, wxID_ANY, "Buffer Size: ");
@@ -83,8 +87,14 @@ public:
         st_audio_inputs_->SetForegroundColour(HSVToColour(0.0, 0.0, 0.9));
         st_audio_inputs_->SetBackgroundColour(kPanelBackgroundColour.brush_.GetColour());
         
+        st_audio_input_channels_->SetForegroundColour(HSVToColour(0.0, 0.0, 0.9));
+        st_audio_input_channels_->SetBackgroundColour(kPanelBackgroundColour.brush_.GetColour());
+        
         st_audio_outputs_->SetForegroundColour(HSVToColour(0.0, 0.0, 0.9));
         st_audio_outputs_->SetBackgroundColour(kPanelBackgroundColour.brush_.GetColour());
+        
+        st_audio_output_channels_->SetForegroundColour(HSVToColour(0.0, 0.0, 0.9));
+        st_audio_output_channels_->SetBackgroundColour(kPanelBackgroundColour.brush_.GetColour());
         
         st_sample_rates_->SetForegroundColour(HSVToColour(0.0, 0.0, 0.9));
         st_sample_rates_->SetBackgroundColour(kPanelBackgroundColour.brush_.GetColour());
@@ -100,7 +110,6 @@ public:
         tooltip->SetDelay(500);
         warning_icon_->SetToolTip(tooltip);
 
-        
         auto vbox = new wxBoxSizer(wxVERTICAL);
         
         auto add_entry = [&](auto parent_box, auto static_text, auto choice) {
@@ -112,7 +121,9 @@ public:
         };
         
         add_entry(vbox, st_audio_inputs_, cho_audio_inputs_);
+        add_entry(vbox, st_audio_input_channels_, cho_audio_input_channels_);
         add_entry(vbox, st_audio_outputs_, cho_audio_outputs_);
+        add_entry(vbox, st_audio_output_channels_, cho_audio_output_channels_);
         add_entry(vbox, st_sample_rates_, cho_sample_rates_);
         add_entry(vbox, st_buffer_sizes_, cho_buffer_sizes_);
         auto hbox = new wxBoxSizer(wxHORIZONTAL);
@@ -128,7 +139,9 @@ public:
         Bind(wxEVT_PAINT, [this](auto &ev) { OnPaint(); });
         
         cho_audio_inputs_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectAudioInput(); });
+        cho_audio_input_channels_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectAudioInputChannels(); });
         cho_audio_outputs_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectAudioOutput(); });
+        cho_audio_output_channels_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectAudioOutputChannels(); });
         cho_sample_rates_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectSampleRate(); });
         cho_buffer_sizes_->Bind(wxEVT_CHOICE, [this](auto &ev) { OnSelectBufferSize(); });
         
@@ -183,7 +196,24 @@ public:
             return;
         }
         
+        UpdateAudioInputChannels();
+        
         copied.input_info_ = wrapper ? wrapper->info_ : std::optional<AudioDeviceInfo>{};
+        OpenDevice(copied, true);
+    }
+    
+    void OnSelectAudioInputChannels()
+    {
+        auto *cho = cho_audio_input_channels_;
+        
+        auto sel = cho->GetSelection();
+        if(sel == wxNOT_FOUND) { return; }
+        
+        auto copied = device_setting_;
+        if(copied.input_info_) {
+            copied.input_info_->num_channels_ = sel + 1;
+        }
+        
         OpenDevice(copied, true);
     }
     
@@ -204,8 +234,25 @@ public:
             return;
         }
         
+        UpdateAudioOutputChannels();
+        
         copied.output_info_ = wrapper->info_;
         OpenDevice(copied, false);
+    }
+    
+    void OnSelectAudioOutputChannels()
+    {
+        auto *cho = cho_audio_output_channels_;
+        
+        auto sel = cho->GetSelection();
+        if(sel == wxNOT_FOUND) { return; }
+        
+        auto copied = device_setting_;
+        if(copied.output_info_) {
+            copied.output_info_->num_channels_ = sel + 1;
+        }
+        
+        OpenDevice(copied, true);
     }
     
     void OnSelectSampleRate()
@@ -371,6 +418,44 @@ public:
         return ss.str();
     }
     
+    auto find_entry(AudioDeviceInfo const &info) {
+        auto found = std::find_if(device_info_list_.begin(), device_info_list_.end(),
+                                  [info](AudioDeviceInfo const &x) {
+                                      return x.driver_ == info.driver_ &&  x.name_ == info.name_;
+                                  });
+        assert(found != device_info_list_.end());
+        return *found;
+    }
+    
+    void UpdateAudioInputChannels()
+    {
+        if(device_setting_.input_info_ == std::nullopt) { return; }
+        
+        auto found = find_entry(*device_setting_.input_info_);
+        cho_audio_input_channels_->Clear();
+        for(int ch = 0; ch < found.num_channels_; ++ch) {
+            cho_audio_input_channels_->Append(std::to_string(ch + 1));
+        }
+        
+        auto const ch = std::min<int>(device_setting_.input_info_->num_channels_,
+                                      found.num_channels_);
+        cho_audio_input_channels_->Select(ch - 1);
+    }
+    
+    void UpdateAudioOutputChannels()
+    {
+        if(device_setting_.output_info_ == std::nullopt) { return; }
+        auto found = find_entry(*device_setting_.output_info_);
+        cho_audio_output_channels_->Clear();
+        for(int ch = 0; ch < found.num_channels_; ++ch) {
+            cho_audio_output_channels_->Append(std::to_string(ch + 1));
+        }
+        
+        auto const ch = std::min<int>(device_setting_.output_info_->num_channels_,
+                                      found.num_channels_);
+        cho_audio_output_channels_->Select(ch - 1);
+    }
+    
     void UpdateSelections()
     {
         auto select = [](wxChoice *cho, String const &label, int default_index) {
@@ -386,12 +471,16 @@ public:
         
         if(device_setting_.input_info_) {
             select(cho_audio_inputs_, get_device_label(*device_setting_.input_info_), 0);
+            UpdateAudioInputChannels();
         } else {
             cho_audio_inputs_->SetSelection(0);
         }
         
         assert(device_setting_.output_info_);
         select(cho_audio_outputs_, get_device_label(*device_setting_.output_info_), wxNOT_FOUND);
+        if(cho_audio_input_channels_->GetSelection() != wxNOT_FOUND) {
+            UpdateAudioOutputChannels();
+        }
         
         cho_sample_rates_->Clear();
         auto available = device_setting_.GetAvailableSamplingRates();
@@ -431,7 +520,7 @@ public:
         }
         adm->Close();
         
-        auto list = adm->Enumerate();
+        device_info_list_ = adm->Enumerate();
         
         cho_audio_inputs_->Clear();
         cho_audio_outputs_->Clear();
@@ -443,7 +532,7 @@ public:
         int input_index = 0;
         int output_index = wxNOT_FOUND;
         
-        for(auto &entry: list) {
+        for(auto &entry: device_info_list_) {
             if(entry.io_type_ == DeviceIOType::kInput) {
                 cho_audio_inputs_->Append(get_device_label(entry), new AudioDeviceInfoWrapper{entry});
                 if(device_setting_.input_info_ && is_same_device(*device_setting_.input_info_, entry)) {
@@ -472,6 +561,9 @@ public:
         cho_audio_inputs_->SetSelection(input_index);
         cho_audio_outputs_->SetSelection(output_index);
         
+        UpdateAudioInputChannels();
+        UpdateAudioOutputChannels();
+        
         OpenDevice(device_setting_, false);
     }
     
@@ -487,13 +579,18 @@ public:
 private:
     wxStaticText *st_audio_inputs_ = nullptr;
     wxChoice *cho_audio_inputs_ = nullptr;
+    wxStaticText *st_audio_input_channels_ = nullptr;
+    wxChoice *cho_audio_input_channels_ = nullptr;
     wxStaticText *st_audio_outputs_ = nullptr;
     wxChoice *cho_audio_outputs_ = nullptr;
+    wxStaticText *st_audio_output_channels_ = nullptr;
+    wxChoice *cho_audio_output_channels_ = nullptr;
     wxStaticText *st_sample_rates_ = nullptr;
     wxChoice *cho_sample_rates_ = nullptr;
     wxStaticText *st_buffer_sizes_ = nullptr;
     wxChoice *cho_buffer_sizes_ = nullptr;
     wxStaticBitmap *warning_icon_ = nullptr;
+    std::vector<AudioDeviceInfo> device_info_list_;
 };
 
 class DeviceSettingDialog
