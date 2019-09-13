@@ -103,8 +103,7 @@ void OutputUnitInfo(Vst::IUnitInfo *unit_handler)
     HWM_DEBUG_LOG(L"Selected Unit: " << unit_handler->getSelectedUnit());
     
     HWM_DEBUG_LOG(L"--- Output Program List Info ---");
-    
-    std::wstringstream ss;
+
     for(size_t i = 0; i < unit_handler->getProgramListCount(); ++i) {
         Vst::ProgramListInfo program_list_info {};
         tresult res = unit_handler->getProgramListInfo(i, program_list_info);
@@ -113,10 +112,11 @@ void OutputUnitInfo(Vst::IUnitInfo *unit_handler)
             break;
         }
         
-        ss << wxString::Format(L"[%d] %ls", (Int32)i, ProgramListInfoToString(program_list_info)).ToStdWstring();
+        HWM_DEBUG_LOG(wxString::Format(L"[%d] %ls", (Int32)i, ProgramListInfoToString(program_list_info)).ToStdWstring());
         
         for(size_t program_index = 0; program_index < program_list_info.programCount; ++program_index) {
             
+            std::wstringstream ss;
             ss << wxString::Format(L"\t[%d] ", (Int32)program_index).ToStdWstring();
             
             Vst::String128 name;
@@ -152,10 +152,8 @@ void OutputUnitInfo(Vst::IUnitInfo *unit_handler)
                 ss << L", No Pitch Name";
             }
             
-            ss << std::endl;
+            HWM_DEBUG_LOG(ss.str());
         }
-        
-        HWM_DEBUG_LOG(ss.str());
     }
 }
 
