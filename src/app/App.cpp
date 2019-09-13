@@ -258,8 +258,8 @@ struct App::Impl
         // App内部では、モノラル入力も必ずステレオにして扱う
         input_buffer_.resize(std::max(num_input_channels, 2), max_block_size);
         output_buffer_.resize(std::max(num_output_channels, 2), max_block_size);
-        level_meters_.resize(output_buffer_.channels(), kAudioOutputLevelMinDB);
-        level_meters_tmp_.resize(output_buffer_.channels(), kAudioOutputLevelMinDB);
+        level_meters_.resize(num_output_channels_, kAudioOutputLevelMinDB);
+        level_meters_tmp_.resize(num_output_channels_, kAudioOutputLevelMinDB);
         
         output_level_ = TransitionalVolume(sample_rate_,
                                            kAudioOutputLevelTransientMillisec,
