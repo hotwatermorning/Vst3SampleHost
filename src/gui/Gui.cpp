@@ -3,6 +3,7 @@
 
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
+#include <wx/dir.h>
 
 #include "../resource/ResourceHelper.hpp"
 #include "../plugin/vst3/Vst3Plugin.hpp"
@@ -388,7 +389,6 @@ private:
     wxWindow        *keyboard_;
     wxFrame         *editor_frame_ = nullptr;
     wxPanel         *header_panel_ = nullptr;
-    String          module_dir_;
     
     ScopedListenerRegister<App::IModuleLoadListener> slr_mll_;
     ScopedListenerRegister<App::IPluginLoadListener> slr_pll_;
@@ -412,18 +412,20 @@ private:
     
     void OnLoadModule()
     {
-        if(wxFileName(module_dir_, "").DirExists() == false) {
+        auto app = App::GetInstance();
+        auto dir = app->GetConfig().plugin_search_path_;
+        if(wxDir::Exists(dir) == false) {
 #if defined(_MSC_VER)
-            module_dir_ = L"C:/Program Files/Common Files/VST3";
+            dir = L"C:/Program Files/Common Files/VST3";
 #else
-            module_dir_ = L"/Library/Audio/Plug-Ins/VST3";
+            dir = L"/Library/Audio/Plug-Ins/VST3";
 #endif
         }
         
         // load
         wxFileDialog openFileDialog(this,
                                     "Open VST3 file",
-                                    module_dir_,
+                                    dir,
                                     "",
                                     "VST3 files (*.vst3)|*.vst3",
                                     wxFD_OPEN|wxFD_FILE_MUST_EXIST);
@@ -433,7 +435,8 @@ private:
         }
         
         auto path = String(openFileDialog.GetPath().ToStdWstring());
-        module_dir_ = wxFileName(path).GetPath();
+        app->GetConfig().plugin_search_path_ = wxFileName(path).GetPath();
+        app->SaveConfig();
         
         if(App::GetInstance()->LoadVst3Module(path) == false) {
             wxMessageBox(L"モジュールのオープンに失敗しました");

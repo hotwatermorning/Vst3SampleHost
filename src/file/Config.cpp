@@ -69,6 +69,7 @@ std::ostream & operator<<(std::ostream &os, Config const &self)
     WRITE_MEMBER(audio_output_channel_count)
     WRITE_MEMBER(sample_rate)
     WRITE_MEMBER(block_size)
+    WRITE_MEMBER(plugin_search_path)
     ;
 
 #undef WRITE_MEMBER
@@ -108,6 +109,8 @@ if(auto val = find_value(lines, #key)) { from_s(*val, self. key ## _); }
     self.block_size_ = Clamp<double>(self.block_size_,
                                      kSupportedBlockSizeMin,
                                      kSupportedBlockSizeMax);
+    
+    READ_MEMBER(plugin_search_path);
 
 #undef READ_MEMBER
     

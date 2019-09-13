@@ -809,10 +809,7 @@ void App::SelectAudioDevice()
     }
     
     pimpl_->config_.ScanAudioDeviceStatus();
-    auto res = pimpl_->WriteConfigFile();
-    if(res.has_error()) {
-        wxMessageBox(L"コンフィグデータの保存に失敗しました。アプリケーションを終了してください。\nError Message: [" + res.what() + L"]");
-    }
+    SaveConfig();
     
     bool const new_inputtability = CanEnableAudioInput();
     if(old_inputtability != new_inputtability) {
@@ -927,6 +924,14 @@ void App::SaveProjectFile(String path_to_save)
 #endif
     
     ofs << file;
+}
+
+void App::SaveConfig()
+{
+    auto res = pimpl_->WriteConfigFile();
+    if(res.has_error()) {
+        wxMessageBox(L"コンフィグデータの保存に失敗しました。アプリケーションを終了してください。\nError Message: [" + res.what() + L"]");
+    }
 }
 
 namespace {

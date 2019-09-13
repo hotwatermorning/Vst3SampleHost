@@ -18,6 +18,7 @@ struct Config
     
     double sample_rate_ = kSupportedSampleRateDefault;
     Int32 block_size_ = kSupportedBlockSizeDefault;
+    String plugin_search_path_;
     
     //! 現在のオーディオデバイスの状態を読み込み
     void ScanAudioDeviceStatus();

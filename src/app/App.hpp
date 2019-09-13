@@ -120,6 +120,8 @@ public:
     void LoadProjectFile(String path_to_load);
     void SaveProjectFile(String path_to_save);
     
+    void SaveConfig();
+    
 private:
     struct Impl;
     std::unique_ptr<Impl> pimpl_;
