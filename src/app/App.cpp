@@ -195,8 +195,8 @@ struct App::Impl
 #endif
         if(!ifs) {
             auto msg = to_wstr(strerror(errno));
-            HWM_ERROR_LOG(L"failed to open the config file: " + msg);
-            return Result::Fail(L"コンフィグファイルを開けませんでした: " + msg);
+            HWM_WARN_LOG(L"failed to open the config file: " + msg);
+            return Result::NoError(); 
         }
         
         try {
