@@ -2,20 +2,20 @@
 
 [![Build Status](https://dev.azure.com/vst3host-dev/vst3host-dev/_apis/build/status/hotwatermorning.Vst3SampleHost?branchName=master)](https://dev.azure.com/vst3host-dev/vst3host-dev/_build/latest?definitionId=1&branchName=master)
 
-このプロジェクトは、VST3プラグインをホストするサンプルホストアプリケーションのプロジェクトです。
+このプロジェクトは、VST3 プラグインをホストするサンプルホストアプリケーションのプロジェクトです。
 
 ![ScreenShot](./misc/ScreenShot.png)
 
 ## ダウンロード
 
-最新のビルド済みパッケージは、以下のURLからダウンロードできます。
+最新のビルド済みパッケージは、以下の URL からダウンロードできます。
 
 * [Win (MSVC2017)](https://vst3hostdev.blob.core.windows.net/vst3samplehost-release/refs/heads/update_ci_settings/vst3samplehost_release_win_msvc2017.zip)
 * [Win (MSVC2019)](https://vst3hostdev.blob.core.windows.net/vst3samplehost-release/refs/heads/update_ci_settings/vst3samplehost_release_win_msvc2019.zip)
 * [macOS (Xcode10.1)](https://vst3hostdev.blob.core.windows.net/vst3samplehost-release/refs/heads/update_ci_settings/vst3samplehost_release_osx_xcode10_1.zip)
 
 #### 免責事項
-@hotwatermorningは、このソフトウェアの使用によって生じたいかなる損害に対しても責任を負いません。
+@hotwatermorning は、このソフトウェアの使用によって生じたいかなる損害に対しても責任を負いません。
 
 ## 機能
 
@@ -28,7 +28,7 @@
 
 ## ビルド方法
 
-Vst3SampleHostは、以下の環境でビルドできます。
+Vst3SampleHost は、以下の環境でビルドできます。
 
 * macOS 10.13.4 & Xcode 10.1
 * Windows 10 & Visual Studio 2017
@@ -42,7 +42,7 @@ Vst3SampleHostは、以下の環境でビルドできます。
 * Xcode 10.1 or later
 * Visual Studio 2017 or later
 
-### macOS環境でのビルドコマンド
+### macOS 環境でのビルドコマンド
 
 ```sh
 cd ./gradle
@@ -50,10 +50,10 @@ cd ./gradle
 ./gradlew build_all [-Pconfig=Debug]
 # `config` プロパティはデフォルトで `Debug` が指定されます。リリースビルド時は、 `-Pconfig=Release` を指定します。
 
-open ../build_debug/Debug/ChapterXX/Vst3SampleHost.app
+open ../build_debug/Debug/Vst3SampleHost/Vst3SampleHost.app
 ```
 
-### Windows環境でのビルドコマンド
+### Windows 環境でのビルドコマンド
 
 ```bat
 cd .\gradle
@@ -67,22 +67,22 @@ gradlew build_all [-Pconfig=Debug] [-Pmsvc_version="..."]
 :
 : 非英語ロケール環境でのビルド時に文字化けが発生する場合は、 `-Dfile.encoding=UTF-8` オプションを追加してください。
 
-start ..\build_debug\Debug\ChapterXX\Vst3SampleHost.exe
+start ..\build_debug\Debug\Vst3SampleHost\Vst3SampleHost.exe
 ```
 
 ### TIPS
 
-* サブモジュールのビルドが完了していてVst3SampleHost自体の再ビルドのみが必要な場合は、以下のようにコマンドを実行することで、不要なサブモジュールの再ビルドをスキップして、プロジェクトファイルの再生成と指定したチャプターのVst3SampleHostの再ビルドを実行できます。
+* サブモジュールのビルドが完了していて Vst3SampleHost 自体の再ビルドのみが必要な場合は、以下のようにコマンドを実行することで、不要なサブモジュールの再ビルドをスキップして、プロジェクトファイルの再生成と指定したチャプターの Vst3SampleHost の再ビルドを実行できます。
 
 ```sh
-./gradlew prepare_project build_app_chapterxx [-Pconfig=Debug]
+./gradlew prepare_project build_app [-Pconfig=Debug]
 ```
 
 ## ライセンスと依存ライブラリ
 
-Vst3SampleHostのソースコードは MIT License で公開します。配布するバイナリにはさらに Proprietary Steinberg VST3 License と Steinberg ASIO SDK License が適用されます。
+Vst3SampleHost のソースコードは MIT License で公開します。配布するバイナリにはさらに Proprietary Steinberg VST3 License と Steinberg ASIO SDK License が適用されます。
 
-Vst3SampleHostは以下のライブラリに依存しています。
+Vst3SampleHost は以下のライブラリに依存しています。
 
 * [wxWidgets](http://www.wxwidgets.org/)
 * [PortAudio](http://www.portaudio.com/)
