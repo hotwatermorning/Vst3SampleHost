@@ -1,0 +1,164 @@
+              wxWindows Library Licence, Version 3.1
+              ======================================
+
+Copyright (c) 1998-2005 Julian Smart, Robert Roebling et al
+
+Everyone is permitted to copy and distribute verbatim copies
+of this licence document, but changing it is not allowed.
+
+                     WXWINDOWS LIBRARY LICENCE
+   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+
+This library is free software; you can redistribute it and/or modify it
+under the terms of the GNU Library General Public Licence as published by
+the Free Software Foundation; either version 2 of the Licence, or (at your
+option) any later version.
+
+This library is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library General Public
+Licence for more details.
+
+You should have received a copy of the GNU Library General Public Licence
+along with this software, usually in a file named COPYING.LIB.  If not,
+write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth
+Floor, Boston, MA 02110-1301 USA.
+
+EXCEPTION NOTICE
+
+1. As a special exception, the copyright holders of this library give
+permission for additional uses of the text contained in this release of the
+library as licenced under the wxWindows Library Licence, applying either
+version 3.1 of the Licence, or (at your option) any later version of the
+Licence as published by the copyright holders of version 3.1 of the Licence
+document.
+
+2. The exception is that you may use, copy, link, modify and distribute
+under your own terms, binary object code versions of works based on the
+Library.
+
+3. If you copy code from files distributed under the terms of the GNU
+General Public Licence or the GNU Library General Public Licence into a
+copy of this library, as this licence permits, the exception does not apply
+to the code that you add in this way.  To avoid misleading anyone as to the
+status of such modified files, you must delete this exception notice from
+such code and/or adjust the licensing conditions notice accordingly.
+
+4. If you write modifications of your own for this library, it is your
+choice whether to permit this exception to apply to your modifications.  If
+you do not wish that, you must delete the exception notice from such code
+and/or adjust the licensing conditions notice accordingly.
+
+---
+
+PortAudio Portable Real-Time Audio Library
+Copyright (c) 1999-2011 Ross Bencina and Phil Burk
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+RtMidi: realtime MIDI i/o C++ classes
+Copyright (c) 2003-2019 Gary P. Scavone
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation files
+(the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+Any person wishing to distribute modifications to the Software is
+asked to send the modifications to the original developer so that
+they can be incorporated into the canonical version.  This is,
+however, not a binding provision of this license.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+VST3 SDK
+
+//-----------------------------------------------------------------------------
+// LICENSE
+// (c) 2019, Steinberg Media Technologies GmbH, All Rights Reserved
+//-----------------------------------------------------------------------------
+This license applies only to files referencing this license,
+for other files of the Software Development Kit the respective embedded license text
+is applicable. The license can be found at: www.steinberg.net/sdklicenses_vst3
+
+This Software Development Kit is licensed under the terms of the Steinberg VST3 License,
+or alternatively under the terms of the General Public License (GPL) Version 3.
+You may use the Software Development Kit according to either of these licenses as it is
+most appropriate for your project on a case-by-case basis (commercial or not).
+
+a) Proprietary Steinberg VST3 License
+The Software Development Kit may not be distributed in parts or its entirety
+without prior written agreement by Steinberg Media Technologies GmbH.
+The SDK must not be used to re-engineer or manipulate any technology used
+in any Steinberg or Third-party application or software module,
+unless permitted by law.
+Neither the name of the Steinberg Media Technologies GmbH nor the names of its
+contributors may be used to endorse or promote products derived from this
+software without specific prior written permission.
+Before publishing a software under the proprietary license, you need to obtain a copy
+of the License Agreement signed by Steinberg Media Technologies GmbH.
+The Steinberg VST SDK License Agreement can be found at:
+www.steinberg.net/en/company/developers.html
+
+THE SDK IS PROVIDED BY STEINBERG MEDIA TECHNOLOGIES GMBH "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL STEINBERG MEDIA TECHNOLOGIES GMBH BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGE.
+
+b) General Public License (GPL) Version 3
+Details of these licenses can be found at: www.gnu.org/licenses/gpl-3.0.html
+//----------------------------------------------------------------------------------
+
+---
+
+Catch2
+
+Boost Software License - Version 1.0 - August 17th, 2003
+
+Permission is hereby granted, free of charge, to any person or organization
+obtaining a copy of the software and accompanying documentation covered by
+this license (the "Software") to use, reproduce, display, distribute,
+execute, and transmit the Software, and to prepare derivative works of the
+Software, and to permit third-parties to whom the Software is furnished to
+do so, all subject to the following:
+
+The copyright notices in the Software and this entire statement, including
+the above license grant, this restriction and the following disclaimer,
+must be included in all copies of the Software, in whole or in part, and
+all derivative works of the Software, unless such copies or derivative
+works are solely in the form of machine-executable object code generated by
+a source language processor.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
+FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.

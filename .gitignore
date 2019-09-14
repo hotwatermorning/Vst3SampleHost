@@ -6,6 +6,7 @@
 !*.txt
 !*.md
 !*.png
+!*.jpg
 !*.in
 !*.yml
 !*.ico

@@ -79,7 +79,7 @@ start ..\build_debug\Debug\ChapterXX\Vst3SampleHost.exe
 
 ## ライセンスと依存ライブラリ
 
-Vst3SampleHostのソースコードは MIT License で公開します。配布するバイナリにはさらに "Proprietary Steinberg VST3" license が適用されます。
+Vst3SampleHostのソースコードは MIT License で公開します。配布するバイナリにはさらに Proprietary Steinberg VST3 License と Steinberg ASIO SDK License が適用されます。
 
 Vst3SampleHostは以下のライブラリに依存しています。
 
@@ -87,12 +87,13 @@ Vst3SampleHostは以下のライブラリに依存しています。
 * [PortAudio](http://www.portaudio.com/)
 * [VST3 SDK](https://github.com/steinbergmedia/vst3sdk)
 * [RtMidi](https://github.com/thestk/rtmidi)
+* [Catch2](https://github.com/catchorg/Catch2)
 
 ## 商標について
 
-VST is a trademark of Steinberg Media Technologies GmbH, registered in Europe and other countries.
+<img src="./misc/VST_Compatible_Logo_Steinberg_with_TM_negative.png" width="20%" height="20%" alt="VST Compatible Logo"></img>
 
-<img src="./misc/VST_Compatible_Logo_Steinberg_negative.png" width="20%" height="20%" alt="VST Compatible Logo"></img>
+<img src="./misc/ASIO-compatible-logo-Steinberg-TM-BW.jpg" width="20%" height="20%" alt="ASIO Compatible Logo"></img>
 
 ## 連絡先
 

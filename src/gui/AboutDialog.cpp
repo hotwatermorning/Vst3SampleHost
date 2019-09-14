@@ -79,6 +79,8 @@ public:
         
         panel_ = new Panel(this, wxID_ANY, wxDefaultPosition, image_.GetSize());
         
+        version_ = String(L"Version: ") + kAppVersion +
+        " (" + String(kAppCommitID).substr(0, 8) + ")";
         by_ = "by ";
         url_ = "diatonic.jp";
         url_actual_ = "https://diatonic.jp";
@@ -86,8 +88,14 @@ public:
         {
             wxClientDC dc(this);
             dc.SetFont(font_);
+            auto sz_version =  dc.GetTextExtent(version_);
             auto sz_by = dc.GetTextExtent(by_);
             auto sz_url = dc.GetTextExtent(url_);
+            
+            rc_version_ = wxRect {
+                wxPoint { padding_x_, link_offset_y_ },
+                sz_version
+            };
             
             rc_url_ = wxRect {
                 wxPoint { image_.GetWidth() - padding_x_ - sz_url.x, link_offset_y_ },
@@ -208,18 +216,8 @@ public:
 
         dc.SetFont(font_);
         dc.SetTextForeground(col_text_);
-        auto font_size = font_.GetPixelSize();
         
-        auto text_rect = wxRect{
-            wxPoint{ padding_x_, img.GetHeight() / 2 },
-            wxSize { img.GetWidth() - padding_x_ * 2, font_size.GetHeight() }
-        };
-        
-        auto const version_str =
-        String(L"Version: ") + kAppVersion +
-        L" (" + String(kAppCommitID).substr(0, 8) + L")";
-        
-        dc.DrawLabel(version_str, text_rect, wxALIGN_CENTER_VERTICAL);
+        dc.DrawLabel(version_, rc_version_, wxALIGN_CENTER_VERTICAL);
     }
     
 private:
@@ -227,14 +225,16 @@ private:
     wxFont font_;
     wxFont font_underlined_;
     GraphicsBuffer back_buffer_;
+    wxRect rc_version_;
     wxRect rc_by_;
     wxRect rc_url_;
     wxColour col_text_          = *wxWHITE;
     wxColour col_link_          = *wxWHITE;
     wxColour col_link_hover_    = wxColour(150, 150, 255);
-    std::string url_;
-    std::string url_actual_;
-    std::string by_;
+    wxString version_;
+    wxString url_;
+    wxString url_actual_;
+    wxString by_;
     bool is_hovering_ = false;
     Int32 const padding_x_ = 62;
     Int32 const link_offset_y_ = 113;
