@@ -26,6 +26,8 @@ public:
     {
         font_ = wxFontInfo(wxSize{10, 10}).Family(wxFONTFAMILY_MODERN);
         Bind(wxEVT_PAINT, [this](auto &) { OnPaint(); });
+        Bind(wxEVT_SIZE, [this](auto &) { bmp_ = GraphicsBuffer(GetClientSize()); });
+
         timer_.Bind(wxEVT_TIMER, [this](auto &) { Refresh(); });
         
         timer_.Start(10);
@@ -33,8 +35,10 @@ public:
     
     void OnPaint()
     {
-        wxPaintDC paint_dc(this);
-        wxGCDC dc(paint_dc);
+        if(bmp_.IsOk() == false) { return; }
+
+        wxMemoryDC memory_dc(bmp_.GetBitmap());
+        wxGCDC dc(memory_dc);
         
         auto app = App::GetInstance();
         auto adm = AudioDeviceManager::GetInstance();
@@ -105,11 +109,15 @@ public:
         dc.SetPen(HSVToColour(0.4, 0.2, 1.0, 0.2));
         int const left_pos = std::round(size.x * (kZeroDB - kViewMinDB) / (kViewMaxDB - kViewMinDB));
         dc.DrawLine(left_pos, 0, left_pos, size.y);
+
+        wxPaintDC pdc(this);
+        pdc.Blit(wxPoint{}, GetClientSize(), &memory_dc, wxPoint{});
     }
     
     wxFont font_;
     wxTimer timer_;
     std::vector<double> level_meter_;
+    GraphicsBuffer bmp_;
 };
 
 class HeaderPanel
