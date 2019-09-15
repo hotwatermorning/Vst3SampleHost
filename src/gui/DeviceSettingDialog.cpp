@@ -596,8 +596,8 @@ private:
 class DeviceSettingDialog
 :   public wxDialog
 {
-    wxSize const kMinSize = { 400, 200 };
-    wxSize const kMaxSize = { 1000, 200 };
+    wxSize const kMinSize = { 400, 250 };
+    wxSize const kMaxSize = { 1000, 250 };
 
 public:
     DeviceSettingDialog(wxWindow *parent)

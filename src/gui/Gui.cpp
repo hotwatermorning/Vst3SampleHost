@@ -40,6 +40,10 @@ public:
         wxMemoryDC memory_dc(bmp_.GetBitmap());
         wxGCDC dc(memory_dc);
         
+        dc.SetPen(wxPen(HSVToColour(0, 0, 0.0)));
+        dc.SetBrush(wxBrush(HSVToColour(0, 0, 0.0)));
+        dc.DrawRectangle(GetClientRect());
+        
         auto app = App::GetInstance();
         auto adm = AudioDeviceManager::GetInstance();
         assert(adm);
@@ -52,6 +56,9 @@ public:
             dc.SetFont(font_);
             dc.SetTextForeground(HSVToColour(0.0, 0.0, 0.85));
             dc.DrawLabel("No Device", GetClientRect(), wxALIGN_CENTER);
+            
+            wxPaintDC pdc(this);
+            pdc.Blit(wxPoint{}, GetClientSize(), &memory_dc, wxPoint{});
             return;
         }
         
@@ -68,6 +75,7 @@ public:
         
         int const bars_ysum = size.y - (num_ch - 1);
         int const bar_height = bars_ysum / num_ch;
+        int const bars_height = bar_height * num_ch + (num_ch - 1);
         if(bar_height == 0) {
             BrushPen bp { HSVToColour(0.0, 0.0, 0.4) };
             bp.ApplyTo(dc);
@@ -76,12 +84,15 @@ public:
             dc.SetFont(font_);
             dc.SetTextForeground(HSVToColour(0.0, 0.0, 0.85));
             dc.DrawLabel("Too Many Channels", GetClientRect(), wxALIGN_CENTER);
+            
+            wxPaintDC pdc(this);
+            pdc.Blit(wxPoint{}, GetClientSize(), &memory_dc, wxPoint{});
             return;
         }
         
         {
             auto rc = GetClientRect();
-            rc.SetHeight(bar_height * num_ch + (num_ch - 1));
+            rc.SetHeight(bars_height);
             dc.GradientFillLinear(rc, HSVToColour(0.2, 1.0, 1.0), HSVToColour(0.0, 1.0, 1.0));
         }
         
@@ -106,9 +117,9 @@ public:
         }
         
         auto const kZeroDB = 0;
-        dc.SetPen(HSVToColour(0.4, 0.2, 1.0, 0.2));
+        dc.SetPen(HSVToColour(0.4, 0.6, 1.0, 0.34));
         int const left_pos = std::round(size.x * (kZeroDB - kViewMinDB) / (kViewMaxDB - kViewMinDB));
-        dc.DrawLine(left_pos, 0, left_pos, size.y);
+        dc.DrawLine(left_pos, 0, left_pos, bars_height);
 
         wxPaintDC pdc(this);
         pdc.Blit(wxPoint{}, GetClientSize(), &memory_dc, wxPoint{});
