@@ -24,9 +24,15 @@ public:
     LevelMeterPanel(wxWindow *parent)
     :   wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
     {
+        SetBackgroundColour(*wxBLACK);
+
         font_ = wxFontInfo(wxSize{10, 10}).Family(wxFONTFAMILY_MODERN);
         Bind(wxEVT_PAINT, [this](auto &) { OnPaint(); });
-        Bind(wxEVT_SIZE, [this](auto &) { bmp_ = GraphicsBuffer(GetClientSize()); });
+        Bind(wxEVT_SIZE, [this](auto &) {
+            auto size = GetClientSize();
+            if(size.x <= 0 || size.y <= 0) { return; }
+            bmp_ = GraphicsBuffer(size);
+        });
 
         timer_.Bind(wxEVT_TIMER, [this](auto &) { Refresh(); });
         
@@ -119,7 +125,7 @@ public:
         auto const kZeroDB = 0;
         dc.SetPen(HSVToColour(0.4, 0.6, 1.0, 0.34));
         int const left_pos = std::round(size.x * (kZeroDB - kViewMinDB) / (kViewMaxDB - kViewMinDB));
-        dc.DrawLine(left_pos, 0, left_pos, bars_height);
+        dc.DrawLine(left_pos, 0, left_pos, bars_height-1);
 
         wxPaintDC pdc(this);
         pdc.Blit(wxPoint{}, GetClientSize(), &memory_dc, wxPoint{});
@@ -131,20 +137,20 @@ public:
     GraphicsBuffer bmp_;
 };
 
-class HeaderPanel
+class LevelSliderPanel
 :   public wxPanel
 ,   public App::IPlaybackOptionChangeListener
 {
-public:
     wxColour const kColLabel = HSVToColour(0.0, 0.0, 0.9);
-    wxColour const kColOutputSlider = HSVToColour(0.7, 0.4, 0.4);
-    wxColour const kColInputCheckBox = HSVToColour(0.5, 0.4, 0.4);
+    wxColour const kColBackgrund = HSVToColour(0.7, 0.4, 0.4);
     double const kVolumeSliderScale = 100.0;
     
-    HeaderPanel(wxWindow *parent)
+public:
+    LevelSliderPanel(wxWindow *parent)
     :   wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
-    ,   col_bg_(10, 10, 10)
     {
+        SetBackgroundColour(kColBackgrund);
+        
         auto app = App::GetInstance();
         auto const min_level = app->GetAudioOutputMinLevel();
         auto const max_level = app->GetAudioOutputMaxLevel();
@@ -152,74 +158,58 @@ public:
         
         lbl_volume_ = new wxStaticText(this, wxID_ANY, L"出力レベル");
         lbl_volume_->SetForegroundColour(kColLabel);
-        lbl_volume_->SetBackgroundColour(kColOutputSlider);
+        lbl_volume_->SetMinSize(lbl_volume_->GetSize());
+        //lbl_volume_->SetMinClientSize(lbl_volume_->GetTextExtent(lbl_volume_->GetLabel()));
         
         sl_volume_ = new wxSlider(this, wxID_ANY,
                                   cur_level * kVolumeSliderScale,
                                   min_level * kVolumeSliderScale,
                                   max_level * kVolumeSliderScale);
-        sl_volume_->SetBackgroundColour(kColOutputSlider);
-        sl_volume_->SetLabel(L"出力レベル");
-        sl_volume_->SetMinSize(wxSize{50, 1});
+        sl_volume_->SetMinSize(wxSize{80, 1});
         
         lbl_current_level_ = new wxStaticText(this, wxID_ANY, L"", wxDefaultPosition, wxDefaultSize,
                                               wxST_NO_AUTORESIZE|wxALIGN_RIGHT);
         lbl_current_level_->SetForegroundColour(kColLabel);
-        lbl_current_level_->SetBackgroundColour(kColOutputSlider);
-        lbl_current_level_->SetMinSize(wxSize{70, 1});
+        auto size = lbl_current_level_->GetTextExtent("-00.00 dB");
+        size.IncBy(10, 0);
+        lbl_current_level_->SetMinClientSize(size);
         
-        btn_enable_input_ = new wxCheckBox(this, wxID_ANY, L"マイク入力",
-                                       wxDefaultPosition,
-                                       wxSize(100, 1));
-        btn_enable_input_->SetForegroundColour(kColLabel);
-        btn_enable_input_->SetBackgroundColour(kColInputCheckBox);
+        auto vcenter_box = [](auto window) {
+            auto vbox = new wxBoxSizer(wxVERTICAL);
+            vbox->AddStretchSpacer(1);
+            vbox->Add(window, wxSizerFlags(100).Expand());
+            vbox->AddStretchSpacer(1);
+            return vbox;
+        };
         
-        btn_enable_input_->Enable(app->CanEnableAudioInput());
-        btn_enable_input_->SetValue(app->IsAudioInputEnabled());
-        
-        level_meter_ = new LevelMeterPanel(this);
-        level_meter_->SetMinSize(wxSize{70, 1});
-        level_meter_->SetMaxSize(wxSize{300, 100});
-
         auto hbox = new wxBoxSizer(wxHORIZONTAL);
-        hbox->Add(lbl_volume_, wxSizerFlags(0).Expand());
-        hbox->Add(sl_volume_, wxSizerFlags(30).Expand());
+        hbox->Add(vcenter_box(lbl_volume_), wxSizerFlags(0).Expand());
+        hbox->Add(sl_volume_, wxSizerFlags(1).Expand());
+        hbox->Add(vcenter_box(lbl_current_level_), wxSizerFlags(0).Expand());
         
-        auto vbox_current_level = new wxBoxSizer(wxVERTICAL);
-        vbox_current_level->Add(lbl_current_level_, wxSizerFlags(1).Expand());
-        hbox->Add(vbox_current_level, wxSizerFlags(0).Expand());
-        
-        hbox->AddSpacer(5);
-        hbox->Add(level_meter_, wxSizerFlags(30).Expand());
-        hbox->AddSpacer(5);
-        hbox->AddStretchSpacer(1);
-        hbox->Add(btn_enable_input_, wxSizerFlags(0).Expand());
-        
-        auto vbox = new wxBoxSizer(wxVERTICAL);
-        vbox->Add(hbox, wxSizerFlags(1).Expand().Border(wxALL, 5));
-        SetSizer(vbox);
+        SetSizer(hbox);
         
         sl_volume_->Bind(wxEVT_SLIDER, [this](wxCommandEvent &ev) { OnSlider(ev); });
-        btn_enable_input_->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &ev) { OnCheckBox(ev); });
-
+        
         slr_pocl_.reset(app->GetPlaybackOptionChangeListenerService(), this);
-        SetBackgroundColour(col_bg_);
         
         UpdateLevelText(cur_level);
     }
     
-    bool AcceptsFocus() const override { return false; }
-    
 private:
-    wxStaticText *lbl_volume_;
-    wxSlider *sl_volume_;
-    wxStaticText *lbl_current_level_;
-    LevelMeterPanel *level_meter_;
-    wxCheckBox *btn_enable_input_;
-    wxColor col_bg_;
+    wxStaticText *lbl_volume_ = nullptr;
+    wxSlider *sl_volume_ = nullptr;
+    wxStaticText *lbl_current_level_ = nullptr;
     ScopedListenerRegister<App::IPlaybackOptionChangeListener> slr_pocl_;
     
-private:
+    void OnSlider(wxCommandEvent &ev)
+    {
+        auto app = App::GetInstance();
+        auto level = sl_volume_->GetValue() / kVolumeSliderScale;
+        app->SetAudioOutputLevel(sl_volume_->GetValue() / kVolumeSliderScale);
+        UpdateLevelText(level);
+    }
+    
     void UpdateLevelText(double level)
     {
         auto app = App::GetInstance();
@@ -234,13 +224,58 @@ private:
         lbl_current_level_->SetLabel(buf);
     }
     
-    void OnSlider(wxCommandEvent &ev)
+    void OnAudioOutputLevelChanged(double new_level) override
     {
-        auto app = App::GetInstance();
-        auto level = sl_volume_->GetValue() / kVolumeSliderScale;
-        app->SetAudioOutputLevel(sl_volume_->GetValue() / kVolumeSliderScale);
-        UpdateLevelText(level);
+        sl_volume_->SetValue(new_level * kVolumeSliderScale);
+        UpdateLevelText(new_level);
     }
+};
+
+class AudioInputPanel
+:   public wxPanel
+,   public App::IPlaybackOptionChangeListener
+{
+    wxColour const kColLabel = HSVToColour(0.0, 0.0, 0.9);
+    wxColour const kColInputCheckBox = HSVToColour(0.5, 0.4, 0.4);
+    
+public:
+    AudioInputPanel(wxWindow *parent)
+    :   wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
+    {
+        SetBackgroundColour(kColInputCheckBox);
+        
+        auto app = App::GetInstance();
+        
+        btn_enable_input_ = new wxCheckBox(this, wxID_ANY, L"マイク入力",
+                                           wxDefaultPosition);
+        btn_enable_input_->SetForegroundColour(kColLabel);
+        btn_enable_input_->SetBackgroundColour(kColInputCheckBox);
+        btn_enable_input_->SetMinSize(wxSize(150, 1));
+        
+        btn_enable_input_->Enable(app->CanEnableAudioInput());
+        btn_enable_input_->SetValue(app->IsAudioInputEnabled());
+        
+        btn_enable_input_->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &ev) { OnCheckBox(ev); });
+        
+        auto vcenter_box = [](auto window) {
+            auto vbox = new wxBoxSizer(wxVERTICAL);
+            vbox->AddStretchSpacer(1);
+            vbox->Add(window, wxSizerFlags(100).Expand());
+            //vbox->SetMinSize(wxSize{window->GetClientSize().x, 1});
+            vbox->AddStretchSpacer(1);
+            return vbox;
+        };
+        
+        auto hbox = new wxBoxSizer(wxHORIZONTAL);
+        hbox->Add(vcenter_box(btn_enable_input_), wxSizerFlags(1).Expand());
+        SetSizer(hbox);
+        
+        slr_pocl_.reset(app->GetPlaybackOptionChangeListenerService(), this);
+    }
+    
+private:
+    wxCheckBox *btn_enable_input_ = nullptr;
+    ScopedListenerRegister<App::IPlaybackOptionChangeListener> slr_pocl_;
     
     void OnCheckBox(wxCommandEvent &ev)
     {
@@ -257,12 +292,44 @@ private:
     {
         btn_enable_input_->SetValue(enabled);
     }
-    
-    void OnAudioOutputLevelChanged(double new_level) override
+};
+
+class HeaderPanel
+:   public wxPanel
+{
+public:
+    HeaderPanel(wxWindow *parent)
+    :   wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
     {
-        sl_volume_->SetValue(new_level * kVolumeSliderScale);
-        UpdateLevelText(new_level);
+        SetBackgroundColour(HSVToColour(0.0, 0.0, 0.1));
+        
+        level_slider_ = new LevelSliderPanel(this);
+        level_meter_ = new LevelMeterPanel(this);
+        level_meter_->SetMinSize(wxSize{70, 1});
+        level_meter_->SetMaxSize(wxSize{300, 100});
+
+        audio_input_ = new AudioInputPanel(this);
+        audio_input_->SetMinSize(wxSize{100, 1});
+        audio_input_->SetMaxSize(wxSize{200, 100});
+        
+        auto hbox = new wxBoxSizer(wxHORIZONTAL);
+        hbox->Add(level_slider_, wxSizerFlags(5).Expand());
+        hbox->AddSpacer(5);
+        hbox->Add(level_meter_, wxSizerFlags(5).Expand());
+        hbox->AddSpacer(5);
+        hbox->Add(audio_input_, wxSizerFlags(1).Expand());
+        
+        auto vbox = new wxBoxSizer(wxVERTICAL);
+        vbox->Add(hbox, wxSizerFlags(1).Expand().Border(wxALL, 5));
+        SetSizer(vbox);
     }
+    
+    bool AcceptsFocus() const override { return false; }
+    
+private:
+    LevelSliderPanel *level_slider_ = nullptr;
+    LevelMeterPanel *level_meter_ = nullptr;
+    AudioInputPanel *audio_input_ = nullptr;
 };
 
 class MainWindow
@@ -287,6 +354,7 @@ public:
         this->SetBackgroundColour(wxColour(0x09, 0x21, 0x33));
         
         header_panel_ = new HeaderPanel(this);
+        header_panel_->SetMinClientSize(wxSize{1, 30});
         
         tc_filepath_ = new wxTextCtrl(this, wxID_ANY, "", wxDefaultPosition, wxSize(100, 20), wxTE_READONLY);
         tc_filepath_->SetBackgroundColour(*wxWHITE);
