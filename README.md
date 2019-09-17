@@ -8,11 +8,9 @@
 
 ## ダウンロード
 
-最新のビルド済みパッケージは、以下の URL からダウンロードできます。
+最新のビルド済みパッケージは、このプロジェクトのリリースページからダウンロードできます。
 
-* [Win (MSVC2017)](https://vst3hostdev.blob.core.windows.net/vst3samplehost-release/refs/heads/master/vst3samplehost_release_win_msvc2017.zip)
-* [Win (MSVC2019)](https://vst3hostdev.blob.core.windows.net/vst3samplehost-release/refs/heads/master/vst3samplehost_release_win_msvc2019.zip)
-* [macOS (Xcode10.1)](https://vst3hostdev.blob.core.windows.net/vst3samplehost-release/refs/heads/master/vst3samplehost_release_osx_xcode10_1.zip)
+* https://github.com/hotwatermorning/Vst3SampleHost/releases
 
 #### 免責事項
 @hotwatermorning は、このソフトウェアの使用によって生じたいかなる損害に対しても責任を負いません。
