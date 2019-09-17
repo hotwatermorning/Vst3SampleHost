@@ -25,10 +25,16 @@ jobs:
     displayName: build all
   - task: CopyFiles@2
     inputs:
+      SourceFolder: '$(System.DefaultWorkingDirectory)/build_release/Release'
+      contents: '**/*'
+      targetFolder: '$(Build.ArchiveStagingDirectory)'
+    displayName: Copy binaries
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(System.DefaultWorkingDirectory)'
       contents: |
-        '$(System.DefaultWorkingDirectory)/build_release/Release/**'
-        '$(System.DefaultWorkingDirectory)/LICENSE.txt'
-        '$(System.DefaultWorkingDirectory)/CREDITS.txt'
+        'LICENSE.txt'
+        'CREDITS.txt'
       targetFolder: '$(Build.ArchiveStagingDirectory)'
     displayName: Copy binaries
   - task: PublishBuildArtifacts@1
@@ -53,10 +59,16 @@ jobs:
     displayName: build all
   - task: CopyFiles@2
     inputs:
+      SourceFolder: '$(System.DefaultWorkingDirectory)/build_release/Release'
+      contents: '**/*'
+      targetFolder: '$(Build.ArchiveStagingDirectory)'
+    displayName: Copy binaries
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(System.DefaultWorkingDirectory)'
       contents: |
-        '$(System.DefaultWorkingDirectory)/build_release/Release/**'
-        '$(System.DefaultWorkingDirectory)/LICENSE.txt'
-        '$(System.DefaultWorkingDirectory)/CREDITS.txt'
+        'LICENSE.txt'
+        'CREDITS.txt'
       targetFolder: '$(Build.ArchiveStagingDirectory)'
     displayName: Copy binaries
   - task: PublishBuildArtifacts@1
@@ -81,10 +93,16 @@ jobs:
     displayName: build all
   - task: CopyFiles@2
     inputs:
+      SourceFolder: '$(System.DefaultWorkingDirectory)/build_release/Release'
+      contents: '**/*'
+      targetFolder: '$(Build.ArchiveStagingDirectory)'
+    displayName: Copy binaries
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(System.DefaultWorkingDirectory)'
       contents: |
-        '$(System.DefaultWorkingDirectory)/build_release/Release/**'
-        '$(System.DefaultWorkingDirectory)/LICENSE.txt'
-        '$(System.DefaultWorkingDirectory)/CREDITS.txt'
+        'LICENSE.txt'
+        'CREDITS.txt'
       targetFolder: '$(Build.ArchiveStagingDirectory)'
     displayName: Copy binaries
   - task: PublishBuildArtifacts@1
