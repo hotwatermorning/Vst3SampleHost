@@ -43,7 +43,6 @@ jobs:
       artifactName: vst3samplehost_release_osx_xcode10_1
     displayName: publish artifacts
 - job: build_win_msvc_2017
-  dependsOn: build_osx_10_13_xcode10_1
   pool:
     vmImage: 'vs2017-win2016'
   steps:
@@ -78,7 +77,6 @@ jobs:
       artifactName: vst3samplehost_release_win_msvc2017
     displayName: publish artifacts
 - job: build_win_msvc_2019
-  dependsOn: build_osx_10_13_xcode10_1
   pool:
     vmImage: 'windows-2019'
   steps:
