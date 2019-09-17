@@ -33,16 +33,17 @@ jobs:
     inputs:
       SourceFolder: '$(System.DefaultWorkingDirectory)'
       contents: |
-        'LICENSE.txt'
-        'CREDITS.txt'
+        LICENSE.txt
+        CREDITS.txt
       targetFolder: '$(Build.ArchiveStagingDirectory)'
-    displayName: Copy binaries
+    displayName: Copy licenses
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArchiveStagingDirectory)'
       artifactName: vst3samplehost_release_osx_xcode10_1
     displayName: publish artifacts
 - job: build_win_msvc_2017
+  dependsOn: build_osx_10_13_xcode10_1
   pool:
     vmImage: 'vs2017-win2016'
   steps:
@@ -67,16 +68,17 @@ jobs:
     inputs:
       SourceFolder: '$(System.DefaultWorkingDirectory)'
       contents: |
-        'LICENSE.txt'
-        'CREDITS.txt'
+        LICENSE.txt
+        CREDITS.txt
       targetFolder: '$(Build.ArchiveStagingDirectory)'
-    displayName: Copy binaries
+    displayName: Copy licenses
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArchiveStagingDirectory)'
       artifactName: vst3samplehost_release_win_msvc2017
     displayName: publish artifacts
 - job: build_win_msvc_2019
+  dependsOn: build_osx_10_13_xcode10_1
   pool:
     vmImage: 'windows-2019'
   steps:
@@ -101,10 +103,10 @@ jobs:
     inputs:
       SourceFolder: '$(System.DefaultWorkingDirectory)'
       contents: |
-        'LICENSE.txt'
-        'CREDITS.txt'
+        LICENSE.txt
+        CREDITS.txt
       targetFolder: '$(Build.ArchiveStagingDirectory)'
-    displayName: Copy binaries
+    displayName: Copy licenses
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArchiveStagingDirectory)'
