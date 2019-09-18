@@ -131,6 +131,9 @@ public:
         pdc.Blit(wxPoint{}, GetClientSize(), &memory_dc, wxPoint{});
     }
     
+private:
+    bool AcceptsFocus() const override { return false; }
+    
     wxFont font_;
     wxTimer timer_;
     std::vector<double> level_meter_;
@@ -201,6 +204,8 @@ private:
     wxSlider *sl_volume_ = nullptr;
     wxStaticText *lbl_current_level_ = nullptr;
     ScopedListenerRegister<App::IPlaybackOptionChangeListener> slr_pocl_;
+    
+    bool AcceptsFocus() const override { return false; }
     
     void OnSlider(wxCommandEvent &ev)
     {
@@ -276,6 +281,8 @@ public:
 private:
     wxCheckBox *btn_enable_input_ = nullptr;
     ScopedListenerRegister<App::IPlaybackOptionChangeListener> slr_pocl_;
+    
+    bool AcceptsFocus() const override { return false; }
     
     void OnCheckBox(wxCommandEvent &ev)
     {
