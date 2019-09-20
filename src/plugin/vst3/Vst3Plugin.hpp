@@ -245,8 +245,8 @@ public:
 	void	SetBlockSize(int block_size);
 	void	SetSamplingRate(int sampling_rate);
     
-	bool	HasEditor		() const;
-    void    CheckHavingEditor();
+    //!　エディター画面を持っているかどうかを返す
+    bool    HasEditor() const;
 
 #if defined(_MSC_VER)
     using WindowHandle = HWND;
@@ -254,23 +254,51 @@ public:
     using WindowHandle = void *;
 #endif
     
+    //! プラグイン側からのウィンドウ関連の通知を受け取るリスナークラス
     class IPlugFrameListener
     {
     protected:
         IPlugFrameListener() {}
     public:
         virtual ~IPlugFrameListener() {}
+        
+        //! プラグイン側からの画面サイズ変更要求をホストに通知するコールバック
         virtual void OnResizePlugView(Steinberg::ViewRect const &newSize) = 0;
     };
     
-    //! listener is not owned in Vst3Plugin. so caller has responsible to delete this object.
-    //! listener should never be deleted before CloseEditor() is called.
+    //! エディター画面を表示する
+    /*! @param wnd ウィンドウハンドル
+     *  @param listener プラグイン側からのウィンドウ関連の通知を受け取るリスナー
+     *  @return 処理に成功したかどうかを返す
+     *  @note listener の寿命はこの Vst3Plugin では管理されない。
+     *  listener の所有者が、 CloseEditor() 呼び出しに listener を破棄する必要がある。
+     */
     bool	OpenEditor		(WindowHandle wnd, IPlugFrameListener *listener);
     
+    //! エディター画面を閉じる
 	void	CloseEditor		();
+
+    //! エディター画面を開いているかどうかを返す
 	bool	IsEditorOpened	() const;
+
+    //! エディター画面をリサイズ可能かどうかを返す
+    bool    CanChangeEditorSize() const;
+    
+    //! エディター画面のサイズを返す
 	Steinberg::ViewRect
-			GetPreferredRect() const;
+			GetEditorSize() const;
+    
+    //! エディター画面のサイズを変更する
+    void    SetEditorSize(Steinberg::ViewRect const &rc);
+    
+    //! 有効なエディター画面のサイズを取得する
+    /*! @param rc [in,out] 判定したいエディター画面のサイズ。
+     *  このサイズがプラグインのエディター画面として適用できなかった場合は、
+     *  適用可能なサイズに合うようにこの関数の中で rc の値が修正される。
+     *  @return 処理が成功したかどうかを返す。
+     *  引数に与えた rc の値が有効なサイズが有効だったどうかを返すものではないことに注意。
+     */
+    bool    GetEffectiveEditorSize(Steinberg::ViewRect &rc);
 
     UInt32  GetProgramIndex(UnitID unit_id = 0) const;
     void    SetProgramIndex(UInt32 index, UnitID unit_id = 0);

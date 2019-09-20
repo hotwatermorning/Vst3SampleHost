@@ -37,7 +37,7 @@ struct IPluginEditorFrame
     bool SetViewType(PluginViewType type) = 0;
     
     virtual
-    void OnResizePlugView() = 0;
+    void OnResizePlugView(wxSize const &sz) = 0;
 };
 
 IPluginEditorFrame * CreatePluginEditorFrame(wxWindow *parent,

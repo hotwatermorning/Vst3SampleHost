@@ -1,6 +1,7 @@
 #include "PluginEditor.hpp"
 
 #include "../app/App.hpp"
+#include "../misc/ScopeExit.hpp"
 #include "./UnitData.hpp"
 #include "./PCKeyboardInput.hpp"
 #include <pluginterfaces/base/keycodes.h>
@@ -361,8 +362,7 @@ public:
             }
             cho_select_program_->SetSelection(plugin->GetProgramIndex(0));
         }
-        
-        plugin->CheckHavingEditor();
+
         if(plugin->HasEditor()) {
             chk_gen_editor_->SetValue(false);
         } else {
@@ -553,13 +553,22 @@ public:
     :   wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS)
     {
         plugin_ = target_plugin;
-        Show(false);
-
-        plugin_->OpenEditor(GetHandle(), this);
         
-        auto rc = plugin_->GetPreferredRect();
-        auto csize = wxSize(rc.getWidth(), rc.getHeight());
-        SetClientSize(csize);
+        Show(false);
+        
+        auto const opened = plugin_->OpenEditor(GetHandle(), this);
+        if(!opened) {
+            HWM_INFO_LOG(L"Failed to open the plugin editor.");
+            return;
+        }
+
+        Bind(wxEVT_SIZE, [this](wxSizeEvent const &ev) {
+            Steinberg::ViewRect rc;
+            rc.right = ev.GetSize().x;
+            rc.bottom = ev.GetSize().y;
+            
+            plugin_->SetEditorSize(rc);
+        });
     }
 
     bool Destroy() override
@@ -570,11 +579,30 @@ public:
 
     bool Show(bool show = true) override
     {
-        auto rc = plugin_->GetPreferredRect();
-        auto csize = wxSize(rc.getWidth(), rc.getHeight());
-        SetClientSize(csize);
-
+        if(show) {
+            // プラグインのデフォルトサイズでこのウィンドウのサイズを変更し、 wxEVT_SIZE でプラグイン側のサイズを再設定する。
+            // （そのようにしないと、この PluginEditorContents のデフォルトサイズの領域しか描画できないプラグインがあるため）
+            AdjustFrameSize();
+        }
+        
         return wxPanel::Show(show);
+    }
+    
+    bool IsResizable() const
+    {
+        return plugin_->CanChangeEditorSize();
+    }
+    
+    void GetEffectiveWindowSize(wxSize &sz)
+    {
+        Steinberg::ViewRect rc;
+        rc.right = sz.x;
+        rc.bottom = sz.y;
+        
+        plugin_->GetEffectiveEditorSize(rc);
+        
+        sz.x = rc.right - rc.left;
+        sz.y = rc.bottom - rc.top;
     }
     
     Int16 ToVst3KeyModifier(wxKeyboardState &kb)
@@ -608,10 +636,15 @@ private:
     void OnResizePlugView(Steinberg::ViewRect const& rc) override
     {
         HWM_DEBUG_LOG(L"New view size: " << rc);
-
+        plugin_->SetEditorSize(rc);
+        AdjustFrameSize();
+    }
+    
+    void AdjustFrameSize()
+    {
+        auto rc = plugin_->GetEditorSize();
         wxSize csize(rc.getWidth(), rc.getHeight());
-        SetClientSize(csize);
-        GetFrame()->OnResizePlugView();
+        GetFrame()->OnResizePlugView(csize);
     }
 };
 
@@ -672,8 +705,34 @@ public:
 
         SetSizer(sizer);
         SetAutoLayout(true);
+        
+        Bind(wxEVT_SIZE, [this](wxSizeEvent &ev) {
+            if(genedit_->IsShown()) {
+                // do nothing
+            } else {
+                assert(contents_);
+                
+                if(prevent_size_event_) { return; }
+                prevent_size_event_ = true;
+                HWM_SCOPE_EXIT([this] { prevent_size_event_ = false; });
+                
+                // frame client size
+                auto const sz = GetClientSize();
+                
+                wxSize contents_size { sz.x, std::max<int>(sz.y - kControlHeight, 0) };
+                
+                hwm::dout << "size: " << contents_size.x << ", " << contents_size.y << std::endl;
+                contents_->GetEffectiveWindowSize(contents_size);
+                hwm::dout << "adjusted size: " << contents_size.x << ", " << contents_size.y << std::endl;
 
-        OnResizePlugView();
+                wxSize editor_window_size = contents_size;
+                editor_window_size.IncBy(0, kControlHeight);
+                SetClientSize(editor_window_size);
+            }
+                
+            Layout();
+        });
+
         Show(true);
     }
 
@@ -706,17 +765,18 @@ private:
             genedit_->UpdateParameters();
             genedit_->Show();
             contents_->Hide();
-            SetMinSize(ClientToWindowSize(kMinFrameSize));
-            SetMaxSize(ClientToWindowSize(kMaxFrameSize));
+            SetMinClientSize(kMinFrameSize);
+            SetMaxClientSize(kMaxFrameSize);
             SetSize(500, 500);
-            auto style = (GetWindowStyle() | wxRESIZE_BORDER);
+            auto style = (GetWindowStyle() | (wxRESIZE_BORDER));
             SetWindowStyle(style);
         } else {
             genedit_->Hide();
             contents_->Show();
-            auto style = (GetWindowStyle() & (~wxRESIZE_BORDER));
-            SetWindowStyle(style);
-            OnResizePlugView();
+            if(contents_->IsResizable() == false) {
+                auto style = (GetWindowStyle() & ~(wxRESIZE_BORDER));
+                SetWindowStyle(style);
+            }
         }
         Layout();
     }
@@ -745,23 +805,30 @@ private:
     PluginEditorContents *contents_ = nullptr;
     PluginEditorControl *control_ = nullptr;
     GenericParameterView *genedit_ = nullptr;
+    bool prevent_size_event_ = false;
 
-    void OnResizePlugView() override
+    void OnResizePlugView(wxSize const &src_sz) override
     {
         if (!contents_) {
             return;
         }
-        auto sz = contents_->GetClientSize();
 
+        auto sz = src_sz;
         sz.IncBy(0, kControlHeight);
         sz.SetWidth(std::max<Int32>(sz.x, kMinFrameSize.x));
 
-        auto winsize = ClientToWindowSize(sz);
-        SetMinSize(wxSize(1, 1));
-        SetMaxSize(winsize);
-        SetMinSize(winsize);
-        SetSize(winsize);
+        if(contents_->IsResizable() == false) {
+            // SetMaxClientSize()の範囲がMinClientSizeよりも小さくなってアサーションに引っかかってしまうのを回避
+            SetMinClientSize(wxSize{1, 1});
+            
+            SetMaxClientSize(sz);
+            SetMinClientSize(sz);
+        } else {
+            SetMinClientSize(kMinFrameSize);
+            SetMaxClientSize(kMaxFrameSize);
+        }
         
+        SetClientSize(sz);
         Layout();
     }
 };

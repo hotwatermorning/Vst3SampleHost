@@ -109,17 +109,10 @@ public:
     void    SetProgramIndex(UInt32 index, Vst::UnitID unit_id = 0);
 
 	bool HasEditor() const;
-    
-    // Call this function once before to call HasEditor().
-    void CheckHavingEditor();
 
-	bool OpenEditor(WindowHandle parent, IPlugFrame *plug_frame);
-
+    bool OpenEditor(WindowHandle parent, IPlugFrame *plug_frame);
 	void CloseEditor();
-
-	bool IsEditorOpened() const;
-
-	ViewRect GetPreferredRect() const;
+    bool IsEditorOpened() const;
 
 	void Resume();
 
@@ -159,9 +152,6 @@ private:
     //! initialize this instance with loaded interfaces.
 	void Initialize();
 
-	tresult CreatePlugView();
-	void DeletePlugView();
-
 	void PrepareParameters();
 	void PrepareUnitInfo();
 
@@ -184,8 +174,6 @@ public:
     
     //! represents that this plugin do not split components.
 	Flag					is_single_component_;
-	Flag					has_editor_;
-	Flag					is_editor_opened_;
 	Flag					param_value_changes_was_specified_;
 
 	int	sampling_rate_;

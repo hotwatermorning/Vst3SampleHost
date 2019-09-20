@@ -247,14 +247,9 @@ bool Vst3Plugin::HasEditor() const
     return pimpl_->HasEditor();
 }
 
-void Vst3Plugin::CheckHavingEditor()
-{
-    return pimpl_->CheckHavingEditor();
-}
-
 bool Vst3Plugin::OpenEditor(WindowHandle parent, IPlugFrameListener *listener)
 {
-    //! not support multiple plug view yet.
+    //! currently multiple plug view is not supported yet.
     CloseEditor();
     
     assert(listener);
@@ -266,18 +261,55 @@ bool Vst3Plugin::OpenEditor(WindowHandle parent, IPlugFrameListener *listener)
 
 void Vst3Plugin::CloseEditor()
 {
-    pimpl_->CloseEditor();
+    if(pimpl_->plug_view_) {
+        pimpl_->plug_view_->removed();
+        pimpl_->plug_view_.reset();
+    }
+    
     host_context_->plug_frame_listener_ = nullptr;
 }
 
 bool Vst3Plugin::IsEditorOpened() const
 {
-    return pimpl_->IsEditorOpened();
+    return !!pimpl_->plug_view_;
 }
 
-ViewRect Vst3Plugin::GetPreferredRect() const
+bool Vst3Plugin::CanChangeEditorSize() const
 {
-    return pimpl_->GetPreferredRect();
+    if(!IsEditorOpened()) { return false; }
+    
+    return pimpl_->plug_view_->canResize() == kResultTrue;
+}
+
+ViewRect Vst3Plugin::GetEditorSize() const
+{
+    ViewRect rect { 0, 0, 0, 0 };
+    
+    if(IsEditorOpened()) {
+        auto const ret = pimpl_->plug_view_->getSize(&rect);
+        if(ret != kResultTrue) {
+            HWM_DEBUG_LOG(L"SetEditorSize failed: " << ret);
+        }
+    }
+    
+    return rect;
+}
+
+void Vst3Plugin::SetEditorSize(ViewRect const &rc)
+{
+    if(!pimpl_->plug_view_) { return; }
+    auto tmp = rc;
+    auto const ret = pimpl_->plug_view_->onSize(&tmp);
+    if(ret != kResultTrue) {
+        HWM_DEBUG_LOG(L"SetEditorSize failed: " << ret);
+    }
+}
+
+bool Vst3Plugin::GetEffectiveEditorSize(Steinberg::ViewRect &rc)
+{
+    if(!IsEditorOpened()) { return false; }
+    
+    return pimpl_->plug_view_->checkSizeConstraint(&rc) == kResultTrue;
 }
 
 UInt32 Vst3Plugin::GetProgramIndex(UnitID id) const

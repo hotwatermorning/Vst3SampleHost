@@ -99,10 +99,8 @@ Vst3Plugin::Impl::Impl(IPluginFactory *factory,
                        FUnknown *host_context)
 :   factory_info_()
 ,   is_single_component_(false)
-,   is_editor_opened_(false)
 ,   block_size_(2048)
 ,   sampling_rate_(44100)
-,   has_editor_(false)
 ,   status_(Status::kInvalid)
 ,   audio_buses_info_owner_(std::make_unique<AudioBusesInfoOwner>(this))
 ,   midi_buses_info_owner_(std::make_unique<MidiBusesInfoOwner>(this))
@@ -321,30 +319,58 @@ void Vst3Plugin::Impl::SetProgramIndex(UInt32 index, Vst::UnitID unit_id)
     PushBackParameterChange(unit_info.program_change_param_, normalized_value);
 }
 
-bool Vst3Plugin::Impl::HasEditor() const
+vstma_unique_ptr<IPlugView> CreatePlugView(Vst::IEditController *e)
 {
-    assert(component_);
-    //assert(is_resumed_);
-    return has_editor_.get();
+    auto tmp_view = to_unique(e->createView(Vst::ViewType::kEditor));
+    
+    if(!tmp_view) {
+        auto maybe_view = queryInterface<IPlugView>(e);
+        if(maybe_view.is_right()) {
+            tmp_view = std::move(maybe_view.right());
+        }
+    }
+    
+    if(!tmp_view) { return nullptr; }
+    
+#if defined(_MSC_VER)
+    if(tmp_view->isPlatformTypeSupported(kPlatformTypeHWND) == kResultOk) {
+        HWM_DEBUG_LOG(L"This IPlugView supports HWND");
+    } else {
+        return nullptr;
+    }
+#else
+    if(tmp_view->isPlatformTypeSupported(kPlatformTypeNSView) == kResultOk) {
+        HWM_DEBUG_LOG(L"This IPlugView supports NS View");
+    } else if(tmp_view->isPlatformTypeSupported(kPlatformTypeHIView) == kResultOk) {
+        HWM_DEBUG_LOG(L"This IPlugView supports HI View");
+    } else {
+        return nullptr;
+    }
+#endif
+    
+    return tmp_view;
 }
 
-void Vst3Plugin::Impl::CheckHavingEditor()
+bool Vst3Plugin::Impl::HasEditor() const
 {
-    // some plugin (e.g., TyrellN6) may crash while loading saved data
-    // if a plug view has been created but not attached to an window handle.
-    auto res = CreatePlugView();
-    has_editor_ = (res == kResultOk);
+    assert(edit_controller_);
+    
+    if(!IsEditorOpened()) { return true; }
+    
+    auto view = CreatePlugView(edit_controller_.get());
+    return !!view;
 }
 
 bool Vst3Plugin::Impl::OpenEditor(WindowHandle parent, IPlugFrame *plug_frame)
 {
-    assert(HasEditor());
+    // VST3 は複数エディターのオープンに対応しているので、
+    // Vst3SampleHost の UI 側の仕組みがそれに対応すれば、ここで処理を戻さなくてもいいかもしれない。
+    if(plug_view_) { return true; }
     
-    // この関数を呼び出す前に、GetPreferredRect()から返る幅と高さで、
-    // parentはのウィンドウサイズを設定しておくこと。
-    // さもなければ、プラグインによっては正しく描画が行われない。
+    plug_view_ = CreatePlugView(edit_controller_.get());
+    if(!IsEditorOpened()) { return false; }
     
-    tresult res;
+    tresult res = kResultOk;
     
     assert(plug_frame);
 
@@ -362,28 +388,17 @@ bool Vst3Plugin::Impl::OpenEditor(WindowHandle parent, IPlugFrame *plug_frame)
     }
 #endif
     
-    is_editor_opened_ = (res == kResultOk);
-    return (bool)is_editor_opened_;
-}
-
-void Vst3Plugin::Impl::CloseEditor()
-{
-    if(is_editor_opened_) {
-        plug_view_->removed();
-        is_editor_opened_ = false;
+    if(res != kResultOk) {
+        plug_view_.reset();
+        return false;
     }
+
+    return true;
 }
 
 bool Vst3Plugin::Impl::IsEditorOpened() const
 {
-    return is_editor_opened_.get();
-}
-
-ViewRect Vst3Plugin::Impl::GetPreferredRect() const
-{
-    ViewRect rect;
-    plug_view_->getSize(&rect);
-    return rect;
+    return !!plug_view_;
 }
 
 bool operator==(Vst::ProcessSetup const &x, Vst::ProcessSetup const &y)
@@ -978,50 +993,6 @@ void Vst3Plugin::Impl::Initialize()
     output_params_.setMaxParameters(parameter_info_list_.size());
     
     status_ = Status::kInitialized;
-}
-
-tresult Vst3Plugin::Impl::CreatePlugView()
-{
-    assert(edit_controller_);
-
-    // do nothing if already created.
-    // do not create plug view twice because some plugins (e.g., TyrellN6, Podolski) will be crashed.
-    if(plug_view_) { return kResultOk; }
-
-    plug_view_ = to_unique(edit_controller_->createView(Vst::ViewType::kEditor));
-
-    if(!plug_view_) {
-        auto maybe_view = queryInterface<IPlugView>(edit_controller_);
-        if(maybe_view.is_right()) {
-            plug_view_ = std::move(maybe_view.right());
-        } else {
-            return maybe_view.left();
-        }
-    }
-    
-#if defined(_MSC_VER)
-    if(plug_view_->isPlatformTypeSupported(kPlatformTypeHWND) == kResultOk) {
-        HWM_DEBUG_LOG(L"This IPlugView supports HWND");
-    } else {
-        return kNotImplemented;
-    }
-#else
-    if(plug_view_->isPlatformTypeSupported(kPlatformTypeNSView) == kResultOk) {
-        HWM_DEBUG_LOG(L"This IPlugView supports NS View");
-    } else if(plug_view_->isPlatformTypeSupported(kPlatformTypeHIView) == kResultOk) {
-        HWM_DEBUG_LOG(L"This IPlugView supports HI View");
-    } else {
-        return kNotImplemented;
-    }
-#endif
-    
-    return kResultOk;
-}
-
-void Vst3Plugin::Impl::DeletePlugView()
-{
-    assert(IsEditorOpened() == false);
-    plug_view_.reset();
 }
 
 void Vst3Plugin::Impl::PrepareParameters()
