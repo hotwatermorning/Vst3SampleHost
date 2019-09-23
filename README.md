@@ -17,11 +17,12 @@
 
 ## 機能
 
-* VST3プラグインをロードできます。
-* PCキーボードやピアノ鍵盤UIでオーディオ信号やMIDI信号を生成し、プラグインでそのデータを処理できます。
-    * PCキーボードのA, W, S, ..., L, P が、鍵盤のド、レ♭、レ、...、（オクターブ上の）レ、（オクターブ上の）ミ♭に対応します。
+* VST3 プラグインをロードできます。
+* PC キーボードや Vst3SampleHost 上の鍵盤 UI でオーディオ信号や MIDI 信号を生成し、プラグインでそのデータを処理できます。
+    * PC キーボードの A, W, S, ..., L, P が、鍵盤のド、レ♭、レ、...、（オクターブ上の）レ、（オクターブ上の）ミ♭に対応します。
     * Z と X キーでオクターブを変更できます
-    * 読み込んだプラグインがインストゥルメントプラグインの場合はMIDI信号を生成します。エフェクトプラグインの場合は、オーディオ信号を生成します。
+    * 読み込んだプラグインがインストゥルメントプラグインの場合は MIDI 信号を生成して、インストゥルメントプラグインで音を鳴らせます。
+    * 読み込んだプラグインがエフェクトプラグインの場合は、オーディオ信号を生成して、エフェクトプラグインで音を加工できます。
 * マイク入力をプラグインに送信して、エフェクト処理できます。
 
 ## ビルド方法
@@ -70,7 +71,7 @@ start ..\build_debug\Debug\Vst3SampleHost\Vst3SampleHost.exe
 
 ### TIPS
 
-* サブモジュールのビルドが完了していて Vst3SampleHost 自体の再ビルドのみが必要な場合は、以下のようにコマンドを実行することで、不要なサブモジュールの再ビルドをスキップして、プロジェクトファイルの再生成と指定したチャプターの Vst3SampleHost の再ビルドを実行できます。
+* サブモジュールのビルドが完了していて Vst3SampleHost 自体の再ビルドのみが必要な場合は、以下のようにコマンドを実行することで、不要なサブモジュールの再ビルドをスキップして、プロジェクトファイルの再生成と Vst3SampleHost の再ビルドを実行できます。
 
 ```sh
 ./gradlew prepare_project build_app [-Pconfig=Debug]
@@ -84,7 +85,8 @@ Vst3SampleHost は以下のライブラリに依存しています。
 
 * [wxWidgets](http://www.wxwidgets.org/)
 * [PortAudio](http://www.portaudio.com/)
-* [VST3 SDK](https://github.com/steinbergmedia/vst3sdk)
+* [VST3 SDK](https://www.steinberg.net/en/company/developers.html)
+* [ASIO SDK](https://www.steinberg.net/en/company/developers.html)
 * [RtMidi](https://github.com/thestk/rtmidi)
 * [Catch2](https://github.com/catchorg/Catch2)
 
