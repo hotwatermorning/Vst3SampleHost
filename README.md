@@ -27,6 +27,8 @@
 
 ## ビルド方法
 
+（詳細なビルド方法は [wiki](https://github.com/hotwatermorning/Vst3SampleHost/wiki/%E3%83%93%E3%83%AB%E3%83%89%E6%96%B9%E6%B3%95) にも記載しています）
+
 Vst3SampleHost は、以下の環境でビルドできます。
 
 * macOS 10.13.4 & Xcode 10.1
