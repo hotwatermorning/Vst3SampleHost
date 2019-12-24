@@ -551,10 +551,15 @@ task build_vst3sdk {
       file(build_dir),
       get_hash("vst3sdk"),
       {
+        def cxxflags = ""
+        if(isWindows()) {
+          cxxflags = " -DCMAKE_CXX_FLAGS=/D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING "
+        }
+
         // VST3SDKは、makeのinstallターゲットを用意しない
         execute(
           " cmake ${getCMakeGeneratorForSubmodule()} -DCMAKE_BUILD_TYPE=${project.config} " +
-          " -DCMAKE_CXX_FLAGS=/D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING " +
+          cxxflags +
           " -DCMAKE_INSTALL_PREFIX='${build_dir}/install' " +
           " -DSMTG_ADD_VST3_PLUGINS_SAMPLES=OFF " +
           " -DSMTG_ADD_VST3_HOSTING_SAMPLES=OFF " +
